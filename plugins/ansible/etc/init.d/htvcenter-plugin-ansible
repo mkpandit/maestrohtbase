@@ -1,0 +1,206 @@
+#!/bin/bash
+# init script for the htvcenter ansible-plugin
+#
+# htvcenter Enterprise developed by htvcenter Enterprise GmbH.
+#
+# All source code and content (c) Copyright 2014, htvcenter Enterprise GmbH unless specifically noted otherwise.
+#
+# This source code is released under the htvcenter Enterprise Server and Client License, unless otherwise agreed with htvcenter Enterprise GmbH.
+# The latest version of this license can be found here: http://htvcenter-enterprise.com/license
+#
+# By using this software, you acknowledge having read this license and agree to be bound thereby.
+#
+#           http://htvcenter-enterprise.com
+#
+# Copyright 2014, htvcenter Enterprise GmbH <info@htvcenter-enterprise.com>
+#
+
+htvcenter_SERVER_BASE_DIR=$(pushd $(dirname $0)/../../../../.. > /dev/null; echo $PWD; popd > /dev/null)
+. $htvcenter_SERVER_BASE_DIR/htvcenter/etc/htvcenter-server.conf
+. $htvcenter_SERVER_BASE_DIR/htvcenter/include/htvcenter-functions
+. $htvcenter_SERVER_BASE_DIR/htvcenter/include/htvcenter-server-functions
+. $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/ansible/include/htvcenter-plugin-ansible-functions
+. $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/ansible/etc/htvcenter-plugin-ansible.conf
+htvcenter_server_get_config
+export resource_htvcenterserver=$htvcenter_SERVER_IP_ADDRESS
+export LANG=C
+# define wget to use with https
+if [ "$htvcenter_WEB_PROTOCOL" == "https" ]; then
+	WGET_NO_CERT_CHECK="--no-check-certificate"
+fi
+
+
+function htvcenter_plugin_ansible_start() {
+	echo "Starting the htvcenter ansible-plugin"
+	touch $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/ansible/.running
+}
+
+
+function htvcenter_plugin_ansible_stop() {
+	echo "Stopping the htvcenter ansible-plugin"
+	rm -f $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/ansible/.running
+}
+
+function htvcenter_plugin_ansible_uninstall() {
+	local USERNAME=$1
+	local PASSWORD=$2
+	if [ "$USERNAME" == "" ] && [ "$PASSWORD" == "" ]; then
+		echo -n "ansible: Please give a username to uninstall the plugin : "
+		read USERNAME
+		echo
+		echo -n "ansible: Please give the password for user $USERNAME : "
+		read PASSWORD
+		echo
+	fi
+	echo "Uninstalling the htvcenter ansible-plugin"
+	htvcenter_plugin_ansible_stop
+	rm -f /etc/cron.d/htvcenter-ansible-config
+	if [ -x "/etc/init.d/cron" ]; then
+		if [ -x "`which invoke-rc.d 2>/dev/null`" ]; then
+			invoke-rc.d cron reload
+		else
+			/etc/init.d/cron reload
+		fi
+	elif [ -x /etc/init.d/crond ]; then
+		if [ -x "`which invoke-rc.d 2>/dev/null`" ]; then
+			invoke-rc.d crond reload
+		else
+			/etc/init.d/crond reload
+		fi
+	else
+		htvcenter_post_event 0 "htvcenter_plugin_ansible_start" 3 "htvcenter-plugin-ansible" "Could not find cron init script in /etc/init.d/. Please reload cron manually!"
+	fi
+
+	# trigger init action to eventually remove cloud products
+	if [ -e $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/cloud ]; then
+		if ! wget -q $WGET_NO_CERT_CHECK -O /dev/null --http-user=$USERNAME --http-password=$PASSWORD "$htvcenter_WEB_PROTOCOL://$resource_htvcenterserver/htvcenter/base/plugins/ansible/ansible-action.php?ansible_command=uninstall"; then
+			htvcenter_post_event 0 "htvcenter_plugin_ansible_start" 3 "htvcenter-plugin-ansible" "Could not trigger database hook. Please manually remove any Ansible Cloud products!"
+		fi
+	fi
+
+	rm -f $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/ansible
+	rm -f $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/boot-service/boot-service-ansible.tgz
+	rm -f $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/boot-service/htvcenter-ansible-apply.php
+	rm -rf $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/ansible/etc/ansible
+	return 0
+}
+
+function htvcenter_plugin_ansible_init() {
+	local USERNAME=$1
+	local PASSWORD=$2
+	if [ "$USERNAME" == "" ] && [ "$PASSWORD" == "" ]; then
+		echo -n "ansible: Please give a username to init the plugin : "
+		read USERNAME
+		echo
+		echo -n "ansible: Please give the password for user $USERNAME : "
+		read PASSWORD
+		echo
+	fi
+	# check for the public ssh key
+	if [ ! -f "$htvcenter_PLUGIN_ANSIBLE_PUBLIC_SSHKEY" ]; then
+		htvcenter_post_event 0 "htvcenter_plugin_ansible_start" 3 "htvcenter-plugin-ansible" "Public SSH key file $htvcenter_PLUGIN_ANSIBLE_PUBLIC_SSHKEY does not exists! Please create it!"
+		return 1
+	fi
+	cp -f $htvcenter_PLUGIN_ANSIBLE_PUBLIC_SSHKEY $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/boot-service/htvcenter-server-public-ssh-key
+	# add to authorized_keys
+	htvcenter_PUBLIC_SSHKEY=`cat $htvcenter_PLUGIN_ANSIBLE_PUBLIC_SSHKEY`
+	if ! grep "$htvcenter_PUBLIC_SSHKEY" /root/.ssh/authorized_keys 1>/dev/null 2>/dev/null; then
+		htvcenter_post_event 0 "htvcenter_plugin_ansible_start" 5 "htvcenter-plugin-ansible" "Adding Public SSH key file $htvcenter_PLUGIN_ANSIBLE_PUBLIC_SSHKEY to /root/.ssh/authorized_keys"
+		echo >> /root/.ssh/authorized_keys
+		cat $htvcenter_PLUGIN_ANSIBLE_PUBLIC_SSHKEY >> /root/.ssh/authorized_keys
+		echo >> /root/.ssh/authorized_keys
+	fi
+	CURRENTD=`pwd`
+	echo "Initializing the htvcenter ansible-plugin"
+	# linking the web dir
+	ln -sf $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/ansible/web $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/ansible
+	# link the boot-service
+	ln -sf $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/ansible/web/boot-service-ansible.tgz $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/boot-service/boot-service-ansible.tgz
+	# link the apply
+	ln -sf $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/ansible/web/htvcenter-ansible-apply.php $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/boot-service/htvcenter-ansible-apply.php
+	# create the svn dir
+	rm -rf $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/ansible/etc/ansible
+	mkdir -p $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/ansible/etc/ansible
+	svnadmin create $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/ansible/etc/ansible
+	svn import -q $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/ansible/etc/default/ file://$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/ansible/etc/ansible/ -m "initial import"
+	# also co the files for the web-dir
+	rm -rf $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/ansible/web/ansible/
+	mkdir -p $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/ansible/web/ansible/
+	cd $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/ansible/web/ansible/
+	svn co -q file://$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/ansible/etc/ansible/ .
+	chmod -R 777 $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/ansible/web/ansible/
+	# setup access through ssh+svn
+	rm -f $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/ansible/etc/ansible/conf/svnserve.conf
+	echo "[general]" > $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/ansible/etc/ansible/conf/svnserve.conf
+	echo "anon-access = read" >> $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/ansible/etc/ansible/conf/svnserve.conf
+	echo "auth-access = write" >> $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/ansible/etc/ansible/conf/svnserve.conf
+	echo "realm = htvcenter Ansible configuration" >> $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/ansible/etc/ansible/conf/svnserve.conf
+	echo "password-db = passwd" >> $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/ansible/etc/ansible/conf/svnserve.conf
+	chmod -R 777 $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/ansible/etc/ansible/db
+	cd $CURRENTD
+	# create cron job which will update the svn repo with files which were added by the web gui
+	cat $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/ansible/etc/cron.d/htvcenter-ansible-config.cron | \
+		sed -e "s#@@htvcenter_SERVER_BASE_DIR@@#$htvcenter_SERVER_BASE_DIR#g" > /etc/cron.d/htvcenter-ansible-config
+	if [ -x "/etc/init.d/cron" ]; then
+		if [ -x "`which invoke-rc.d 2>/dev/null`" ]; then
+			invoke-rc.d cron reload
+		else
+			/etc/init.d/cron reload
+		fi
+	elif [ -x /etc/init.d/crond ]; then
+		if [ -x "`which invoke-rc.d 2>/dev/null`" ]; then
+			invoke-rc.d crond reload
+		else
+			/etc/init.d/crond reload
+		fi
+	else
+		echo "Could not find cron init script in /etc/init.d/. Please reload cron manually!"
+		htvcenter_post_event 0 "htvcenter_plugin_ansible_start" 3 "htvcenter-plugin-ansible" "Could not find cron init script in /etc/init.d/. Please reload cron manually!"
+	fi
+
+	# trigger init action to eventually add cloud products
+	if [ -e $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/cloud ]; then
+		if ! wget -q $WGET_NO_CERT_CHECK -O /dev/null --http-user=$USERNAME --http-password=$PASSWORD "$htvcenter_WEB_PROTOCOL://$resource_htvcenterserver/htvcenter/base/plugins/ansible/ansible-action.php?ansible_command=init"; then
+			htvcenter_post_event 0 "htvcenter_plugin_ansible_start" 3 "htvcenter-plugin-ansible" "Could not trigger database hook. Please manually add Ansible Cloud products!"
+		fi
+	fi
+	return 0
+}
+
+
+
+
+
+
+
+USER=$2
+PASS=$3
+
+case "$1" in
+	start)
+		htvcenter_plugin_ansible_start
+		;;
+	stop)
+		htvcenter_plugin_ansible_stop
+		;;
+	restart)
+		htvcenter_plugin_ansible_stop
+		sleep 1
+		htvcenter_plugin_ansible_start
+		;;
+	init)
+		htvcenter_plugin_ansible_init $USER $PASS
+		;;
+	uninstall)
+		htvcenter_plugin_ansible_uninstall $USER $PASS
+		;;
+	*)
+		echo "Usage: $0 {start|stop|restart|init|uninstall}"
+		exit 1
+
+esac
+exit $?
+
+
+
+

@@ -1,0 +1,121 @@
+body {
+    font-family: "open sans" !important;
+    overflow-y: none !important;
+    overflow-x: none !important;
+	background-color: #32404e;
+}
+
+#fullbg {
+    background-color: #32404e;
+    height: 100%;
+    position: absolute;
+    /* top: -90px; */
+    width: 100%;
+    z-index: 2147483647;
+}
+
+
+#loginside {
+    margin: 50px auto auto;
+    width: 50%;
+    z-index: 9999999;
+	text-align: center;
+}
+
+#loginside img {
+    margin: auto;
+    display: block;
+    /* position: relative;
+    top: 90px; */
+}
+
+#loginwindow {
+     background-color: #f1f1f1;
+     border: 1px solid lightgray;
+     height: 260px;
+     width: 100%;
+ 	 margin-top: 50px;
+      border-bottom: 4px solid lightgray;
+   
+}
+
+#btnlogin {
+    float: right;
+    margin-right: 2%;
+	margin-top: 15px;
+    background-color: #579ddb;
+    border-color: #5fa2dd;
+    color: #ffffff;
+    font-family: "open sans";
+    border-radius: 0px !important;
+}
+
+.restorepass {
+    margin-left: 20px;
+}
+
+#loginwindow a.links {
+    color: #579ddb;
+    text-decoration: underline;
+    font-size: 14px;
+}
+
+#loginwindow a.links:hover {
+    text-decoration: none;
+}
+
+#loginwindow a.links i {
+    text-decoration: none !important;
+}
+
+#loginwindow .sr-onlys {
+   margin-top: 10px;
+    margin-left: 20px;
+    font-family: "open sans" !important;
+    font-size: 16px;
+    color: #579ddb !important;
+	display: block;
+}
+
+#loginwindow .addlinks {
+    position: relative;
+    top: 35px;
+    float: left;
+    left: 30px;
+}
+
+#loginwindow .addlinks a {
+    margin-right: 3px;
+}
+#loginwindow .form-inline {
+    padding: 1% 5%;
+	text-align: left;
+}
+
+div.form-inline div.form-group {
+	margin-bottom: 3%;
+	width: 100%;
+}
+
+#loginwindow .btn {
+    margin-left: 20px;
+    font-size: 13px;
+    margin-left: 15px;
+}
+
+#loginwindow .input-group {
+    margin-top: 5px;
+    margin-left: 15px;
+    width: 95%;
+}
+
+input, .input-group-addon {
+    border-radius: 0px !important;
+}
+
+#loginwindow .input-group-addon {
+    width: 50px;
+    background-color: #579ddb;
+    color: white;
+}
+

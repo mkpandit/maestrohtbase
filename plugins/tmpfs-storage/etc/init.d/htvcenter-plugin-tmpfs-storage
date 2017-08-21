@@ -1,0 +1,132 @@
+#!/bin/bash
+# init script for the htvcenter tmpfs-storage-plugin
+#
+# This file is part of htvcenter.
+# htvcenter Enterprise developed by htvcenter Enterprise GmbH.
+#
+# All source code and content (c) Copyright 2014, htvcenter Enterprise GmbH unless specifically noted otherwise.
+#
+# This source code is released under the htvcenter Enterprise Server and Client License, unless otherwise agreed with htvcenter Enterprise GmbH.
+# The latest version of this license can be found here: http://htvcenter-enterprise.com/license
+#
+# By using this software, you acknowledge having read this license and agree to be bound thereby.
+#
+#           http://htvcenter-enterprise.com
+#
+# Copyright 2014, htvcenter Enterprise GmbH <info@htvcenter-enterprise.com>
+#
+
+htvcenter_SERVER_BASE_DIR=$(pushd $(dirname $0)/../../../../.. > /dev/null; echo $PWD; popd > /dev/null)
+. $htvcenter_SERVER_BASE_DIR/htvcenter/etc/htvcenter-server.conf
+. $htvcenter_SERVER_BASE_DIR/htvcenter/include/htvcenter-functions
+. $htvcenter_SERVER_BASE_DIR/htvcenter/include/htvcenter-server-functions
+. $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/tmpfs-storage/include/htvcenter-plugin-tmpfs-storage-functions
+. $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/tmpfs-storage/etc/htvcenter-plugin-tmpfs-storage.conf
+
+# get the ip config
+htvcenter_server_get_config
+export resource_htvcenterserver=$htvcenter_SERVER_IP_ADDRESS
+export LANG=C
+# define wget to use with https
+if [ "$htvcenter_WEB_PROTOCOL" == "https" ]; then
+	WGET_NO_CERT_CHECK="--no-check-certificate"
+fi
+
+
+function htvcenter_plugin_tmpfs_storage_start() {
+	htvcenter_plugin_tmpfs_storage_stop 1>/dev/null 2>&1
+	echo "Starting the htvcenter tmpfs-storage-plugin"
+	touch $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/tmpfs-storage/.running
+}
+
+
+function htvcenter_plugin_tmpfs_storage_stop() {
+	echo "Stopping the htvcenter tmpfs-storage-plugin"
+	rm -f $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/tmpfs-storage/.running
+}
+
+function htvcenter_plugin_tmpfs_storage_uninstall() {
+	local USERNAME=$1
+	local PASSWORD=$2
+	if [ "$USERNAME" == "" ] && [ "$PASSWORD" == "" ]; then
+		echo -n "tmpfs-storage: Please give a username to uninstall the plugin : "
+		read USERNAME
+		echo
+		echo -n "tmpfs-storage: Please give the password for user $USERNAME : "
+		read PASSWORD
+		echo
+	fi
+	echo "Uninstalling the htvcenter tmpfs-storage-plugin"
+	htvcenter_plugin_tmpfs_storage_stop
+	# drop the table
+	if ! wget -q $WGET_NO_CERT_CHECK -O /dev/null --http-user=$USERNAME --http-password=$PASSWORD "$htvcenter_WEB_PROTOCOL://$resource_htvcenterserver/htvcenter/base/plugins/tmpfs-storage/tmpfs-storage-action.php?tmpfs_storage_command=uninstall"; then
+		tmpfs-storage_log init "ERROR: Could not drop the tmpfs-storage-plugin tables in the database!"
+		return 1
+	fi
+	htvcenter_server_remove_deployment_type $USERNAME $PASSWORD tmpfs-deployment
+	rm -f $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/tmpfs-storage
+	rm -f $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/boot-service/root-mount.tmpfs-deployment
+	rm -f $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/boot-service/image.tmpfs-deployment.php
+
+}
+
+function htvcenter_plugin_tmpfs_storage_init() {
+	local USERNAME=$1
+	local PASSWORD=$2
+	if [ "$USERNAME" == "" ] && [ "$PASSWORD" == "" ]; then
+		echo -n "tmpfs-storage: Please give a username to init the plugin : "
+		read USERNAME
+		echo
+		echo -n "tmpfs-storage: Please give the password for user $USERNAME : "
+		read PASSWORD
+		echo
+	fi
+	echo "Initializing the htvcenter tmpfs-storage-plugin"
+	htvcenter_server_add_deployment_type $USERNAME $PASSWORD tmpfs-deployment tmpfs-deployment "Tmpfs-root deployment" tmpfs-storage "temporary In-Memory Storage"
+	# linking the web dir
+	ln -sf $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/tmpfs-storage/web $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/tmpfs-storage
+	# linking the root mount hook
+	chmod +x $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/tmpfs-storage/web/root-mount.tmpfs-deployment
+	ln -sf $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/tmpfs-storage/web/root-mount.tmpfs-deployment $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/boot-service/root-mount.tmpfs-deployment
+	# linking the default image-parameters
+	ln -sf $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/tmpfs-storage/web/image.tmpfs-deployment.php $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/boot-service/image.tmpfs-deployment.php
+
+	# creating the table
+	if ! wget -q $WGET_NO_CERT_CHECK -O /dev/null --http-user=$USERNAME --http-password=$PASSWORD "$htvcenter_WEB_PROTOCOL://$resource_htvcenterserver/htvcenter/base/plugins/tmpfs-storage/tmpfs-storage-action.php?tmpfs_storage_command=init"; then
+		tmpfs-storage_log init "ERROR: Could not create the tmpfs-storage-plugin tables in the database!"
+		return 1
+	fi
+
+}
+
+USER=$2
+PASS=$3
+
+case "$1" in
+	start)
+		htvcenter_plugin_tmpfs_storage_start
+		;;
+	stop)
+		htvcenter_plugin_tmpfs_storage_stop
+		;;
+	restart)
+		htvcenter_plugin_tmpfs_storage_stop
+		sleep 1
+		htvcenter_plugin_tmpfs_storage_start
+		;;
+	init)
+		htvcenter_plugin_tmpfs_storage_init $USER $PASS
+		;;
+	uninstall)
+		htvcenter_plugin_tmpfs_storage_uninstall $USER $PASS
+		;;
+	*)
+		echo "Usage: $0 {start|stop|restart|init|uninstall}"
+		exit 1
+
+esac
+exit $?
+
+
+
+

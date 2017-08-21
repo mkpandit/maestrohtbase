@@ -1,0 +1,629 @@
+#!/bin/bash
+# this script automatically manages vmware-vsphere datastores
+#
+# HyperTask Enterprise developed by HyperTask Enterprise GmbH.
+#
+# All source code and content (c) Copyright 2014, HyperTask Enterprise GmbH unless specifically noted otherwise.
+#
+# This source code is released under the HyperTask Enterprise Server and Client License, unless otherwise agreed with HyperTask Enterprise GmbH.
+# The latest version of this license can be found here: http://htvcenter-enterprise.com/license
+#
+# By using this software, you acknowledge having read this license and agree to be bound thereby.
+#
+#           http://htvcenter-enterprise.com
+#
+# Copyright 2014, HyperTask Enterprise GmbH <info@htvcenter-enterprise.com>
+#
+htvcenter_SERVER_BASE_DIR=$(dirname $0)/../../../..
+htvcenter_SERVER_BASE_DIR=$(pushd $htvcenter_SERVER_BASE_DIR > /dev/null && echo $PWD && popd > /dev/null)
+. $htvcenter_SERVER_BASE_DIR/htvcenter/include/htvcenter-functions
+# unblock starting command queue early for non-blocking + ui commands
+VMWARE_VSPHERE_COMMAND=$1
+if [ "$VMWARE_VSPHERE_COMMAND" == "post_ds_list" ] || [ "$VMWARE_VSPHERE_COMMAND" == "post_vmdk_list" ]; then
+	htvcenter_unblock_starting_queue $@
+	NON_BLOCKING=true
+fi
+
+export htvcenter_SOURCE_DIR="$htvcenter_SERVER_BASE_DIR/htvcenter/"
+. $htvcenter_SERVER_BASE_DIR/htvcenter/include/htvcenter-package-functions
+. $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/include/htvcenter-plugin-vmware-vsphere-functions
+. $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/etc/htvcenter-plugin-vmware-vsphere.conf
+. $htvcenter_SERVER_BASE_DIR/htvcenter/etc/htvcenter-server.conf
+. $htvcenter_SERVER_BASE_DIR/htvcenter/include/htvcenter-server-functions
+htvcenter_server_get_config
+export resource_htvcenterserver=$htvcenter_SERVER_IP_ADDRESS
+htvcenter_VMWARE_VSPHERE_HOST_CONF_DIR="$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/conf/host"
+htvcenter_VMWARE_VSPHERE_STAT_DIR="$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/web/vmware-vsphere-stat/"
+export LANG=C
+ORG_IFS="$IFS"
+
+
+# let only root run this script
+WHOAMI=`whoami`
+if [ "$WHOAMI" != "root" ]; then
+	echo "ERROR: Please run this script as root!"
+	exit 6
+fi
+
+# make sure required deps are installed
+if ! check_vmware_vsphere_deps; then
+	if [ "$NON_BLOCKING" != "true" ]; then
+		htvcenter_unblock_starting_queue $@
+	fi
+	exit 1
+fi
+
+if [ ! -d "$htvcenter_VMWARE_VSPHERE_HOST_CONF_DIR" ]; then
+	mkdir -p $htvcenter_VMWARE_VSPHERE_HOST_CONF_DIR
+fi
+if [ ! -d "$htvcenter_VMWARE_VSPHERE_STAT_DIR" ]; then
+	mkdir -p $htvcenter_VMWARE_VSPHERE_STAT_DIR
+	chmod 777 $htvcenter_VMWARE_VSPHERE_STAT_DIR
+fi
+
+
+function vmware_vsphere_usage() {
+	echo "Usage : $0 add_nas <-i vsphere-server-ip> <-s nas-ip> <-p nas-path> <-n ds-name>"
+	echo "        $0 remove_nas <-i vsphere-server-ip> <-n ds-name>"
+	echo "        $0 add_iscsi <-i vsphere-server-ip> <-n ds-name> <-t iscsi-target-name> <-q iscsi-target-ip> <-g iscsi-portgroup> <-v vswitch> <-k vmk-name> <-ki vmk-ip> <-ks vmk-subnet>"
+	echo "        $0 remove_iscsi <-i vsphere-server-ip> <-n ds-name> <-t iscsi-target-name> <-q iscsi-target-ip>"
+	echo "        $0 list <-i vsphere-server-ip>"
+	echo "        $0 post_ds_list <-i vsphere-server-ip>"
+	echo "        $0 post_vmdk_list <-i vsphere-server-ip>"
+	echo "        $0 clone_vmdk <-i vsphere-server-ip> <-n ds-name> <-f source-vmdk-name> <-c target-vmdk-name>"
+	echo "        $0 remove_vmdk <-i vsphere-server-ip> <-n ds-name> <-f vmdk-name>"
+	echo ""
+	echo "Optional parameters:"
+	echo "             [--htvcenter-ui-user <username>]"
+	echo "             [--htvcenter-internal-cmd <true/false>]"
+	echo "             [--htvcenter-cmd-mode <regular/background/fork>]"
+	exit 1
+}
+
+
+
+FULL_COMMANDLINE="$0 $@"
+VMWARE_VSPHERE_COMMAND=$1
+shift
+while [ $# -ne 0 ]; do
+	case "$1" in
+		-i)
+			VMWARE_VSPHERE_HOST_IP=$2
+			shift
+			;;
+		-n)
+			VMWARE_VSPHERE_DATASTORE_NAME=$2
+			shift
+			;;
+		-e)
+			VMWARE_VSPHERE_ESX_HOST_NAME=$2
+			shift
+			;;
+		-f)
+			VMWARE_VSPHERE_VMDK=$2
+			shift
+			;;
+		-c)
+			VMWARE_VSPHERE_CLONE_VMDK=$2
+			shift
+			;;
+		-s)
+			VMWARE_VSPHERE_DATASTORE_IP=$2
+			shift
+			;;
+		-p)
+			VMWARE_VSPHERE_DATASTORE_NAS_PATH=$2
+			shift
+			;;
+		-g)
+			VMWARE_VSPHERE_DATASTORE_ISCSI_PORTGROUP_NAME=$2
+			shift
+			;;
+		-t)
+			VMWARE_VSPHERE_DATASTORE_ISCSI_TARGET_NAME=$2
+			shift
+			;;
+		-q)
+			VMWARE_VSPHERE_DATASTORE_ISCSI_TARGET_IP=$2
+			shift
+			;;
+		-v)
+			VMWARE_VSPHERE_DATASTORE_ISCSI_VSWITCH_NAME=$2
+			shift
+			;;
+		-k)
+			VMWARE_VSPHERE_DATASTORE_ISCSI_VMK_NAME=$2
+			shift
+			;;
+
+		-ki)
+			VMWARE_VSPHERE_DATASTORE_ISCSI_VMK_IP=$2
+			shift
+			;;
+		-ks)
+			VMWARE_VSPHERE_DATASTORE_ISCSI_VMK_SUBNET=$2
+			shift
+			;;
+		--htvcenter-ui-user)
+			htvcenter_UI_USER=$2
+			shift
+			;;
+		--htvcenter-internal-cmd)
+			htvcenter_INTERNAL_CMD=$2
+			shift
+			;;
+		--htvcenter-cmd-mode)
+			htvcenter_CMD_MODE=$2
+			shift
+			;;
+
+		*)
+			if [ "$NON_BLOCKING" != "true" ]; then
+				htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			fi
+			echo "ERROR: Free commandline arguments are not allowed"
+			vmware_vsphere_usage
+			exit 6
+			;;
+	esac
+	shift
+done
+
+
+# command set ?
+if [ "$VMWARE_VSPHERE_COMMAND" == "" ]; then
+	htvcenter_post_event 0 "parameter_check" 3 "htvcenter-vmware-vsphere-datastore" "Wrong usage, no command given!"
+	htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+	vmware_vsphere_usage
+fi
+# vSphere ip set ?
+if [ "$VMWARE_VSPHERE_HOST_IP" == "" ]; then
+	htvcenter_post_event 0 "parameter_check" 3 "htvcenter-vmware-vsphere-datastore" "Wrong usage, no VMware vSphere ip-adress given!"
+	if [ "$NON_BLOCKING" != "true" ]; then
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+	fi
+	vmware_vsphere_usage
+fi
+# host configured ?
+if [ ! -f "$htvcenter_VMWARE_VSPHERE_HOST_CONF_DIR/$VMWARE_VSPHERE_HOST_IP.conf" ]; then
+	htvcenter_post_event 0 "parameter_check" 3 "htvcenter-vmware-vsphere-datastore" "VMware vSphere Host configuration missing! Please create the configuration first."
+	if [ "$NON_BLOCKING" != "true" ]; then
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+	fi
+	vmware_vsphere_usage
+else
+	# source the host configuration
+	. $htvcenter_VMWARE_VSPHERE_HOST_CONF_DIR/$VMWARE_VSPHERE_HOST_IP.conf
+fi
+if [ "$htvcenter_UI_USER" != "" ]; then
+	htvcenter_UI_USER_PARAMETER=" --htvcenter-ui-user $htvcenter_UI_USER"
+fi
+
+# main
+case "$VMWARE_VSPHERE_COMMAND" in
+
+
+	add_nas)
+		# check requirements
+		if [ "$VMWARE_VSPHERE_DATASTORE_IP" == "" ]; then
+			htvcenter_post_event 0 "add_nas" 3 "htvcenter-vmware-vsphere-datastore" "Wrong usage, Datastore IP address missing!"
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			vmware_vsphere_usage
+		fi
+		if [ "$VMWARE_VSPHERE_DATASTORE_NAS_PATH" == "" ]; then
+			htvcenter_post_event 0 "add_nas" 3 "htvcenter-vmware-vsphere-datastore" "Wrong usage, NAS Path missing!"
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			vmware_vsphere_usage
+		fi
+		if [ "$VMWARE_VSPHERE_DATASTORE_NAME" == "" ]; then
+			htvcenter_post_event 0 "add_nas" 3 "htvcenter-vmware-vsphere-datastore" "Wrong usage, Datastore Name missing!"
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			vmware_vsphere_usage
+		fi
+
+		LOCK_TIME=`htvcenter_lock_queue aquire vmware-vsphere`
+		trap "htvcenter_lock_queue release vmware-vsphere $LOCK_TIME" EXIT
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+
+		if ! $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/bin/python/hostaddnas.py -s "$VMWARE_VSPHERE_HOST_IP" -o 443 -u "$VI_USERNAME" -p "$VI_PASSWORD" -n "$VMWARE_VSPHERE_ESX_HOST_NAME" -i "$VMWARE_VSPHERE_DATASTORE_IP" -d "$VMWARE_VSPHERE_DATASTORE_NAME" -l "$VMWARE_VSPHERE_DATASTORE_NAS_PATH"; then
+			htvcenter_post_event 0 "add_nas" 3 "htvcenter-vmware-vsphere-datastore" "Failed to add NAS Datastore $VMWARE_VSPHERE_DATASTORE_IP:$VMWARE_VSPHERE_DATASTORE_NAS_PATH!"
+
+			htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+			trap '' EXIT
+
+			exit 1
+		fi
+
+		htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+		trap '' EXIT
+
+		$0 post_ds_list -i $VMWARE_VSPHERE_HOST_IP --htvcenter-internal-cmd true
+		;;
+
+	remove_nas)
+		if [ "$VMWARE_VSPHERE_DATASTORE_NAME" == "" ]; then
+			htvcenter_post_event 0 "remove_nas" 3 "htvcenter-vmware-vsphere-datastore" "Wrong usage, Datastore Name missing!"
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			vmware_vsphere_usage
+		fi
+
+		LOCK_TIME=`htvcenter_lock_queue aquire vmware-vsphere`
+		trap "htvcenter_lock_queue release vmware-vsphere $LOCK_TIME" EXIT
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+
+		if ! $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/bin/python/dsdestroy.py -s "$VMWARE_VSPHERE_HOST_IP" -o 443 -u "$VI_USERNAME" -p "$VI_PASSWORD" -n "$VMWARE_VSPHERE_ESX_HOST_NAME" -d "$VMWARE_VSPHERE_DATASTORE_NAME"; then
+			htvcenter_post_event 0 "remove_nas" 3 "htvcenter-vmware-vsphere-datastore" "Failed to remove NAS Datastore $VMWARE_VSPHERE_DATASTORE_NAME!"
+
+			htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+			trap '' EXIT
+
+			exit 1
+		fi
+		htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+		trap '' EXIT
+
+		$0 post_ds_list -i $VMWARE_VSPHERE_HOST_IP --htvcenter-internal-cmd true
+		;;
+
+	add_iscsi)
+		if [ "$VMWARE_VSPHERE_DATASTORE_NAME" == "" ]; then
+			htvcenter_post_event 0 "remove_nas" 3 "htvcenter-vmware-vsphere-datastore" "Wrong usage, Datastore Name missing!"
+			vmware_vsphere_usage
+		fi
+		if [ "$VMWARE_VSPHERE_DATASTORE_ISCSI_TARGET_NAME" == "" ]; then
+			htvcenter_post_event 0 "remove_nas" 3 "htvcenter-vmware-vsphere-datastore" "Wrong usage, iSCSI Target Name missing!"
+			vmware_vsphere_usage
+		fi
+		if [ "$VMWARE_VSPHERE_DATASTORE_ISCSI_TARGET_IP" == "" ]; then
+			htvcenter_post_event 0 "remove_nas" 3 "htvcenter-vmware-vsphere-datastore" "Wrong usage, iSCSI Target ip missing!"
+			vmware_vsphere_usage
+		fi
+		if [ "$VMWARE_VSPHERE_DATASTORE_ISCSI_PORTGROUP_NAME" == "" ]; then
+			htvcenter_post_event 0 "remove_nas" 3 "htvcenter-vmware-vsphere-datastore" "Wrong usage, iSCSI Portgroup name missing!"
+			vmware_vsphere_usage
+		fi
+		if [ "$VMWARE_VSPHERE_DATASTORE_ISCSI_VSWITCH_NAME" == "" ]; then
+			htvcenter_post_event 0 "remove_nas" 3 "htvcenter-vmware-vsphere-datastore" "Wrong usage, vswitch name missing!"
+			vmware_vsphere_usage
+		fi
+		if [ "$VMWARE_VSPHERE_DATASTORE_ISCSI_VMK_NAME" == "" ]; then
+			htvcenter_post_event 0 "remove_nas" 3 "htvcenter-vmware-vsphere-datastore" "Wrong usage, vmk name missing!"
+			vmware_vsphere_usage
+		fi
+		if [ "$VMWARE_VSPHERE_DATASTORE_ISCSI_VMK_IP" == "" ]; then
+			htvcenter_post_event 0 "remove_nas" 3 "htvcenter-vmware-vsphere-datastore" "Wrong usage, vmk ip missing!"
+			vmware_vsphere_usage
+		fi
+		if [ "$VMWARE_VSPHERE_DATASTORE_ISCSI_VMK_SUBNET" == "" ]; then
+			htvcenter_post_event 0 "remove_nas" 3 "htvcenter-vmware-vsphere-datastore" "Wrong usage, vmk subnet missing!"
+			vmware_vsphere_usage
+		fi
+
+		VMWARE_VSPHERE_DATASTORE_ISCSI_PORTGROUP_NAME=`echo $VMWARE_VSPHERE_DATASTORE_ISCSI_PORTGROUP_NAME | sed -e "s/@/ /g"`
+
+		# TODO initiator username + password
+
+		LOCK_TIME=`htvcenter_lock_queue aquire vmware-vsphere`
+		trap "htvcenter_lock_queue release vmware-vsphere $LOCK_TIME" EXIT
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+
+		# enable software iscsi
+		vicfg-iscsi -e --swiscsi
+		# get the vmhba of the software iscsi initiator
+		echo "- getting iSCSI VMBHA ..."
+		ISCSI_VMHBA=`vicfg-scsidevs -a | grep iscsi_vmk | awk '{ print $1 }'`
+		if [ "$ISCSI_VMHBA" == "" ]; then
+			htvcenter_post_event 0 "add_iscsi" 3 "htvcenter-vmware-vsphere-datastore" "Failed to enable the iSCSI Software Adapter on vSphere Host $VMWARE_VSPHERE_HOST_IP!"
+
+#			htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+#			trap '' EXIT
+
+#			exit 1
+		fi
+		# add dedicated portgroup
+		echo "- creating/checking portgroup ..."
+		if vicfg-vswitch -l | grep -w "$VMWARE_VSPHERE_DATASTORE_ISCSI_PORTGROUP_NAME" 1>/dev/null; then
+			htvcenter_post_event 0 "add_iscsi" 5 "htvcenter-vmware-vsphere-datastore" "NOTICE: iSCSI Portgroup $VMWARE_VSPHERE_DATASTORE_ISCSI_PORTGROUP_NAME already exists on vSphere Host $VMWARE_VSPHERE_HOST_IP."
+		else
+			if ! vicfg-vswitch -add-pg "$VMWARE_VSPHERE_DATASTORE_ISCSI_PORTGROUP_NAME" $VMWARE_VSPHERE_DATASTORE_ISCSI_VSWITCH_NAME; then
+				htvcenter_post_event 0 "add_iscsi" 3 "htvcenter-vmware-vsphere-datastore" "Failed to create iSCSI Portgroup $VMWARE_VSPHERE_DATASTORE_ISCSI_PORTGROUP_NAME to vswitch $VMWARE_VSPHERE_DATASTORE_ISCSI_VSWITCH_NAME on vSphere Host $VMWARE_VSPHERE_HOST_IP!"
+
+#			htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+#			trap '' EXIT
+
+#				exit 1
+			fi
+		fi
+
+# debug
+		vicfg-vswitch -l
+
+		# add vmnic to portgroup
+		echo "- creating/checking vmk on portgroup ..."
+		if vicfg-vmknic -l | grep -w "$VMWARE_VSPHERE_DATASTORE_ISCSI_PORTGROUP_NAME" | grep -w $VMWARE_VSPHERE_DATASTORE_ISCSI_VMK_NAME 1>/dev/null; then
+			htvcenter_post_event 0 "add_iscsi" 5 "htvcenter-vmware-vsphere-datastore" "NOTICE: iSCSI vmk $VMWARE_VSPHERE_DATASTORE_ISCSI_VMK_NAME already exists on Portgroup $VMWARE_VSPHERE_DATASTORE_ISCSI_PORTGROUP_NAME on vSphere Host $VMWARE_VSPHERE_HOST_IP."
+		else
+			if ! vicfg-vmknic -add $VMWARE_VSPHERE_DATASTORE_ISCSI_VMK_NAME -ip $VMWARE_VSPHERE_DATASTORE_ISCSI_VMK_IP -netmask $VMWARE_VSPHERE_DATASTORE_ISCSI_VMK_SUBNET -portgroup "$VMWARE_VSPHERE_DATASTORE_ISCSI_PORTGROUP_NAME"; then
+				htvcenter_post_event 0 "add_iscsi" 3 "htvcenter-vmware-vsphere-datastore" "Failed to create iSCSI vmk $VMWARE_VSPHERE_DATASTORE_ISCSI_VMK_NAME on Portgroup $VMWARE_VSPHERE_DATASTORE_ISCSI_PORTGROUP_NAME on vSphere Host $VMWARE_VSPHERE_HOST_IP!"
+
+#				htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+#				trap '' EXIT
+
+#				exit 1
+			fi
+		fi
+
+#debug
+		vicfg-vmknic -l
+
+		# check if the vmk is already connected to the vmhba
+		echo "- connect vmk to vmhba ..."
+		if vspherecli swiscsi nic list -d $ISCSI_VMHBA | grep -w ^$VMWARE_VSPHERE_DATASTORE_ISCSI_VMK_NAME; then
+			htvcenter_post_event 0 "add_iscsi" 5 "htvcenter-vmware-vsphere-datastore" "NOTICE: iSCSI vmk $VMWARE_VSPHERE_DATASTORE_ISCSI_VMK_NAME already connected to VMHBA $ISCSI_VMHBA on vSphere Host $VMWARE_VSPHERE_HOST_IP."
+		else
+			if ! vspherecli swiscsi nic add -n $VMWARE_VSPHERE_DATASTORE_ISCSI_VMK_NAME -d $ISCSI_VMHBA; then
+				htvcenter_post_event 0 "add_iscsi" 3 "htvcenter-vmware-vsphere-datastore" "Failed to add vmk $VMWARE_VSPHERE_DATASTORE_ISCSI_VMK_NAME to $ISCSI_VMHBA on vSphere Host $VMWARE_VSPHERE_HOST_IP!"
+
+#				htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+#				trap '' EXIT
+
+#				exit 1
+			fi
+		fi
+		
+		# add to discovery
+		echo "- adding $VMWARE_VSPHERE_DATASTORE_ISCSI_TARGET_IP to iSCSI discovery ..."
+		if ! vicfg-iscsi -a --discovery -ip $VMWARE_VSPHERE_DATASTORE_ISCSI_TARGET_IP $ISCSI_VMHBA; then
+			htvcenter_post_event 0 "add_iscsi" 3 "htvcenter-vmware-vsphere-datastore" "Failed to add iSCSI Target ip $VMWARE_VSPHERE_DATASTORE_ISCSI_TARGET_IP to $ISCSI_VMHBA discovery on vSphere Host $VMWARE_VSPHERE_HOST_IP!"
+
+#			htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+#			trap '' EXIT
+
+#			exit 1
+		fi
+		echo "... rescaning $ISCSI_VMHBA"
+		if ! vicfg-rescan $ISCSI_VMHBA; then
+			htvcenter_post_event 0 "add_iscsi" 3 "htvcenter-vmware-vsphere-datastore" "Failed to rescan $ISCSI_VMHBA on vSphere Host $VMWARE_VSPHERE_HOST_IP!"
+
+#			htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+#			trap '' EXIT
+
+#			exit 1
+		fi
+
+# debug
+		# list target
+		vicfg-iscsi -l -T $ISCSI_VMHBA
+		vicfg-iscsi -l -L $ISCSI_VMHBA
+#		vicfg-iscsi -i 192.168.88.10 -l --discovery $ISCSI_VMHBA
+
+		echo "- getting device name ..."
+		# check discovery for the given target name, get the vmware device name
+		OS_DEVICE_NAME=`vicfg-iscsi -l -L $ISCSI_VMHBA | grep -A5 -w $VMWARE_VSPHERE_DATASTORE_ISCSI_TARGET_NAME | grep "OS.*DEVICE.*NAME" | cut -d':' -f2 | awk '{ print $1 }'`
+		if [ "$OS_DEVICE_NAME" == "" ]; then
+			htvcenter_post_event 0 "add_iscsi" 3 "htvcenter-vmware-vsphere-datastore" "Failed to discover volume of iSCSI Target $VMWARE_VSPHERE_DATASTORE_ISCSI_TARGET_NAME on vSphere Host $VMWARE_VSPHERE_HOST_IP!"
+
+#			htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+#			trap '' EXIT
+
+#			exit 1
+		fi
+		OTHER_DEVICE_NAME=`vicfg-scsidevs -l | grep -A12 -w ^$OS_DEVICE_NAME | grep -A1 "Other.*Names:" | grep -v "Other" | awk '{ print $1 }'`
+		if [ "$OTHER_DEVICE_NAME" == "" ]; then
+			htvcenter_post_event 0 "add_iscsi" 3 "htvcenter-vmware-vsphere-datastore" "Failed to get the device name of iSCSI volume $OS_DEVICE_NAME on vSphere Host $VMWARE_VSPHERE_HOST_IP!"
+
+#			htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+#			trap '' EXIT
+
+#			exit 1
+		fi
+
+		# create vmfs on partition
+		echo "- creating the datastore ..."
+		# partition the iscsi lun, create a 1. partition type VMFS
+		if ! vmkfstools -C vmfs3 -b 1m -S $VMWARE_VSPHERE_DATASTORE_NAME $OTHER_DEVICE_NAME:1; then
+			htvcenter_post_event 0 "add_iscsi" 3 "htvcenter-vmware-vsphere-datastore" "Failed to create VMFS on iSCSI volume $OS_DEVICE_NAME/$OTHER_DEVICE_NAME:1 on vSphere Host $VMWARE_VSPHERE_HOST_IP!"
+
+#			htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+#			trap '' EXIT
+
+#			exit 1
+		fi
+		echo "Successfully created Datastore $VMWARE_VSPHERE_DATASTORE_NAME"
+
+		htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+		trap '' EXIT
+
+		$0 post_ds_list -i $VMWARE_VSPHERE_HOST_IP --htvcenter-internal-cmd true
+		;;
+	remove_iscsi)
+		if [ "$VMWARE_VSPHERE_DATASTORE_NAME" == "" ]; then
+			htvcenter_post_event 0 "remove_nas" 3 "htvcenter-vmware-vsphere-datastore" "Wrong usage, Datastore Name missing!"
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			vmware_vsphere_usage
+		fi
+		if [ "$VMWARE_VSPHERE_DATASTORE_ISCSI_TARGET_NAME" == "" ]; then
+			htvcenter_post_event 0 "remove_nas" 3 "htvcenter-vmware-vsphere-datastore" "Wrong usage, iSCSI Target Name missing!"
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			vmware_vsphere_usage
+		fi
+		if [ "$VMWARE_VSPHERE_DATASTORE_ISCSI_TARGET_IP" == "" ]; then
+			htvcenter_post_event 0 "remove_nas" 3 "htvcenter-vmware-vsphere-datastore" "Wrong usage, iSCSI Target ip missing!"
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			vmware_vsphere_usage
+		fi
+
+		LOCK_TIME=`htvcenter_lock_queue aquire vmware-vsphere`
+		trap "htvcenter_lock_queue release vmware-vsphere $LOCK_TIME" EXIT
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+
+		# get the vmhba of the software iscsi initiator
+		echo "- getting iSCSI VMBHA ..."
+		ISCSI_VMHBA=`vicfg-scsidevs -a | grep iscsi_vmk | awk '{ print $1 }'`
+		if [ "$ISCSI_VMHBA" == "" ]; then
+			htvcenter_post_event 0 "add_iscsi" 3 "htvcenter-vmware-vsphere-datastore" "Failed to enable the iSCSI Software Adapter on vSphere Host $VMWARE_VSPHERE_HOST_IP!"
+
+			htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+			trap '' EXIT
+
+			exit 1
+		fi
+		# remove target discovery and static connect
+		echo "- removing iSCSI discovery of $VMWARE_VSPHERE_DATASTORE_ISCSI_TARGET_NAME ..."
+		vicfg-iscsi -r --static -name $VMWARE_VSPHERE_DATASTORE_ISCSI_TARGET_NAME -ip $VMWARE_VSPHERE_DATASTORE_ISCSI_TARGET_IP $ISCSI_VMHBA
+		vicfg-iscsi -r --discovery -name $VMWARE_VSPHERE_DATASTORE_ISCSI_TARGET_NAME -ip $VMWARE_VSPHERE_DATASTORE_ISCSI_TARGET_IP $ISCSI_VMHBA
+		echo "- rescaning $ISCSI_VMHBA ..."
+		if ! vicfg-rescan $ISCSI_VMHBA; then
+			htvcenter_post_event 0 "add_iscsi" 3 "htvcenter-vmware-vsphere-datastore" "Failed to rescan $ISCSI_VMHBA on vSphere Host $VMWARE_VSPHERE_HOST_IP!"
+
+			htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+			trap '' EXIT
+
+			exit 1
+		fi
+		# check that is is gone
+		if $htvcenter_VMWARE_VSPHERE_SDK_DIR/apps/host/dsbrowse.pl | grep -w ^$VMWARE_VSPHERE_DATASTORE_NAME 1>/dev/null; then
+			htvcenter_post_event 0 "add_iscsi" 3 "htvcenter-vmware-vsphere-datastore" "Failed to remove Datastore $VMWARE_VSPHERE_DATASTORE_NAME on vSphere Host $VMWARE_VSPHERE_HOST_IP!"
+
+			htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+			trap '' EXIT
+
+			exit 1
+		fi
+		echo "Successfully removed Datastore $VMWARE_VSPHERE_DATASTORE_NAME"
+
+		htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+		trap '' EXIT
+
+		$0 post_ds_list -i $VMWARE_VSPHERE_HOST_IP --htvcenter-internal-cmd true
+		;;
+
+	list)
+		# run API command
+		$htvcenter_VMWARE_VSPHERE_SDK_DIR/apps/host/dsbrowse.pl
+		;;
+
+	post_ds_list)
+		mkdir -p $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/web/vmware-vsphere-stat/
+		chmod 777 $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/web/vmware-vsphere-stat/
+		VSPHERE_STATS="$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/web/vmware-vsphere-stat/$VMWARE_VSPHERE_HOST_IP.ds_list"
+		VSPHERE_STATS_TMP="$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/web/vmware-vsphere-stat/$VMWARE_VSPHERE_HOST_IP.ds_list.tmp"
+		rm -f $VSPHERE_STATS
+		> $VSPHERE_STATS_TMP
+		$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/bin/python/dslist.py -s "$VMWARE_VSPHERE_HOST_IP" -o 443 -u "$VI_USERNAME" -p "$VI_PASSWORD" -n "$VMWARE_VSPHERE_ESX_HOST_NAME"  > $VSPHERE_STATS_TMP
+		chmod 777 $VSPHERE_STATS_TMP
+		/bin/mv $VSPHERE_STATS_TMP $VSPHERE_STATS
+		;;
+
+
+	post_vmdk_list)
+		if [ "$VMWARE_VSPHERE_DATASTORE_NAME" == "" ]; then
+			htvcenter_post_event 0 "clone_vmdk" 3 "htvcenter-vmware-vsphere-datastore" "Wrong usage, Datastore Name missing!"
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			vmware_vsphere_usage
+		fi
+
+		# post dir list
+		PICK_VMDK_CONFIG_TMP=$VMWARE_VSPHERE_HOST_IP.vmdk_list
+		VSPHERE_VMDK_STATS="$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/web/vmware-vsphere-stat/$VMWARE_VSPHERE_HOST_IP.vmdk_list"
+		> $PICK_VMDK_CONFIG_TMP
+		for VMDK in `$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/bin/perl/hostlistfiles.pl --vmhost $VI_SERVER_HOSTNAME --type vmdk | grep -v "\-flat\.vmdk" | sed -e "s/ //g" | grep ^"\[$VMWARE_VSPHERE_DATASTORE_NAME\]"`; do
+			echo "$VMDK" >> $PICK_VMDK_CONFIG_TMP
+		done
+		/bin/mv $PICK_VMDK_CONFIG_TMP $VSPHERE_VMDK_STATS
+		chmod 777 $VSPHERE_VMDK_STATS
+		;;
+
+
+	clone_vmdk)
+		if [ "$VMWARE_VSPHERE_DATASTORE_NAME" == "" ]; then
+			htvcenter_post_event 0 "clone_vmdk" 3 "htvcenter-vmware-vsphere-datastore" "Wrong usage, Datastore Name missing!"
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			vmware_vsphere_usage
+		fi
+		if [ "$VMWARE_VSPHERE_VMDK" == "" ] || [ "$VMWARE_VSPHERE_CLONE_VMDK" == "" ]; then
+			htvcenter_post_event 0 "clone_vmdk" 3 "htvcenter-vmware-vsphere-datastore" "Wrong usage, VMDK Filename (source/target) missing!"
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			vmware_vsphere_usage
+		fi
+
+		LOCK_TIME=`htvcenter_lock_queue aquire vmware-vsphere`
+		trap "htvcenter_lock_queue release vmware-vsphere $LOCK_TIME" EXIT
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+
+		vmware_vsphere_lock aquire
+		# create dir on datastore
+		#if ! $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/bin/perl/hostdir.pl --datastore $VMWARE_VSPHERE_DATASTORE_NAME --operation create --dirname $VMWARE_VSPHERE_CLONE_VMDK; then
+		CREATERETURN=$($htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/bin/perl/hostdir.pl --datastore $VMWARE_VSPHERE_DATASTORE_NAME --operation create --dirname $VMWARE_VSPHERE_CLONE_VMDK 2>&1 >/dev/null)
+		if [ -n "$CREATERETURN" ] ; then
+			CREATERETURN=$(htvcenter_format_error_msg $CREATERETURN)
+			htvcenter_post_event 0 "clone_vmdk" 3 "htvcenter-vmware-vsphere-datastore" "Failed to create directory $VMWARE_VSPHERE_CLONE_VMDK on datastore $VMWARE_VSPHERE_DATASTORE_NAME! $CREATERETURN"
+			htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+			trap '' EXIT
+			exit 1
+		fi
+		# clone action
+		#if ! vmkfstools --clonevirtualdisk /vmfs/volumes/$VMWARE_VSPHERE_DATASTORE_NAME/$VMWARE_VSPHERE_VMDK/$VMWARE_VSPHERE_VMDK.vmdk /vmfs/volumes/$VMWARE_VSPHERE_DATASTORE_NAME/$VMWARE_VSPHERE_CLONE_VMDK/$VMWARE_VSPHERE_CLONE_VMDK.vmdk; then
+		CLONERETURN=$(vmkfstools --clonevirtualdisk /vmfs/volumes/$VMWARE_VSPHERE_DATASTORE_NAME/$VMWARE_VSPHERE_VMDK/$VMWARE_VSPHERE_VMDK.vmdk /vmfs/volumes/$VMWARE_VSPHERE_DATASTORE_NAME/$VMWARE_VSPHERE_CLONE_VMDK/$VMWARE_VSPHERE_CLONE_VMDK.vmdk 2>&1 >/dev/null)
+		if [ -n "$CLONERETURN" ] ; then
+			CLONERETURN=$(htvcenter_format_error_msg $CLONERETURN)
+			htvcenter_post_event 0 "clone_vmdk" 3 "htvcenter-vmware-vsphere-datastore" "Failed to clone $VMWARE_VSPHERE_CLONE_VMDK from $VMWARE_VSPHERE_VMDK on datastore $VMWARE_VSPHERE_DATASTORE_NAME! $CLONERETURN"
+			htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+			trap '' EXIT
+			exit 1
+		fi
+		htvcenter_post_event 0 "clone_vmdk" 5 "htvcenter-vmware-vsphere-datastore" "Created clone $VMWARE_VSPHERE_CLONE_VMDK from $VMWARE_VSPHERE_VMDK on datastore $VMWARE_VSPHERE_DATASTORE_NAME!"
+
+		htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+		trap '' EXIT
+
+		$0 post_vmdk_list -i $VMWARE_VSPHERE_HOST_IP -n $VMWARE_VSPHERE_DATASTORE_NAME --htvcenter-internal-cmd true
+		;;
+
+
+
+	remove_vmdk)
+		if [ "$VMWARE_VSPHERE_DATASTORE_NAME" == "" ]; then
+			htvcenter_post_event 0 "remove_vmdk" 3 "htvcenter-vmware-vsphere-datastore" "Wrong usage, Datastore Name missing!"
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			vmware_vsphere_usage
+		fi
+		if [ "$VMWARE_VSPHERE_VMDK" == "" ]; then
+			htvcenter_post_event 0 "remove_vmdk" 3 "htvcenter-vmware-vsphere-datastore" "Wrong usage, VMDK Filename (source/target) missing!"
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			vmware_vsphere_usage
+		fi
+
+		LOCK_TIME=`htvcenter_lock_queue aquire vmware-vsphere`
+		trap "htvcenter_lock_queue release vmware-vsphere $LOCK_TIME" EXIT
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+
+		# create dir on datastore
+		if ! $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/bin/perl/hostdir.pl --datastore $VMWARE_VSPHERE_DATASTORE_NAME --operation remove --dirname $VMWARE_VSPHERE_VMDK; then
+			htvcenter_post_event 0 "remove_vmdk" 3 "htvcenter-vmware-vsphere-datastore" "Failed to remove $VMWARE_VSPHERE_VMDK on datastore $VMWARE_VSPHERE_DATASTORE_NAME!"
+
+			htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+			trap '' EXIT
+
+			exit 1
+
+		fi
+		htvcenter_post_event 0 "remove_vmdk" 5 "htvcenter-vmware-vsphere-datastore" "Removed $VMWARE_VSPHERE_VMDK from $VMWARE_VSPHERE_VMDK on datastore $VMWARE_VSPHERE_DATASTORE_NAME!"
+
+		htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+		trap '' EXIT
+
+		$0 post_vmdk_list -i $VMWARE_VSPHERE_HOST_IP -n $VMWARE_VSPHERE_DATASTORE_NAME --htvcenter-internal-cmd true
+		;;
+
+
+
+
+	*)
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+		vmware_vsphere_usage
+		;;
+
+
+esac
+

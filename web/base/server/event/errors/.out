@@ -1,0 +1,2 @@
+dbclient: Exited: Error resolving '-t' port '1667'. Name or service not known
+/usr/share/htvcenter/sbin/htvcenter-cmd-queue: line 53: kill: (11202) - No such process

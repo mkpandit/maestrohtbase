@@ -1,0 +1,126 @@
+#!/bin/bash
+# this script automatically manages ansible
+#
+# htvcenter Enterprise developed by htvcenter Enterprise GmbH.
+#
+# All source code and content (c) Copyright 2014, htvcenter Enterprise GmbH unless specifically noted otherwise.
+#
+# This source code is released under the htvcenter Enterprise Server and Client License, unless otherwise agreed with htvcenter Enterprise GmbH.
+# The latest version of this license can be found here: http://htvcenter-enterprise.com/license
+#
+# By using this software, you acknowledge having read this license and agree to be bound thereby.
+#
+#           http://htvcenter-enterprise.com
+#
+# Copyright 2014, htvcenter Enterprise GmbH <info@htvcenter-enterprise.com>
+#
+htvcenter_SERVER_BASE_DIR=$(dirname $0)/../../../..
+htvcenter_SERVER_BASE_DIR=$(pushd $htvcenter_SERVER_BASE_DIR > /dev/null && echo $PWD && popd > /dev/null)
+. $htvcenter_SERVER_BASE_DIR/htvcenter/include/htvcenter-functions
+. $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/ansible/include/htvcenter-plugin-ansible-functions
+. $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/ansible/etc/htvcenter-plugin-ansible.conf
+. $htvcenter_SERVER_BASE_DIR/htvcenter/etc/htvcenter-server.conf
+. $htvcenter_SERVER_BASE_DIR/htvcenter/include/htvcenter-server-functions
+htvcenter_server_get_config
+export resource_htvcenterserver=$htvcenter_SERVER_IP_ADDRESS
+export LANG=C
+ANSIBLE_PLAYBOOK_LOG="$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/ansible/log/playbook-apply.log"
+export PATH=$PATH:/usr/local/bin
+# let only root run this script
+WHOAMI=`whoami`
+if [ "$WHOAMI" != "root" ]; then
+	echo "ERROR: Please run this script as root!"
+	exit 6
+fi
+
+if ! which ansible 1>/dev/null; then
+	htvcenter_unblock_starting_queue $@
+	htvcenter_post_event 0 "check" 3 "htvcenter-ansible-manager" "The ansible utility is not installed! Please install and try again."
+	echo "ERROR: The 'ansible' utility is not installed! Please install and try again."
+	exit 6
+fi
+if ! which ansible-playbook 1>/dev/null; then
+	htvcenter_unblock_starting_queue $@
+	htvcenter_post_event 0 "check" 3 "htvcenter-ansible-manager" "The ansible-playbook utility is not installed! Please install and try again."
+	echo "ERROR: The 'ansible-playbook' utility is not installed! Please install and try again."
+	exit 6
+fi
+
+
+function ansible_manager_usage() {
+	echo "Usage : $0 apply server-id server-name server-ip"
+	exit 1
+}
+
+
+FULL_COMMANDLINE="$0 $@"
+ANSIBLE_MANAGER_COMMAND=$1
+
+# main
+case "$ANSIBLE_MANAGER_COMMAND" in 
+	apply)
+		SERVER_ID=$2
+		SERVER_NAME=$3
+		SERVER_IP=$4
+		SERVER_PLAYBOOK_CONFIG="$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/ansible/web/ansible/server/$SERVER_NAME"
+		if [ ! -f "$SERVER_PLAYBOOK_CONFIG" ]; then
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			htvcenter_post_event 0 "apply" 5 "htvcenter-ansible-manager" "No Ansible Playbooks configured for Server $SERVER_NAME"
+			exit 0
+		fi
+		htvcenter_post_event 0 "apply" 5 "htvcenter-ansible-manager" "Starting Ansible configuration management for Server $SERVER_NAME"
+
+		LOCK_TIME=`htvcenter_lock_queue aquire ansible`
+		trap "htvcenter_lock_queue release ansible $LOCK_TIME" EXIT
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+
+		# make sure the host/ip is not in the knownhosts file
+		ssh-keygen -R $SERVER_IP
+		ssh-keygen -R $SERVER_NAME
+		# add it to the knownhosts file by running a simple command
+		$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/ansible/bin/htvcenter-ansible-ssh $SERVER_IP ls
+		# run the configured playbooks
+		mkdir -p $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/ansible/log
+		ANSIBLE_HOST_FILE=`mktemp /tmp/ansible.$SERVER_NAME.XXXXXX` || exit 1
+		ANSIBLE_PLAYBOOK_FILE=`mktemp /tmp/ansible.$SERVER_NAME.XXXXXX` || exit 1
+		echo $SERVER_IP > $ANSIBLE_HOST_FILE
+		for PLAYBOOK in `cat $SERVER_PLAYBOOK_CONFIG`; do
+			htvcenter_post_event 0 "apply" 9 "htvcenter-ansible-manager" "Applying Ansible Playbook $PLAYBOOK.yml to Server $SERVER_NAME"
+			cp $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/ansible/web/ansible/playbooks/$PLAYBOOK.yml -f $ANSIBLE_PLAYBOOK_FILE
+			sed -i -e "s/@@IP@@/$SERVER_IP/g" $ANSIBLE_PLAYBOOK_FILE
+			if ! ansible-playbook $ANSIBLE_PLAYBOOK_FILE -i $ANSIBLE_HOST_FILE 2>$ANSIBLE_PLAYBOOK_LOG 1>$ANSIBLE_PLAYBOOK_LOG; then
+				htvcenter_post_event 0 "apply" 3 "htvcenter-ansible-manager" "Applying Ansible Playbook $PLAYBOOK.yml to Server $SERVER_NAME failed!"
+			fi
+			htvcenter_post_event 0 "apply" 10 "htvcenter-ansible-manager" "Applying Ansible Playbook $PLAYBOOK.yml to Server $SERVER_NAME"
+			rm -f $ANSIBLE_PLAYBOOK_FILE
+		done
+		rm -f $ANSIBLE_HOST_FILE
+
+		htvcenter_lock_queue release ansible $LOCK_TIME
+		trap '' EXIT
+
+		htvcenter_post_event 0 "apply" 5 "htvcenter-ansible-manager" "Ansible configuration management for Server $SERVER_NAME finished"
+		;;
+
+	start)
+		SERVER_ID=$2
+		SERVER_NAME=$3
+		SERVER_IP=$4
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+		htvcenter_post_event 0 "start" 5 "htvcenter-ansible-manager" "Server $SERVER_NAME id $SERVER_ID starting with ip-address $SERVER_IP."
+		;;
+	stop)
+		SERVER_ID=$2
+		SERVER_NAME=$3
+		SERVER_IP=$4
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+		htvcenter_post_event 0 "stop" 5 "htvcenter-ansible-manager" "Server $SERVER_NAME id $SERVER_ID stopping with ip-address $SERVER_IP."
+		;;
+	*)
+		echo "ERROR: Free commandline arguments are not allowed!"
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+		ansible_manager_usage
+		exit 6
+		;;
+esac
+

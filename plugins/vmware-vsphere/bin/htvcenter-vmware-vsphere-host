@@ -1,0 +1,186 @@
+#!/bin/bash
+# this script automatically manages vmware-vsphere ESX Hosts
+#
+# HyperTask Enterprise developed by HyperTask Enterprise GmbH.
+#
+# All source code and content (c) Copyright 2014, HyperTask Enterprise GmbH unless specifically noted otherwise.
+#
+# This source code is released under the HyperTask Enterprise Server and Client License, unless otherwise agreed with HyperTask Enterprise GmbH.
+# The latest version of this license can be found here: http://htvcenter-enterprise.com/license
+#
+# By using this software, you acknowledge having read this license and agree to be bound thereby.
+#
+#           http://htvcenter-enterprise.com
+#
+# Copyright 2014, HyperTask Enterprise GmbH <info@htvcenter-enterprise.com>
+#
+htvcenter_SERVER_BASE_DIR=$(dirname $0)/../../../..
+htvcenter_SERVER_BASE_DIR=$(pushd $htvcenter_SERVER_BASE_DIR > /dev/null && echo $PWD && popd > /dev/null)
+. $htvcenter_SERVER_BASE_DIR/htvcenter/include/htvcenter-functions
+# unblock starting command queue early for non-blocking + ui commands
+VMWARE_VSPHERE_COMMAND=$1
+if [ "$VMWARE_VSPHERE_COMMAND" == "post_host_list" ]; then
+	htvcenter_unblock_starting_queue $@
+	NON_BLOCKING=true
+fi
+
+export htvcenter_SOURCE_DIR="$htvcenter_SERVER_BASE_DIR/htvcenter/"
+. $htvcenter_SERVER_BASE_DIR/htvcenter/include/htvcenter-package-functions
+. $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/include/htvcenter-plugin-vmware-vsphere-functions
+. $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/etc/htvcenter-plugin-vmware-vsphere.conf
+. $htvcenter_SERVER_BASE_DIR/htvcenter/etc/htvcenter-server.conf
+. $htvcenter_SERVER_BASE_DIR/htvcenter/include/htvcenter-server-functions
+htvcenter_server_get_config
+export resource_htvcenterserver=$htvcenter_SERVER_IP_ADDRESS
+htvcenter_VMWARE_VSPHERE_STAT_DIR="$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/web/vmware-vsphere-stat/"
+htvcenter_VMWARE_VSPHERE_HOST_CONF_DIR="$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/conf/host"
+export LANG=C
+ORG_IFS="$IFS"
+
+# let only root run this script
+WHOAMI=`whoami`
+if [ "$WHOAMI" != "root" ]; then
+	echo "ERROR: Please run this script as root!"
+	exit 6
+fi
+
+# make sure required deps are installed
+if ! check_vmware_vsphere_deps; then
+	if [ "$NON_BLOCKING" != "true" ]; then
+		htvcenter_unblock_starting_queue $@
+	fi
+	exit 1
+fi
+
+# conf dirs existing ?
+if [ ! -d "$htvcenter_VMWARE_VSPHERE_STAT_DIR" ]; then
+	mkdir -p $htvcenter_VMWARE_VSPHERE_STAT_DIR
+	chmod 777 $htvcenter_VMWARE_VSPHERE_STAT_DIR
+fi
+if [ ! -d "$htvcenter_VMWARE_VSPHERE_HOST_CONF_DIR" ]; then
+	mkdir -p $htvcenter_VMWARE_VSPHERE_HOST_CONF_DIR
+fi
+
+
+function vmware_vsphere_usage() {
+	echo "        $0 post_host_list <-i vsphere-server-ip>"
+	echo ""
+	echo "Optional parameters:"
+	echo "             [--htvcenter-ui-user <username>]"
+	echo "             [--htvcenter-internal-cmd <true/false>]"
+	echo "             [--htvcenter-cmd-mode <regular/background/fork>]"
+	exit 1
+}
+
+
+FULL_COMMANDLINE="$0 $@"
+VMWARE_VSPHERE_COMMAND=$1
+shift
+while [ $# -ne 0 ]; do
+	case "$1" in
+		-n)
+			VMWARE_VSPHERE_HOST_NAME=$2
+			shift
+			;;
+		-i)
+			VMWARE_VSPHERE_HOST_IP=$2
+			shift
+			;;
+		-u)
+			htvcenter_USERNAME=$2
+			shift
+			;;
+		-p)
+			htvcenter_PASSWORD=$2
+			shift
+			;;
+
+		--htvcenter-ui-user)
+			htvcenter_UI_USER=$2
+			shift
+			;;
+		--htvcenter-internal-cmd)
+			htvcenter_INTERNAL_CMD=$2
+			shift
+			;;
+		--htvcenter-cmd-mode)
+			htvcenter_CMD_MODE=$2
+			shift
+			;;
+
+		*)
+			if [ "$NON_BLOCKING" != "true" ]; then
+				htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			fi
+			echo "ERROR: Free commandline arguments are not allowed"
+			vmware_vsphere_usage
+			exit 6
+			;;
+	esac
+	shift
+done
+
+
+# command set ?
+if [ "$VMWARE_VSPHERE_COMMAND" == "" ]; then
+	htvcenter_post_event 0 "parameter_check" 3 "htvcenter-vmware-vsphere" "Wrong usage, no command given!"
+	htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+	vmware_vsphere_usage
+fi
+# vSphere ip set ?
+if [ "$VMWARE_VSPHERE_HOST_IP" == "" ]; then
+	htvcenter_post_event 0 "parameter_check" 3 "htvcenter-vmware-vsphere" "Wrong usage, no VMware vSphere ip-adress given!"
+	if [ "$NON_BLOCKING" != "true" ]; then
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+	fi
+	vmware_vsphere_usage
+fi
+# VM name set ?
+if [ "$VMWARE_VSPHERE_COMMAND" != "post_host_list" ]; then
+	if [ "$VMWARE_VSPHERE_HOST_NAME" == "" ]; then
+		htvcenter_post_event 0 "parameter_check" 3 "htvcenter-vmware-vsphere" "Wrong usage, Host name missing!"
+		if [ "$NON_BLOCKING" != "true" ]; then
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+		fi
+		vmware_vsphere_usage
+	fi
+fi
+# host configured ?
+if [ "$VMWARE_VSPHERE_COMMAND" != "configure" ]; then
+	if [ ! -f "$htvcenter_VMWARE_VSPHERE_HOST_CONF_DIR/$VMWARE_VSPHERE_HOST_IP.conf" ]; then
+		htvcenter_post_event 0 "parameter_check" 3 "htvcenter-vmware-vsphere" "VMware vSphere Host configuration missing! Please create the configuration first."
+		if [ "$NON_BLOCKING" != "true" ]; then
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+		fi
+		vmware_vsphere_usage
+	else
+		# source the host configuration
+		. $htvcenter_VMWARE_VSPHERE_HOST_CONF_DIR/$VMWARE_VSPHERE_HOST_IP.conf
+	fi
+fi
+if [ "$htvcenter_UI_USER" != "" ]; then
+	htvcenter_UI_USER_PARAMETER=" --htvcenter-ui-user $htvcenter_UI_USER"
+fi
+
+
+# main
+case "$VMWARE_VSPHERE_COMMAND" in 
+
+
+	post_host_list)
+		VSPHERE_STATS="$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/web/vmware-vsphere-stat/$VMWARE_VSPHERE_HOST_IP.host_list"
+		VSPHERE_STATS_TMP="$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/web/vmware-vsphere-stat/$VMWARE_VSPHERE_HOST_IP.host_list.tmp"
+		rm -f $VSPHERE_STATS
+		> $VSPHERE_STATS_TMP
+		$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/bin/python/hostlist.py -s "$VMWARE_VSPHERE_HOST_IP" -o 443 -u "$VI_USERNAME" -p "$VI_PASSWORD" >> $VSPHERE_STATS_TMP
+		/bin/mv $VSPHERE_STATS_TMP $VSPHERE_STATS
+		chmod 777 $VSPHERE_STATS
+		;;
+
+	*)
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+		vmware_vsphere_usage
+		;;
+
+esac
+

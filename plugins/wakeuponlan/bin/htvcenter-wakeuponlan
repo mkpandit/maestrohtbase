@@ -1,0 +1,135 @@
+#!/bin/bash
+#
+#
+# htvcenter Enterprise developed by htvcenter Enterprise GmbH.
+#
+# All source code and content (c) Copyright 2014, htvcenter Enterprise GmbH unless specifically noted otherwise.
+#
+# This source code is released under the htvcenter Enterprise Server and Client License, unless otherwise agreed with htvcenter Enterprise GmbH.
+# The latest version of this license can be found here: http://htvcenter-enterprise.com/license
+#
+# By using this software, you acknowledge having read this license and agree to be bound thereby.
+#
+#           http://htvcenter-enterprise.com
+#
+# Copyright 2014, htvcenter Enterprise GmbH <info@htvcenter-enterprise.com>
+
+
+# this script automatically manages wakeuponlan
+htvcenter_SERVER_BASE_DIR=$(dirname $0)/../../../..
+htvcenter_SERVER_BASE_DIR=$(pushd $htvcenter_SERVER_BASE_DIR > /dev/null && echo $PWD && popd > /dev/null)
+. $htvcenter_SERVER_BASE_DIR/htvcenter/include/htvcenter-functions
+# unblock starting command queue early for non-blocking + ui commands
+# only blocking commands
+. $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/wakeuponlan/include/htvcenter-plugin-wakeuponlan-functions
+. $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/wakeuponlan/etc/htvcenter-plugin-wakeuponlan.conf
+. $htvcenter_SERVER_BASE_DIR/htvcenter/etc/htvcenter-server.conf
+. $htvcenter_SERVER_BASE_DIR/htvcenter/include/htvcenter-server-functions
+# get the ip config
+. $htvcenter_SERVER_BASE_DIR/htvcenter/etc/htvcenter-server.conf
+. $htvcenter_SERVER_BASE_DIR/htvcenter/include/htvcenter-server-functions
+htvcenter_server_get_config
+export LANG=C
+export resource_htvcenterserver=$htvcenter_SERVER_IP_ADDRESS
+
+# let only root run this script
+WHOAMI=`whoami`
+if [ "$WHOAMI" != "root" ]; then
+	echo "ERROR: Please run this script as root!"
+	exit 6
+fi
+
+if ! which wakeonlan 1>/dev/null; then
+	htvcenter_unblock_starting_queue $@
+	htvcenter_post_event 0 "wakeonlan" 2 "htvcenter-wakeuponlan" "The wakeonlan utility is not installed! Please install and try again."
+	exit 6
+fi
+
+
+function wakeuponlan_usage() {
+	echo "Usage : $0 wakeup -m <resource-mac>"
+	exit 1
+}
+
+
+FULL_COMMANDLINE="$0 $@"
+WAKEUPONLAN_COMMAND=$1
+shift
+
+while [ $# -ne 0 ]; do
+	case "$1" in
+		-m)
+			PARAM_WAKEUPONLAN_RESOURCE_MAC=$2
+			shift
+			;;
+		--htvcenter-ui-user)
+			htvcenter_UI_USER=$2
+			shift
+			;;
+		--htvcenter-internal-cmd)
+			htvcenter_INTERNAL_CMD=$2
+			shift
+			;;
+		--htvcenter-cmd-mode)
+			htvcenter_CMD_MODE=$2
+			shift
+			;;
+		*)
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			echo "ERROR: Free commandline arguments are not allowed"
+			wakeuponlan_usage
+			exit 6
+			;;
+	esac
+	shift
+done
+
+# checks
+if [ "$WAKEUPONLAN_COMMAND" == "" ]; then
+	htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+	wakeuponlan_usage
+fi
+if [ "$htvcenter_UI_USER" != "" ]; then
+	htvcenter_UI_USER_PARAMETER=" --htvcenter-ui-user $htvcenter_UI_USER"
+fi
+
+# main
+case "$WAKEUPONLAN_COMMAND" in
+
+	wakeup)
+		if [ "$PARAM_WAKEUPONLAN_RESOURCE_MAC" == "" ]; then
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			wakeuponlan_usage
+		fi
+
+		LOCK_TIME=`htvcenter_lock_queue aquire wakeuponlan`
+		trap "htvcenter_lock_queue release wakeuponlan $LOCK_TIME" EXIT
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+
+		htvcenter_post_event 0 "wakeup" 5 "htvcenter-wakeuponlan" "Waking up $PARAM_WAKEUPONLAN_RESOURCE_MAC."
+
+		CMD_ERR=`wakeonlan $PARAM_WAKEUPONLAN_RESOURCE_MAC 2>&1`
+		if [ "$?" != 0 ]; then
+			CMD_ERR=`htvcenter_format_error_msg $CMD_ERR`
+			htvcenter_post_event 0 "wakeup" 3 "htvcenter-wakeuponlan" "Error waking up $PARAM_WAKEUPONLAN_RESOURCE_MAC."
+
+			htvcenter_lock_queue release wakeuponlan $LOCK_TIME
+			trap '' EXIT
+
+			exit 1
+		fi
+
+		htvcenter_lock_queue release wakeuponlan $LOCK_TIME
+		trap '' EXIT
+		
+		;;
+
+
+	*)
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+		wakeuponlan_usage
+		;;
+
+
+esac
+

@@ -1,0 +1,123 @@
+#!/bin/bash
+# init script for the htvcenter wakeuponlan-plugin
+#
+# htvcenter Enterprise developed by htvcenter Enterprise GmbH.
+#
+# All source code and content (c) Copyright 2014, htvcenter Enterprise GmbH unless specifically noted otherwise.
+#
+# This source code is released under the htvcenter Enterprise Server and Client License, unless otherwise agreed with htvcenter Enterprise GmbH.
+# The latest version of this license can be found here: http://htvcenter-enterprise.com/license
+#
+# By using this software, you acknowledge having read this license and agree to be bound thereby.
+#
+#           http://htvcenter-enterprise.com
+#
+# Copyright 2014, htvcenter Enterprise GmbH <info@htvcenter-enterprise.com>
+
+
+htvcenter_SERVER_BASE_DIR=$(pushd $(dirname $0)/../../../../.. > /dev/null; echo $PWD; popd > /dev/null)
+. $htvcenter_SERVER_BASE_DIR/htvcenter/etc/htvcenter-server.conf
+. $htvcenter_SERVER_BASE_DIR/htvcenter/include/htvcenter-functions
+. $htvcenter_SERVER_BASE_DIR/htvcenter/include/htvcenter-server-functions
+. $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/wakeuponlan/include/htvcenter-plugin-wakeuponlan-functions
+. $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/wakeuponlan/etc/htvcenter-plugin-wakeuponlan.conf
+# get the ip config
+htvcenter_server_get_config
+export resource_htvcenterserver=$htvcenter_SERVER_IP_ADDRESS
+export LANG=C
+# define wget to use with https
+if [ "$htvcenter_WEB_PROTOCOL" == "https" ]; then
+	WGET_NO_CERT_CHECK="--no-check-certificate"
+fi
+
+function htvcenter_plugin_wakeuponlan_start() {
+	echo "Starting the htvcenter wakeuponlan-plugin"
+	touch $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/wakeuponlan/.running
+}
+
+
+function htvcenter_plugin_wakeuponlan_stop() {
+	echo "Stopping the htvcenter wakeuponlan-plugin"
+	rm -f $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/wakeuponlan/.running
+}
+
+function htvcenter_plugin_wakeuponlan_uninstall() {
+	local USERNAME=$1
+	local PASSWORD=$2
+	if [ "$USERNAME" == "" ] && [ "$PASSWORD" == "" ]; then
+		echo -n "wakeuponlan: Please give a username to uninstall the plugin : "
+		read USERNAME
+		echo
+		echo -n "wakeuponlan: Please give the password for user $USERNAME : "
+		read PASSWORD
+		echo
+	fi
+	echo "Uninstalling the htvcenter wakeuponlan-plugin"
+	htvcenter_plugin_wakeuponlan_stop
+
+	# removing the table
+	if ! wget -q $WGET_NO_CERT_CHECK -O /dev/null --http-user=$USERNAME --http-password=$PASSWORD "$htvcenter_WEB_PROTOCOL://$resource_htvcenterserver/htvcenter/base/plugins/wakeuponlan/wakeuponlan-action.php?wakeuponlan_command=uninstall"; then
+		wakeuponlan_log init "ERROR: Could not drop the wakeuponlan-plugin tables in the database!"
+		return 1
+	fi
+	rm -f $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/wakeuponlan
+	rm -f $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/boot-service/boot-service-wakeuponlan.tgz
+
+}
+
+function htvcenter_plugin_wakeuponlan_init() {
+	local USERNAME=$1
+	local PASSWORD=$2
+	if [ "$USERNAME" == "" ] && [ "$PASSWORD" == "" ]; then
+		echo -n "wakeuponlan: Please give a username to init the plugin : "
+		read USERNAME
+		echo
+		echo -n "wakeuponlan: Please give the password for user $USERNAME : "
+		read PASSWORD
+		echo
+	fi
+	echo "Initializing the htvcenter wakeuponlan-plugin"
+	# linking the web dir
+	ln -sf $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/wakeuponlan/web $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/wakeuponlan
+	# link the boot-service
+	ln -sf $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/wakeuponlan/web/boot-service-wakeuponlan.tgz $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/boot-service/boot-service-wakeuponlan.tgz
+
+	# creating the table
+	if ! wget -q $WGET_NO_CERT_CHECK -O /dev/null --http-user=$USERNAME --http-password=$PASSWORD "$htvcenter_WEB_PROTOCOL://$resource_htvcenterserver/htvcenter/base/plugins/wakeuponlan/wakeuponlan-action.php?wakeuponlan_command=init"; then
+		wakeuponlan_log init "ERROR: Could not create the wakeuponlan-plugin tables in the database!"
+		return 1
+	fi
+
+}
+
+USER=$2
+PASS=$3
+
+case "$1" in
+	start)
+		htvcenter_plugin_wakeuponlan_start
+		;;
+	stop)
+		htvcenter_plugin_wakeuponlan_stop
+		;;
+	restart)
+		htvcenter_plugin_wakeuponlan_stop
+		sleep 1
+		htvcenter_plugin_wakeuponlan_start
+		;;
+	init)
+		htvcenter_plugin_wakeuponlan_init $USER $PASS
+		;;
+	uninstall)
+		htvcenter_plugin_wakeuponlan_uninstall $USER $PASS
+		;;
+	*)
+		echo "Usage: $0 {start|stop|restart|init|uninstall}"
+		exit 1
+
+esac
+exit $?
+
+
+
+

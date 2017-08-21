@@ -1,0 +1,17 @@
+div#fai_tab2 div#form div.htmlobject_box {
+	margin: 0px 0px 15px 0;
+}
+
+div#fai_tab2 div#form div.htmlobject_box div.left{
+	width: 20%;
+	float: left;
+}
+
+div#fai_tab2 div#form div.htmlobject_box div.right{
+	width: 70%;
+	float: left;
+}
+
+div#fai_tab2 div#form div#buttons {
+	margin-left: 23%;
+}

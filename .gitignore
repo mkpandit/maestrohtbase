@@ -1,0 +1,7 @@
+plugins/chatbot/*
+plugins/collectd/*
+plugins/dhcpd/*
+plugins/dns/*
+plugins/local-server/*
+*.rrd
+wc.db

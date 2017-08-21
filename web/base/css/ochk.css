@@ -1,0 +1,78 @@
+#kvm_vm_tab1 div b, #kvm_vm_tab2 div b {
+	margin-left: 50px;
+}
+
+#kvm_vm_tab0 #htmlobject_box_add {
+	position: relative;
+	left: 20px;
+}
+
+#kvm_vm_tab0 #htmlobject_box_add a {
+	background-color: #579ddb !important;
+    border-color: #5fa2dd !important;
+    color: #ffffff !important;
+    left: -15px;
+    margin-left: 15px;
+    padding: 6px 12px;
+    position: relative;
+    top: 10px;
+}
+
+#resource_tab1 input.submit {
+    float: right !important;
+    left: 2%;
+
+}
+
+#kvm_vm_tab0 #htmlobject_box_add a:hover {
+	opacity: 0.8;
+}
+
+#OCH_edit a.add {
+   float: right;
+    position: relative;
+    right: 7%;
+}
+
+#appliance_tab1 #step2 a.add {
+    position: relative;
+    left: 30px;
+}
+
+.addkvmoforme .right .bootstrap-select {
+	float: left;
+	/*left: 170px;
+    margin-bottom: -20px !important;
+    position: relative;
+    top: -30px;*/
+	top: 8px;
+}
+
+.addkvmoforme #name_box {
+    position: relative;
+    top: 17px;
+}
+
+.addkvmoforme input[type=text] {
+	/*left: 170px !important;
+	margin-bottom: -50px !important;
+	position: relative;
+	top: -35px;*/
+	width: 80%;
+}
+
+.addkvmoforme .htmlobject_box {
+	margin-bottom: 15px;
+}
+
+.addkvmoforme .htmlobject_box .left {
+    float: left;
+	width: 20%;
+	min-width: 100px !important;
+}
+
+.addkvmoforme .htmlobject_box .right {
+    float: left;
+	width: 75%;
+	min-width: 100px !important;
+}

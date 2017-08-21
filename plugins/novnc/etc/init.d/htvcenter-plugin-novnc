@@ -1,0 +1,122 @@
+#!/bin/bash
+# init script for the htvcenter novnc plugin
+#
+# htvcenter Enterprise developed by htvcenter Enterprise GmbH.
+#
+# All source code and content (c) Copyright 2014, htvcenter Enterprise GmbH unless specifically noted otherwise.
+#
+# This source code is released under the htvcenter Enterprise Server and Client License, unless otherwise agreed with htvcenter Enterprise GmbH.
+# The latest version of this license can be found here: http://htvcenter-enterprise.com/license
+#
+# By using this software, you acknowledge having read this license and agree to be bound thereby.
+#
+#           http://htvcenter-enterprise.com
+#
+# Copyright 2014, htvcenter Enterprise GmbH <info@htvcenter-enterprise.com>
+#
+htvcenter_SERVER_BASE_DIR=$(pushd $(dirname $0)/../../../../.. > /dev/null; echo $PWD; popd > /dev/null)
+. $htvcenter_SERVER_BASE_DIR/htvcenter/etc/htvcenter-server.conf
+. $htvcenter_SERVER_BASE_DIR/htvcenter/include/htvcenter-functions
+. $htvcenter_SERVER_BASE_DIR/htvcenter/include/htvcenter-server-functions
+. $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/novnc/include/htvcenter-plugin-novnc-functions
+. $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/novnc/etc/htvcenter-plugin-novnc.conf
+# for the post-event to work
+htvcenter_server_get_config
+htvcenter_SERVER_IP=$htvcenter_SERVER_IP_ADDRESS
+resource_id=0
+resource_htvcenterserver=$htvcenter_SERVER_IP_ADDRESS
+# which screen binary to use
+if [ -x /usr/bin/screen.real ]; then
+	RUNSCREEN="/usr/bin/screen.real"
+else
+	RUNSCREEN=`which screen`
+fi
+
+
+function htvcenter_plugin_novnc_start() {
+	echo "Starting the htvcenter novnc-plugin"
+	local CURRENTDIR=`pwd`
+	htvcenter_plugin_novnc_stop 1>/dev/null 2>&1
+
+	touch $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/novnc/.running
+	return 0
+}
+
+function htvcenter_plugin_novnc_stop() {
+	echo "Stopping the htvcenter novnc-plugin"
+	rm -f $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/novnc/.running
+	return 0
+}
+
+
+function htvcenter_plugin_novnc_init() {
+	echo "Initializing the htvcenter novnc-plugin"
+	# linking the web dir
+	ln -sf $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/novnc/web $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/novnc
+	# link the boot-service
+	ln -sf $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/novnc/web/boot-service-novnc.tgz $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/boot-service/boot-service-novnc.tgz
+	# link novnc client js files
+	mkdir -p $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/novnc/novncjs
+	for j in $(ls $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/novnc/vncclient/include | grep "[.|-]js"); do
+		ln -sf $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/novnc/vncclient/include/$j $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/novnc/novncjs/$j
+	done
+	# link novnc client font files
+	ln -sf $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/novnc/vncclient/include/Orbitron700.ttf $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/novnc/novncjs/Orbitron700.ttf
+	ln -sf $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/novnc/vncclient/include/Orbitron700.woff $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/novnc/novncjs/Orbitron700.woff
+	# link novnc client image files
+	for i in $(ls $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/novnc/vncclient/images); do
+		ln -sf $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/novnc/vncclient/images/$i $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/novnc/img/$i
+	done
+	##### cloud
+	if [ -d $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/cloud/cloud-fortis/web ]; then
+		mkdir -p $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/cloud/cloud-fortis/web/novncjs
+		for j in $(ls $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/novnc/vncclient/include | grep "[.|-]js"); do
+			ln -sf $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/novnc/vncclient/include/$j $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/cloud/cloud-fortis/web/novncjs/$j
+		done
+		ln -sf $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/novnc/vncclient/include/Orbitron700.ttf $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/cloud/cloud-fortis/web/novncjs/Orbitron700.ttf
+		ln -sf $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/novnc/vncclient/include/Orbitron700.woff $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/cloud/cloud-fortis/web/novncjs/Orbitron700.woff
+	fi
+	return 0
+}
+
+
+function htvcenter_plugin_novnc_uninstall() {
+	echo "Uninstalling the htvcenter novnc-plugin"
+	htvcenter_plugin_novnc_stop
+	# remove bootservice
+	rm -f $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/boot-service/boot-service-novnc.tgz
+	# unlinking the web dir
+	rm -f $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/novnc
+	##### cloud
+	if [ -d $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/cloud/cloud-fortis/web/novncjs ]; then
+		rm -rf $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/cloud/cloud-fortis/web/novncjs
+	fi
+}
+
+
+case "$1" in
+	start)
+		htvcenter_plugin_novnc_start
+		;;
+	stop)
+		htvcenter_plugin_novnc_stop
+		;;
+	restart)
+		htvcenter_plugin_novnc_stop
+		sleep 1
+		htvcenter_plugin_novnc_start
+		;;
+	init)
+		htvcenter_plugin_novnc_init
+		;;
+	uninstall)
+		htvcenter_plugin_novnc_uninstall
+		;;
+	*)
+		echo "Usage: $0 {start|stop|restart|init|uninstall|createcert}"
+		exit 1
+
+esac
+exit $?
+
+

@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+ <Reconfigure-Virtual-Machine>
+   <Name>ESXVM</Name>
+   <Host>esxi55.htbase.com</Host>
+   <Remove-Device>
+        <Network-Adapter>
+          <Name>Network adapter 3</Name>
+        </Network-Adapter>
+   </Remove-Device>
+ </Reconfigure-Virtual-Machine>

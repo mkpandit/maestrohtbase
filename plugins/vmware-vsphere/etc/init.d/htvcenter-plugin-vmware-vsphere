@@ -1,0 +1,138 @@
+#!/bin/bash
+# init script for the HyperTask vmware-vsphere-plugin
+#
+# HyperTask Enterprise developed by HyperTask Enterprise GmbH.
+#
+# All source code and content (c) Copyright 2014, HyperTask Enterprise GmbH unless specifically noted otherwise.
+#
+# This source code is released under the HyperTask Enterprise Server and Client License, unless otherwise agreed with HyperTask Enterprise GmbH.
+# The latest version of this license can be found here: http://htvcenter-enterprise.com/license
+#
+# By using this software, you acknowledge having read this license and agree to be bound thereby.
+#
+#           http://htvcenter-enterprise.com
+#
+# Copyright 2014, HyperTask Enterprise GmbH <info@htvcenter-enterprise.com>
+#
+
+htvcenter_SERVER_BASE_DIR=$(pushd $(dirname $0)/../../../../.. > /dev/null; echo $PWD; popd > /dev/null)
+. $htvcenter_SERVER_BASE_DIR/htvcenter/etc/htvcenter-server.conf
+. $htvcenter_SERVER_BASE_DIR/htvcenter/include/htvcenter-functions
+. $htvcenter_SERVER_BASE_DIR/htvcenter/include/htvcenter-server-functions
+. $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/include/htvcenter-plugin-vmware-vsphere-functions
+. $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/etc/htvcenter-plugin-vmware-vsphere.conf
+# get the ip config
+htvcenter_server_get_config
+export resource_htvcenterserver=$htvcenter_SERVER_IP_ADDRESS
+export LANG=C
+# define wget to use with https
+if [ "$htvcenter_WEB_PROTOCOL" == "https" ]; then
+	WGET_NO_CERT_CHECK="--no-check-certificate"
+fi
+
+function htvcenter_plugin_vmware_vsphere_start() {
+	echo "Starting the HyperTask vmware-vsphere-plugin"
+	touch $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/vmware-vsphere/.running
+}
+
+
+function htvcenter_plugin_vmware_vsphere_stop() {
+	echo "Stopping the HyperTask vmware-vsphere-plugin"
+	rm -f $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/vmware-vsphere/.running
+}
+
+function htvcenter_plugin_vmware_vsphere_uninstall() {
+	local USERNAME=$1
+	local PASSWORD=$2
+	if [ "$USERNAME" == "" ] && [ "$PASSWORD" == "" ]; then
+		echo -n "vmware-vsphere: Please give a username to uninstall the plugin : "
+		read USERNAME
+		echo
+		echo -n "vmware-vsphere: Please give the password for user $USERNAME : "
+		read PASSWORD
+		echo
+	fi
+	echo "Uninstalling the HyperTask vmware-vsphere-plugin"
+	htvcenter_plugin_vmware_vsphere_stop
+	# removing the table
+	if ! wget -q $WGET_NO_CERT_CHECK -O /dev/null --http-user=$USERNAME --http-password=$PASSWORD "$htvcenter_WEB_PROTOCOL://$resource_htvcenterserver/htvcenter/base/plugins/vmware-vsphere/vmware-vsphere-action.php?vmware_vsphere_command=uninstall"; then
+		vmware_vsphere_log init "ERROR: Could not drop the vmware-vsphere plugin tables in the database!"
+		return 1
+	fi
+	htvcenter_server_remove_deployment_type $USERNAME $PASSWORD vsphere-deployment
+	htvcenter_server_remove_virtualization_type $USERNAME $PASSWORD vmware-vsphere
+	htvcenter_server_remove_virtualization_type $USERNAME $PASSWORD vmware-vsphere-vm-local
+	htvcenter_server_remove_virtualization_type $USERNAME $PASSWORD vmware-vsphere-vm-net
+	rm -f $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/boot-service/image.vsphere-deployment.php
+	rm -f $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/vmware-vsphere
+	rm -f $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/action/vmware-vsphere-integrate.php
+}
+
+function htvcenter_plugin_vmware_vsphere_init() {
+	local USERNAME=$1
+	local PASSWORD=$2
+	if [ "$USERNAME" == "" ] && [ "$PASSWORD" == "" ]; then
+		echo -n "vmware-vsphere: Please give a username to init the plugin : "
+		read USERNAME
+		echo
+		echo -n "vmware-vsphere: Please give the password for user $USERNAME : "
+		read PASSWORD
+		echo
+	fi
+	echo "Initializing the HyperTask vmware-vsphere-plugin"
+	# linking the web dir
+	ln -sf $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/web $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/vmware-vsphere
+	# creating the table
+	if ! wget -q $WGET_NO_CERT_CHECK -O /dev/null --http-user=$USERNAME --http-password=$PASSWORD "$htvcenter_WEB_PROTOCOL://$resource_htvcenterserver/htvcenter/base/plugins/vmware-vsphere/vmware-vsphere-action.php?vmware_vsphere_command=init"; then
+		vmware_vsphere_log init "ERROR: Could not create the vmware-vsphere plugin tables in the database!"
+		return 1
+	fi
+
+	# install pyvmomi
+	if ! pip install pyvmomi==5.5.0.2014.1.1; then
+		htvcenter_post_event 0 "init" 3 "vmware-vsphere" "Could not automatically install pyvmomi vsphere python API!"
+		htvcenter_post_event 0 "init" 3 "vmware-vsphere" "Please run: pip install pyvmomi==5.5.0.2014.1.1"
+	fi
+
+	# linking the image deployment parameters menu
+	ln -sf $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/web/image.vsphere-deployment.php $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/boot-service/image.vsphere-deployment.php
+
+	# add deployment type
+	htvcenter_server_add_deployment_type $USERNAME $PASSWORD vsphere-deployment vsphere-deployment "Local Deployment VMWare VSPHERE" vmware-vsphere "VMWare VSPHERE"
+	# adding virtualization type
+	htvcenter_server_add_virtualization_type $USERNAME $PASSWORD vmware-vsphere "vSphere Host"
+	htvcenter_server_add_virtualization_type $USERNAME $PASSWORD vmware-vsphere-vm-local "vSphere VM (localboot)"
+
+}
+
+USER=$2
+PASS=$3
+
+case "$1" in
+	start)
+		htvcenter_plugin_vmware_vsphere_start
+		;;
+	stop)
+		htvcenter_plugin_vmware_vsphere_stop
+		;;
+	restart)
+		htvcenter_plugin_vmware_vsphere_stop
+		sleep 1
+		htvcenter_plugin_vmware_vsphere_start
+		;;
+	init)
+		htvcenter_plugin_vmware_vsphere_init $USER $PASS
+		;;
+	uninstall)
+		htvcenter_plugin_vmware_vsphere_uninstall $USER $PASS
+		;;
+	*)
+		echo "Usage: $0 {start|stop|restart|init|uninstall}"
+		exit 1
+
+esac
+exit $?
+
+
+
+

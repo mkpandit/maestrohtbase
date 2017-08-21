@@ -1,0 +1,84 @@
+#!/bin/bash
+# this is the boot-service init script for the cloud resources
+#
+# htvcenter Enterprise developed by HTBase Corp.
+#
+# All source code and content (c) Copyright 2015, HTBase Corp unless specifically noted otherwise.
+#
+# This source code is released under the htvcenter Enterprise Server and Client License, unless otherwise agreed with htvcenter Enterprise.
+#
+# By using this software, you acknowledge having read this license and agree to be bound thereby.
+#
+#           http://www.htbase.com
+#
+# Copyright 2014, HTVBase Corp <bandrade@htbase.com>
+#
+
+htvcenter_SERVER_BASE_DIR=$(pushd $(dirname $0)/../../../../.. > /dev/null; echo $PWD; popd > /dev/null)
+. $htvcenter_SERVER_BASE_DIR/htvcenter/include/htvcenter-functions
+. $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/cloud/include/htvcenter-plugin-cloud-functions
+. $htvcenter_RESOURCE_PARAMETER_FILE
+htvcenter_SERVER_IP=$resource_htvcenterserver
+NETWORK_CONF="/tmp/cloud-net.conf"
+# define wget to use with https
+if [ "$htvcenter_web_protocol" == "https" ]; then
+	WGET_NO_CERT_CHECK="--no-check-certificate"
+fi
+
+
+# do not start on the intitrd
+if [ -f /etc/initrd-devices.conf ]; then
+	exit 0
+fi
+# and do not run on the htvcenter server itself
+if [ -f $htvcenter_SERVER_BASE_DIR/htvcenter/etc/htvcenter-server.conf ]; then
+	exit 0
+fi
+
+
+function cloud_start() {
+	echo "Starting the htvcenter cloud-plugin"
+	return 0
+}
+
+
+function cloud_stop() {
+	echo "Stopping the htvcenter cloud-plugin"
+	return 0
+}
+
+
+
+
+
+case "$1" in
+	start)
+		cloud_start
+		;;
+	stop)
+		cloud_stop
+		;;
+	restart)
+		cloud_stop
+		sleep 1
+		cloud_start
+		;;
+	*)
+		echo "Usage: $0 {start|stop|restart}"
+		exit 1
+
+esac
+exit $?
+
+
+
+
+
+
+
+
+
+
+
+
+

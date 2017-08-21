@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<Virtual-Machines>
+         <Virtual-Machine>
+            <Name>ESXVM</Name>
+           	<Host>esxi55.htbase.com</Host>
+	        <Datacenter>ha-datacenter</Datacenter>
+           	<Guest-Id>ubuntu64Guest</Guest-Id>
+           	<Datastore>datastore1</Datastore>
+           	<Disksize>20480000</Disksize>
+           	<Memory>4096</Memory>
+           	<Number-of-Processor>2</Number-of-Processor>
+           	<Nic-Network>VM Network</Nic-Network>
+           	<Nic-Poweron>0</Nic-Poweron>
+         </Virtual-Machine>
+</Virtual-Machines>

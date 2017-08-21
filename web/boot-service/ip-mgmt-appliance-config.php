@@ -1,0 +1,1 @@
+/usr/share/htvcenter/plugins/ip-mgmt/web/ip-mgmt-appliance-config.php

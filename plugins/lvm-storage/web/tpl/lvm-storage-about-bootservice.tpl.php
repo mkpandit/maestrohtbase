@@ -1,0 +1,37 @@
+<!--
+/*
+    htvcenter Enterprise developed by htvcenter Enterprise GmbH.
+
+    All source code and content (c) Copyright 2014, htvcenter Enterprise GmbH unless specifically noted otherwise.
+
+    This source code is released under the htvcenter Enterprise Server and Client License, unless otherwise agreed with htvcenter Enterprise GmbH.
+    The latest version of this license can be found here: http://htvcenter-enterprise.com/license
+
+    By using this software, you acknowledge having read this license and agree to be bound thereby.
+
+                http://htvcenter-enterprise.com
+
+    Copyright 2014, htvcenter Enterprise GmbH <info@htvcenter-enterprise.com>
+*/
+//-->
+<h2>{label}</h2>
+
+<div class="row">
+<div class="tab-base span7">
+                    
+                                <!--Nav Tabs-->
+                                <ul class="nav nav-tabs">
+                                    <li class="active">
+                                        <a href="#demo-lft-tab-1" data-toggle="tab">{boot_service_title}</a>
+                                    </li>
+                                </ul>
+                    
+                                <!--Tabs Content-->
+                                <div class="tab-content">
+                                    <div class="tab-pane fade active in" id="demo-lft-tab-1">
+<h3>{boot_service_title}</h3>
+        {boot_service_content}
+                                    </div>
+                                </div>
+                            </div>
+</div>

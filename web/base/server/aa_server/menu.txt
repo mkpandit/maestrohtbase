@@ -1,0 +1,33 @@
+#
+# htvcenter Enterprise developed by HTBase Corp.
+#
+# All source code and content (c) Copyright 2015, HTBase Corp unless specifically noted otherwise.
+#
+# This source code is released under the htvcenter Enterprise Server and Client License, unless otherwise agreed with HTBase Corp.
+#
+# By using this software, you acknowledge having read this license and agree to be bound thereby.
+#
+#           http://www.htbase.com
+#
+# Copyright 2015, HTBase Corp <contact@htbase.com>
+#
+# this is the root of the menu
+# syntax is :
+#	Title
+#	Href
+#	Alt
+#	IMG
+#	Target
+.|Datacenter
+.|Dashboard|index.php?base=aa_server&controller=datacenter|Datacenter Dashboard
+.|Server|index.php?base=appliance|List of Server
+.|Components
+..|Images|index.php?base=image|List of server images
+..|Kernels|index.php?base=kernel|List of OS kernels
+..|Resources|index.php?base=resource|Available computing resources in the Datacenter
+..|Storage|index.php?base=storage|List of storage servers
+#..|All Events|index.php?base=event|Events in the htvcenter Server|active.png
+#..|Active|index.php?base=event&event_filter=active|Active Events|transition.png
+#..|Warning|index.php?base=event&event_filter=warning|Warning Events|unknown.png
+#..|Error|index.php?base=event&event_filter=error|Error Events!|error.png
+#..|Acknowledged|index.php?base=event&event_filter=acknowledge|Acknowledged Events|idle.png

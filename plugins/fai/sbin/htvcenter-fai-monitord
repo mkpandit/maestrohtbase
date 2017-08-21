@@ -1,0 +1,119 @@
+#!/bin/bash
+# this script automatically monitors kvm vms
+#
+# htvcenter Enterprise developed by htvcenter Enterprise GmbH.
+#
+# All source code and content (c) Copyright 2014, htvcenter Enterprise GmbH unless specifically noted otherwise.
+#
+# This source code is released under the htvcenter Enterprise Server and Client License, unless otherwise agreed with htvcenter Enterprise GmbH.
+# The latest version of this license can be found here: http://htvcenter-enterprise.com/license
+#
+# By using this software, you acknowledge having read this license and agree to be bound thereby.
+#
+#           http://htvcenter-enterprise.com
+#
+# Copyright 2014, htvcenter Enterprise GmbH <info@htvcenter-enterprise.com>
+#
+# this script automatically monitors fai auto-installations
+htvcenter_SERVER_BASE_DIR=$(dirname $0)/../../../..
+htvcenter_SERVER_BASE_DIR=$(pushd $htvcenter_SERVER_BASE_DIR > /dev/null && echo $PWD && popd > /dev/null)
+. $htvcenter_SERVER_BASE_DIR/htvcenter/include/htvcenter-functions
+. $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/fai/include/htvcenter-plugin-fai-functions
+htvcenter_POSTENCODE="$htvcenter_SERVER_BASE_DIR/htvcenter/sbin/htvcenter-postencode"
+if [ -f $htvcenter_RESOURCE_PARAMETER_FILE ]; then
+	. $htvcenter_RESOURCE_PARAMETER_FILE
+	htvcenter_SERVER_IP=$resource_htvcenterserver
+	export SERVER_PROTOCOL=$htvcenter_web_protocol
+else
+	echo "ERROR: This script runs on an integrated Fai-Server only!"
+	exit 6
+fi
+export LANG=C
+htvcenter_EVENT="statistics"
+htvcenter_ACTIVE_STATE="transition"
+htvcenter_STARTING_STATE="starting"
+htvcenter_CLIENT_FAI_INSTALL_DIR="/opt/pcbin/install/htvcenter-client"
+
+# define wget to use with https
+if [ "$SERVER_PROTOCOL" == "https" ]; then
+	WGET_NO_CERT_CHECK="--no-check-certificate --random-file=/dev/random"
+fi
+
+# let only root run this script
+WHOAMI=`whoami`
+if [ "$WHOAMI" != "root" ]; then
+	echo "ERROR: Please run this script as root!"
+	exit 6
+fi
+
+# mac is the identifier
+RESOURCE_ID=$1
+RESOURCE_MAC=$2
+RESOURCE_IP=$3
+if [ "$RESOURCE_ID" == "" ] || [ "$RESOURCE_MAC" == "" ] || [ "$RESOURCE_IP" == "" ]; then
+	echo "Usage: $0 <resource_id> <resource_mac> <resource_ip>"
+	exit 1
+fi
+
+
+# local used functions
+function send_info() {
+	current_state=`urlencodestring $htvcenter_ACTIVE_STATE`
+	current_event=`urlencodestring $htvcenter_EVENT`
+	MESSAGEDATA="resource_id=$RESOURCE_ID&resource_uptime=$current_uptime&resource_state=$current_state&resource_event=$current_event";
+	htvcenter_RESOURCE_INFO_URL="$SERVER_PROTOCOL://$resource_htvcenterserver/htvcenter/action/resource-monitor.php?resource_command=update_info&$MESSAGEDATA"
+	wget $WGET_NO_CERT_CHECK -q -O /dev/null "$htvcenter_RESOURCE_INFO_URL"
+}
+
+
+
+# uptime
+function find_uptime() {
+	if [ -f /proc/uptime ]; then
+		current_uptime=`cat /proc/uptime | cut -d'.' -f 1`
+	fi
+	if [ -z "$current_uptime" ]; then
+		current_uptime=0
+	fi
+}
+
+
+# main loop
+while (true); do
+	# uptime
+	find_uptime
+	# sending statistics
+	send_info
+	# delay
+	sleep $resource_senddelay
+	# get install state
+	wget $WGET_NO_CERT_CHECK -q -O /tmp/htvcenter-parameters.$RESOURCE_MAC.conf "$SERVER_PROTOCOL://$resource_htvcenterserver/htvcenter/action/resource-monitor.php?resource_command=get_parameter&resource_id=$RESOURCE_ID&resource_mac=$RESOURCE_MAC"
+	. /tmp/htvcenter-parameters.$RESOURCE_MAC.conf
+	rm -f /tmp/htvcenter-parameters.$RESOURCE_MAC.conf
+	if echo $resource_state | grep active 1>/dev/null; then
+			# disable netboot for resource
+			fai-chboot -d $RESOURCE_IP
+			# ready installed, exit the montird
+			exit 0
+	fi
+
+done
+# never reached
+exit 0
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,1646 @@
+#!/bin/bash
+# this script automatically manages vmware-vsphere
+#
+# HyperTask Enterprise developed by HyperTask Enterprise GmbH.
+#
+# All source code and content (c) Copyright 2014, HyperTask Enterprise GmbH unless specifically noted otherwise.
+#
+# This source code is released under the HyperTask Enterprise Server and Client License, unless otherwise agreed with HyperTask Enterprise GmbH.
+# The latest version of this license can be found here: http://htvcenter-enterprise.com/license
+#
+# By using this software, you acknowledge having read this license and agree to be bound thereby.
+#
+#           http://htvcenter-enterprise.com
+#
+# Copyright 2014, HyperTask Enterprise GmbH <info@htvcenter-enterprise.com>
+#
+htvcenter_SERVER_BASE_DIR=$(dirname $0)/../../../..
+htvcenter_SERVER_BASE_DIR=$(pushd $htvcenter_SERVER_BASE_DIR > /dev/null && echo $PWD && popd > /dev/null)
+. $htvcenter_SERVER_BASE_DIR/htvcenter/include/htvcenter-functions
+# unblock starting command queue early for non-blocking + ui commands
+VMWARE_VSPHERE_COMMAND=$1
+if [ "$VMWARE_VSPHERE_COMMAND" == "update" ] || [ "$VMWARE_VSPHERE_COMMAND" == "relocate" ] || [ "$VMWARE_VSPHERE_COMMAND" == "clone" ] || [ "$VMWARE_VSPHERE_COMMAND" == "post_vm_list" ] || [ "$VMWARE_VSPHERE_COMMAND" == "post_vm_config" ] || [ "$VMWARE_VSPHERE_COMMAND" == "list" ] || [ "$VMWARE_VSPHERE_COMMAND" == "post_iso_list" ] || [ "$VMWARE_VSPHERE_COMMAND" == "post_host_statistics" ]; then
+	htvcenter_unblock_starting_queue $@
+	NON_BLOCKING=true
+fi
+
+
+
+
+export htvcenter_SOURCE_DIR="$htvcenter_SERVER_BASE_DIR/htvcenter/"
+. $htvcenter_SERVER_BASE_DIR/htvcenter/include/htvcenter-package-functions
+. $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/include/htvcenter-plugin-vmware-vsphere-functions
+. $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/etc/htvcenter-plugin-vmware-vsphere.conf
+. $htvcenter_SERVER_BASE_DIR/htvcenter/etc/htvcenter-server.conf
+. $htvcenter_SERVER_BASE_DIR/htvcenter/include/htvcenter-server-functions
+htvcenter_server_get_config
+export resource_htvcenterserver=$htvcenter_SERVER_IP_ADDRESS
+htvcenter_VMWARE_VSPHERE_VM_CONF_DIR="$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/conf/vm"
+htvcenter_VMWARE_VSPHERE_HOST_CONF_DIR="$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/conf/host"
+htvcenter_VMWARE_VSPHERE_STAT_DIR="$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/web/vmware-vsphere-stat/"
+export LANG=C
+ORG_IFS="$IFS"
+# some defaults
+DEFAULT_VMWARE_VSPHERE_VM_CPU=1
+DEFAULT_VMWARE_VSPHERE_VM_RAM=512
+DEFAULT_VMWARE_VSPHERE_VM_DISK=4194304
+DEFAULT_VMWARE_VSPHERE_MINI_VM_DISK=1024
+
+# http://communities.vmware.com/thread/240659?tstart=0
+export PERL_LWP_SSL_VERIFY_HOSTNAME=0
+
+# let only root run this script
+WHOAMI=`whoami`
+if [ "$WHOAMI" != "root" ]; then
+	echo "ERROR: Please run this script as root!"
+	exit 6
+fi
+
+# make sure required deps are installed
+if ! check_vmware_vsphere_deps; then
+	if [ "$NON_BLOCKING" != "true" ]; then
+		htvcenter_unblock_starting_queue $@
+	fi
+	exit 1
+fi
+
+# conf dirs existing ?
+if [ ! -d "$htvcenter_VMWARE_VSPHERE_VM_CONF_DIR" ]; then
+	mkdir -p $htvcenter_VMWARE_VSPHERE_VM_CONF_DIR
+fi
+if [ ! -d "$htvcenter_VMWARE_VSPHERE_HOST_CONF_DIR" ]; then
+	mkdir -p $htvcenter_VMWARE_VSPHERE_HOST_CONF_DIR
+fi
+if [ ! -d "$htvcenter_VMWARE_VSPHERE_STAT_DIR" ]; then
+	mkdir -p $htvcenter_VMWARE_VSPHERE_STAT_DIR
+	chmod 777 $htvcenter_VMWARE_VSPHERE_STAT_DIR
+fi
+
+
+function vmware_vsphere_usage() {
+	echo "Usage : $0 configure <-i vsphere-server-ip> <-eu vsphere-server-username> <-ep vsphere-server-password> <-eh vsphere-server-hostname> <-ed vsphere-server-domainname>"
+	echo "        $0 start/stop/reboot/remove/list <-i vsphere-server-ip> <-n vm-name>"
+	echo "        $0 create/update <-i vsphere-server-ip> <-n vm-name> <--resourcepool resourcepool> <-m mac-address> <-l datastore> <--vmxversion vmx-files-version> <--disktype thin/thick> <-vmtype vmware-vsphere-vm-local/vmware-vsphere-vm-net> [ -r memory ] [-d disk-size ] [-c cpus ] [-va vnc-password ] [-vp vnc-port ] [-b local/network/cdrom/iso ] [--iso [datastore]iso ] [--existing-vmdk [datastore]vmdk]"
+	echo "        $0 clone <-i vsphere-server-ip> <-n vm-name> <--vm-template vm-template-name> [-l datastore] [--resourcepool resourcepool] [-m mac-address ] [--datacenter datacentername]"
+	echo "        $0 post_host_statistics <-i vsphere-server-ip>"
+	echo "        $0 post_vm_list <-i vsphere-server-ip>"
+	echo "        $0 post_vm_config <-i vsphere-server-ip> <-n vm-name>"
+	echo "        $0 setboot_by_mac <-m mac-address> <-b local/network/cdrom/iso> <-i vsphere-server-ip>"
+	echo "        $0 setboot <-n vm-name> <-b local/network/cdrom/iso> <-i vsphere-server-ip>"
+	echo "        $0 add_vm_nic <-i vsphere-server-ip> <-n vm-name> <-m mac-address> <-x component-number> <-t nic-type> <-v vm-network>"
+	echo "        $0 remove_vm_nic <-i vsphere-server-ip> <-n vm-name> <-x component-number>"
+	echo "        $0 fence <-m mac-address> <-i vsphere-server-ip>"
+	echo "        $0 host_shutdown/host_reboot <-i vsphere-server-ip>"
+	echo "        $0 post_iso_list <-i vsphere-server-ip>"
+	echo "        $0 enable_vnc <-i vsphere-server-ip>"
+	echo "        $0 assign_by_mac <-i vsphere-server-ip> <-m mac-address> <-l datastore> <-d vmdk>"
+	echo "        $0 deassign_by_mac <-i vsphere-server-ip> <-m mac-address> <-d vmdk>"
+	echo "        $0 stop_by_mac <-i vsphere-server-ip> <-m mac-address>"
+	echo "        $0 reboot_by_mac <-i vsphere-server-ip> <-m mac-address>"
+	echo "        $0 relocate <-i vsphere-server-ip> <-n vm-name> <--resourcepool resourcepool> <-l datastore>"
+	echo ""
+	echo "Optional parameters:"
+	echo "             [--htvcenter-ui-user <username>]"
+	echo "             [--htvcenter-internal-cmd <true/false>]"
+	echo "             [--htvcenter-cmd-mode <regular/background/fork>]"
+	exit 1
+}
+
+
+# function to translate a VM mac address into its resource id
+function get_vm_resource_id() {
+	local VM_MAC=$1
+	local VM_PXE=`echo 01-$VM_MAC | sed -e "s/:/-/g" | tr '[:upper:]'  '[:lower:]'`
+	if [ -f "$htvcenter_SERVER_BASE_DIR/htvcenter/tftpboot/pxelinux.cfg/$VM_PXE" ]; then
+		cat $htvcenter_SERVER_BASE_DIR/htvcenter/tftpboot/pxelinux.cfg/$VM_PXE | grep ^append | grep initrd | sed -e "s/.*id=//g" | awk {' print $1 '}
+	else
+		return
+	fi
+}
+
+# function to translate a mac address into a VM name
+function get_vm_name_by_mac() {
+	local vmnicmac=$1
+	$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/bin/python/vmlist.py  -s "$VMWARE_VSPHERE_HOST_IP" -o 443 -u "$VI_USERNAME" -p "$VI_PASSWORD" | grep -i $vmnicmac | cut -d '|' -f1 | sed -e "s/name=//g"
+}
+
+
+
+# function to remove a VMs nic
+function vm_remove_nic() {
+	local vmname=$1
+	local nicnumber=$2
+	cat $htvcenter_VMWARE_VSPHERE_REMOVE_NETWORK_DEVICE_TEMPLATE |	\
+		sed -e "s/@@htvcenter_VMWARE_VSPHERE_VM_NAME@@/$vmname/g" |	\
+		sed -e "s/@@htvcenter_VMWARE_VSPHERE_HOST@@/$VI_SERVER_HOSTNAME/g" |	\
+		sed -e "s/@@VMWARE_VSPHERE_VM_COMPONENT_NUMBER@@/$nicnumber/g"	\
+		> $htvcenter_VMWARE_VSPHERE_VM_CONF_DIR/$vmname.remove-network-$nicnumber.xml
+	# make sure vmreconfig.py is patched to work on VSPHERE
+	if [ ! -f "$htvcenter_VMWARE_VSPHERE_SDK_DIR/apps/vm/vmreconfig.py.htvcenter-backup" ]; then
+		cp -f $htvcenter_VMWARE_VSPHERE_SDK_DIR/apps/vm/vmreconfig.py $htvcenter_VMWARE_VSPHERE_SDK_DIR/apps/vm/vmreconfig.py.htvcenter-backup
+	fi
+	sed -i -e "s/\$reconfig_hash{Host},/undef,/g" $htvcenter_VMWARE_VSPHERE_SDK_DIR/apps/vm/vmreconfig.py
+	# add via API call
+	if ! $htvcenter_VMWARE_VSPHERE_SDK_DIR/apps/vm/vmreconfig.py --filename $htvcenter_VMWARE_VSPHERE_VM_CONF_DIR/$vmname.remove-network-$nicnumber.xml --schema $htvcenter_VMWARE_VSPHERE_SDK_DIR/apps/schema/vmreconfig.xsd; then
+		htvcenter_post_event 0 "vm_remove_nic" 3 "htvcenter-vmware-vsphere" "Failed to remove the $nicnumber network card from vSphere VM $vmname!"
+		return 1
+	fi
+	return 0
+}
+
+# function to add a VMs nic
+function vm_add_nic() {
+	local vmname=$1
+	local nicnumber=$2
+	local vmnicmac=$3
+	local vmnictype=$4
+	local vmnicbridge=$5
+	vmnicbridge=`echo $vmnicbridge | sed -e "s/@/ /g"`
+
+	cat $htvcenter_VMWARE_VSPHERE_ADD_NETWORK_DEVICE_TEMPLATE |	\
+		sed -e "s/@@htvcenter_VMWARE_VSPHERE_VM_NAME@@/$vmname/g" |	\
+		sed -e "s/@@htvcenter_VMWARE_VSPHERE_HOST@@/$VI_SERVER_HOSTNAME/g" |	\
+		sed -e "s/@@htvcenter_VMWARE_VSPHERE_EXTERNAL_BRIDGE@@/$vmnicbridge/g"	\
+		> $htvcenter_VMWARE_VSPHERE_VM_CONF_DIR/$vmname.add-network-$nicnumber.xml
+	# make sure vmreconfig.py is patched to work on VSPHERE
+	if [ ! -f "$htvcenter_VMWARE_VSPHERE_SDK_DIR/apps/vm/vmreconfig.py.htvcenter-backup" ]; then
+		cp -f $htvcenter_VMWARE_VSPHERE_SDK_DIR/apps/vm/vmreconfig.py $htvcenter_VMWARE_VSPHERE_SDK_DIR/apps/vm/vmreconfig.py.htvcenter-backup
+	fi
+	sed -i -e "s/\$reconfig_hash{Host},/undef,/g" $htvcenter_VMWARE_VSPHERE_SDK_DIR/apps/vm/vmreconfig.py
+	# add via API call
+	if ! $htvcenter_VMWARE_VSPHERE_SDK_DIR/apps/vm/vmreconfig.py --filename $htvcenter_VMWARE_VSPHERE_VM_CONF_DIR/$vmname.add-network-$nicnumber.xml --schema $htvcenter_VMWARE_VSPHERE_SDK_DIR/apps/schema/vmreconfig.xsd; then
+		htvcenter_post_event 0 "vm_add_nic" 3 "htvcenter-vmware-vsphere" "Failed to add the $nicnumber network card to vSphere VM $vmname!"
+		return 1
+	fi
+	# adapt the VMs mac address of the nic
+	if ! $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/bin/python/vmNICManagement.py --vmname $vmname --mac $vmnicmac  --operation updatemac --vnic $nicnumber; then
+		htvcenter_post_event 0 "vm_add_nic" 3 "htvcenter-vmware-vsphere" "Failed to change mac address of vSphere VM $vmname $nicnumber nic!"
+		return 1
+	fi
+	# adapt the VMs nic type of the nic
+	if ! $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/bin/python/vmNICManagement.py --vmname $vmname --nictype $vmnictype --operation updatenictype --vnic $nicnumber; then
+		htvcenter_post_event 0 "vm_add_nic" 3 "htvcenter-vmware-vsphere" "Failed to change nic type of vSphere VM $vmname to $VM_NIC_TYPE!"
+		return 1
+	fi
+	return 0
+}
+
+
+# function to update a VMs nic
+function vm_update_nic() {
+	local vmname=$1
+	local nicnumber=$2
+	local vmnicmac=$3
+	local vmnictype=$4
+	local vmnicbridge=$5
+	if ! vm_remove_nic $vmname $nicnumber; then
+		htvcenter_post_event 0 "vm_update_nic" 3 "htvcenter-vmware-vsphere" "Failed to remove the $nicnumber network card from vSphere VM $vmname!"
+		return 1
+	fi
+	if ! vm_add_nic $vmname $nicnumber $vmnicmac $vmnictype $vmnicbridge; then
+		htvcenter_post_event 0 "vm_update_nic" 3 "htvcenter-vmware-vsphere" "Failed to add the $nicnumber network card to vSphere VM $vmname!"
+		return 1
+	fi
+	return 0
+}
+
+
+# function to update a VMs boot sequence
+function vm_setboot() {
+	local vmname=$1
+	local vmboot=$2
+	if ! $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/bin/python/vmsetboot.py  -s "$VMWARE_VSPHERE_HOST_IP" -o 443 -u "$VI_USERNAME" -p "$VI_PASSWORD" -n "$vmname" -b "$vmboot"; then
+		htvcenter_post_event 0 "vm_setboot" 3 "htvcenter-vmware-vsphere" "Failed to setboot to $vmboot for vSphere VM $vmname!"
+		return 1
+	fi
+	return 0
+}
+
+
+
+FULL_COMMANDLINE="$0 $@"
+VMWARE_VSPHERE_COMMAND=$1
+shift
+while [ $# -ne 0 ]; do
+	case "$1" in
+		-n)
+			VMWARE_VSPHERE_VM_NAME=$2
+			shift
+			;;
+		-c)
+			VMWARE_VSPHERE_VM_CPU=$2
+			shift
+			;;
+		-m)
+			VMWARE_VSPHERE_VM_MAC=$2
+			shift
+			;;
+		-m1)
+			VMWARE_VSPHERE_VM_MAC2=$2
+			shift
+			;;
+		-m2)
+			VMWARE_VSPHERE_VM_MAC3=$2
+			shift
+			;;
+		-m3)
+			VMWARE_VSPHERE_VM_MAC4=$2
+			shift
+			;;
+		-m4)
+			VMWARE_VSPHERE_VM_MAC5=$2
+			shift
+			;;
+		-t)
+			VMWARE_VSPHERE_VM_NIC_TYPE1=$2
+			shift
+			;;
+		-t1)
+			VMWARE_VSPHERE_VM_NIC_TYPE2=$2
+			shift
+			;;
+		-t2)
+			VMWARE_VSPHERE_VM_NIC_TYPE3=$2
+			shift
+			;;
+		-t3)
+			VMWARE_VSPHERE_VM_NIC_TYPE4=$2
+			shift
+			;;
+		-t4)
+			VMWARE_VSPHERE_VM_NIC_TYPE5=$2
+			shift
+			;;
+		-v)
+			VMWARE_VSPHERE_VM_NIC_VSWITCH1=$2
+			shift
+			;;
+		-v1)
+			VMWARE_VSPHERE_VM_NIC_VSWITCH2=$2
+			shift
+			;;
+		-v2)
+			VMWARE_VSPHERE_VM_NIC_VSWITCH3=$2
+			shift
+			;;
+		-v3)
+			VMWARE_VSPHERE_VM_NIC_VSWITCH4=$2
+			shift
+			;;
+		-v4)
+			VMWARE_VSPHERE_VM_NIC_VSWITCH5=$2
+			shift
+			;;
+		-r)
+			VMWARE_VSPHERE_VM_RAM=$2
+			shift
+			;;
+		-d)
+			VMWARE_VSPHERE_VM_DISK=$2
+			shift
+			;;
+		-i)
+			VMWARE_VSPHERE_HOST_IP=$2
+			shift
+			;;
+		-b)
+			VMWARE_VSPHERE_VM_BOOT=$2
+			shift
+			;;
+		-va)
+			VMWARE_VSPHERE_VM_VNC_AUTH=$2
+			shift
+			;;
+		-vp)
+			VMWARE_VSPHERE_VM_VNC_PORT=$2
+			shift
+			;;
+		-u)
+			htvcenter_USERNAME=$2
+			shift
+			;;
+		-p)
+			htvcenter_PASSWORD=$2
+			shift
+			;;
+		-eu)
+			VMWARE_VSPHERE_USERNAME=$2
+			shift
+			;;
+		-ep)
+			VMWARE_VSPHERE_PASSWORD=$2
+			shift
+			;;
+		-eh)
+			VMWARE_VSPHERE_HOSTNAME=$2
+			shift
+			;;
+		-ed)
+			VMWARE_VSPHERE_DOMAINNAME=$2
+			shift
+			;;
+		-l)
+			VMWARE_VSPHERE_VM_DATASTORE=$2
+			shift
+			;;
+		-x)
+			VMWARE_VSPHERE_VM_COMPONENT_NUMBER=$2
+			shift
+			;;
+		--resourcepool)
+			VMWARE_VSPHERE_VM_RESOURCEPOOL=$2
+			shift
+			;;
+		--datacenter)
+			VMWARE_VSPHERE_VM_DATACENTER=$2
+			shift
+			;;
+		--vmxversion)
+			VMWARE_VSPHERE_VM_VMXVERSION=$2
+			shift
+			;;
+		--disktype)
+			VMWARE_VSPHERE_VM_DISKTYPE=$2
+			shift
+			;;
+		-vmtype)
+			VMWARE_VSPHERE_VM_TYPE=$2
+			shift
+			;;
+		-iso)
+			VMWARE_VSPHERE_VM_ISO=$2
+			shift
+			;;
+		--existing-vmdk)
+			VMWARE_VSPHERE_VM_EXISTING_VMDK=$2
+			shift
+			;;
+		--guest-id)
+			VMWARE_VSPHERE_GUEST_ID=$2
+			shift
+			;;
+		--vm-template)
+			VMWARE_VSPHERE_VM_TEMPLATE=$2
+			shift
+			;;
+
+		--htvcenter-ui-user)
+			htvcenter_UI_USER=$2
+			shift
+			;;
+		--htvcenter-internal-cmd)
+			htvcenter_INTERNAL_CMD=$2
+			shift
+			;;
+		--htvcenter-cmd-mode)
+			htvcenter_CMD_MODE=$2
+			shift
+			;;
+
+		*)
+			if [ "$NON_BLOCKING" != "true" ]; then
+				htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			fi
+			echo "ERROR: Free commandline arguments are not allowed"
+			vmware_vsphere_usage
+			exit 6
+			;;
+	esac
+	shift
+done
+
+
+# command set ?
+if [ "$VMWARE_VSPHERE_COMMAND" == "" ]; then
+	htvcenter_post_event 0 "parameter_check" 3 "htvcenter-vmware-vsphere" "Wrong usage, no command given!"
+	htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+	vmware_vsphere_usage
+fi
+# vSphere ip set ?
+if [ "$VMWARE_VSPHERE_HOST_IP" == "" ]; then
+	htvcenter_post_event 0 "parameter_check" 3 "htvcenter-vmware-vsphere" "Wrong usage, no VMware vSphere ip-adress given!"
+	if [ "$NON_BLOCKING" != "true" ]; then
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+	fi
+	vmware_vsphere_usage
+fi
+# VM name set ?
+if [ "$VMWARE_VSPHERE_COMMAND" != "list" ] && [ "$VMWARE_VSPHERE_COMMAND" != "setboot_by_mac" ] && [ "$VMWARE_VSPHERE_COMMAND" != "post_vm_list" ]  && [ "$VMWARE_VSPHERE_COMMAND" != "fence" ]  && [ "$VMWARE_VSPHERE_COMMAND" != "configure" ] && [ "$VMWARE_VSPHERE_COMMAND" != "post_host_statistics" ] && [ "$VMWARE_VSPHERE_COMMAND" != "host_shutdown" ] && [ "$VMWARE_VSPHERE_COMMAND" != "host_reboot" ]  && [ "$VMWARE_VSPHERE_COMMAND" != "post_iso_list" ]  && [ "$VMWARE_VSPHERE_COMMAND" != "post_vm_components" ]  && [ "$VMWARE_VSPHERE_COMMAND" != "enable_vnc" ] && [ "$VMWARE_VSPHERE_COMMAND" != "deassign_by_mac" ] && [ "$VMWARE_VSPHERE_COMMAND" != "assign_by_mac" ] && [ "$VMWARE_VSPHERE_COMMAND" != "stop_by_mac" ] && [ "$VMWARE_VSPHERE_COMMAND" != "reboot_by_mac" ]; then
+	if [ "$VMWARE_VSPHERE_VM_NAME" == "" ]; then
+		htvcenter_post_event 0 "parameter_check" 3 "htvcenter-vmware-vsphere" "Wrong usage, VM name missing!"
+		if [ "$NON_BLOCKING" != "true" ]; then
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+		fi
+		vmware_vsphere_usage
+	fi
+fi
+# host configured ?
+if [ "$VMWARE_VSPHERE_COMMAND" != "configure" ]; then
+	if [ ! -f "$htvcenter_VMWARE_VSPHERE_HOST_CONF_DIR/$VMWARE_VSPHERE_HOST_IP.conf" ]; then
+		htvcenter_post_event 0 "parameter_check" 3 "htvcenter-vmware-vsphere" "VMware vSphere Host configuration missing! Please create the configuration first."
+		if [ "$NON_BLOCKING" != "true" ]; then
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+		fi
+		vmware_vsphere_usage
+	else
+		# source the host configuration
+		. $htvcenter_VMWARE_VSPHERE_HOST_CONF_DIR/$VMWARE_VSPHERE_HOST_IP.conf
+	fi
+fi
+if [ "$htvcenter_UI_USER" != "" ]; then
+	htvcenter_UI_USER_PARAMETER=" --htvcenter-ui-user $htvcenter_UI_USER"
+fi
+
+
+# main
+case "$VMWARE_VSPHERE_COMMAND" in 
+
+	configure)
+		if [ "$VMWARE_VSPHERE_USERNAME" == "" ] || [ "$VMWARE_VSPHERE_PASSWORD" == "" ]; then
+			htvcenter_post_event 0 "configure" 3 "htvcenter-vmware-vsphere" "Wrong usage, VMware vSphere Host username/password missing!"
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			vmware_vsphere_usage
+		fi
+
+		LOCK_TIME=`htvcenter_lock_queue aquire vmware-vsphere`
+		trap "htvcenter_lock_queue release vmware-vsphere $LOCK_TIME" EXIT
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+
+		# test if the connection credentials work
+		VMWARERETURN=$($htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/bin/python/vmlist.py -s $VMWARE_VSPHERE_HOST_IP -o 443 -u $VMWARE_VSPHERE_USERNAME -p $VMWARE_VSPHERE_PASSWORD 2>&1 >/dev/null)
+		if [ -n "$VMWARERETURN" ] ; then
+			# notify HyperTask
+			echo $VMWARERETURN > $htvcenter_VMWARE_VSPHERE_STAT_DIR/$VMWARE_VSPHERE_HOST_IP.integrated_successful.tmp
+			chmod 777 $htvcenter_VMWARE_VSPHERE_STAT_DIR/$VMWARE_VSPHERE_HOST_IP.integrated_successful.tmp
+			mv $htvcenter_VMWARE_VSPHERE_STAT_DIR/$VMWARE_VSPHERE_HOST_IP.integrated_successful.tmp $htvcenter_VMWARE_VSPHERE_STAT_DIR/$VMWARE_VSPHERE_HOST_IP.integrated_successful
+
+			htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+			trap '' EXIT
+			exit 1
+		fi
+		echo "export VI_USERNAME=$VMWARE_VSPHERE_USERNAME" > $htvcenter_VMWARE_VSPHERE_HOST_CONF_DIR/$VMWARE_VSPHERE_HOST_IP.conf
+		echo "export VI_PASSWORD=$VMWARE_VSPHERE_PASSWORD" >> $htvcenter_VMWARE_VSPHERE_HOST_CONF_DIR/$VMWARE_VSPHERE_HOST_IP.conf
+		# notify HyperTask
+		echo "success" > $htvcenter_VMWARE_VSPHERE_STAT_DIR/$VMWARE_VSPHERE_HOST_IP.integrated_successful.tmp
+		chmod 777 $htvcenter_VMWARE_VSPHERE_STAT_DIR/$VMWARE_VSPHERE_HOST_IP.integrated_successful.tmp
+		mv $htvcenter_VMWARE_VSPHERE_STAT_DIR/$VMWARE_VSPHERE_HOST_IP.integrated_successful.tmp $htvcenter_VMWARE_VSPHERE_STAT_DIR/$VMWARE_VSPHERE_HOST_IP.integrated_successful
+
+		htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+		trap '' EXIT
+		;;
+
+
+	create)
+		# check requirements
+		if [ "$VMWARE_VSPHERE_VM_MAC" == "" ]; then
+			htvcenter_post_event 0 "parameter_check" 3 "htvcenter-vmware-vsphere" "Wrong usage, VM mac address missing!"
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			vmware_vsphere_usage
+		fi
+		if [ "$VMWARE_VSPHERE_VM_VNC_PORT" == "" ]; then
+			htvcenter_post_event 0 "parameter_check" 3 "htvcenter-vmware-vsphere" "Wrong usage, VM vnc port is missing!"
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			vmware_vsphere_usage
+		fi
+		if [ "$VMWARE_VSPHERE_VM_TYPE" == "" ]; then
+			htvcenter_post_event 0 "parameter_check" 3 "htvcenter-vmware-vsphere" "Wrong usage, VM type is missing!"
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			vmware_vsphere_usage
+		fi
+
+		VM_DATACENTER_PARAMETER=""
+		if [ "$VMWARE_VSPHERE_VM_DATACENTER" != "" ]; then
+			VM_DATACENTER_PARAMETER=" -a $VMWARE_VSPHERE_VM_DATACENTER"
+		fi
+
+		# set some defaults
+		if [ "$VMWARE_VSPHERE_VM_DATASTORE" == "" ]; then
+			VMWARE_VSPHERE_VM_DATASTORE=$htvcenter_VMWARE_VSPHERE_CLOUD_DATASTORE
+		fi
+		VMWARE_VSPHERE_VM_DATASTORE=`echo $VMWARE_VSPHERE_VM_DATASTORE | sed -e "s/@/ /g"`
+
+		if [ "$VMWARE_VSPHERE_VM_CPU" == "" ]; then
+			VMWARE_VSPHERE_VM_CPU=$DEFAULT_VMWARE_VSPHERE_VM_CPU
+		fi
+		if [ "$VMWARE_VSPHERE_VM_DISK" == "" ]; then
+			VMWARE_VSPHERE_VM_DISK=$DEFAULT_VMWARE_VSPHERE_VM_DISK
+		fi
+		if [ "$VMWARE_VSPHERE_VM_EXISTING_VMDK" != "" ]; then
+			VMWARE_VSPHERE_VM_DISK=$DEFAULT_VMWARE_VSPHERE_MINI_VM_DISK
+		fi
+		if [ "$VMWARE_VSPHERE_VM_RAM" == "" ]; then
+			VMWARE_VSPHERE_VM_RAM=$DEFAULT_VMWARE_VSPHERE_VM_RAM
+		fi
+		if [ "$VMWARE_VSPHERE_VM_NIC_TYPE1" == "" ]; then
+			VMWARE_VSPHERE_VM_NIC_TYPE1=$htvcenter_VMWARE_VSPHERE_CLOUD_DEFAULT_VM_TYPE
+		fi
+		if [ "$VMWARE_VSPHERE_VM_NIC_VSWITCH1" == "" ]; then
+			VMWARE_VSPHERE_VM_NIC_VSWITCH1=$htvcenter_VMWARE_VSPHERE_INTERNAL_BRIDGE
+		fi
+		if [ "$VMWARE_VSPHERE_GUEST_ID" == "" ]; then
+			VMWARE_VSPHERE_GUEST_ID=$htvcenter_VMWARE_VSPHERE_GUEST_ID
+		fi
+		# remove space separators from vswitch parameter
+		VMWARE_VSPHERE_VM_NIC_VSWITCH1=`echo $VMWARE_VSPHERE_VM_NIC_VSWITCH1 | sed -e "s/@/ /g"`
+		VMWARE_VSPHERE_VM_NIC_VSWITCH2=`echo $VMWARE_VSPHERE_VM_NIC_VSWITCH2 | sed -e "s/@/ /g"`
+		VMWARE_VSPHERE_VM_NIC_VSWITCH3=`echo $VMWARE_VSPHERE_VM_NIC_VSWITCH3 | sed -e "s/@/ /g"`
+		VMWARE_VSPHERE_VM_NIC_VSWITCH4=`echo $VMWARE_VSPHERE_VM_NIC_VSWITCH4 | sed -e "s/@/ /g"`
+		VMWARE_VSPHERE_VM_NIC_VSWITCH5=`echo $VMWARE_VSPHERE_VM_NIC_VSWITCH5 | sed -e "s/@/ /g"`
+
+		# build the network config string
+		VMWARE_VSPHERE_VM_NETWORK_CONFIG=`echo -e $VMWARE_VSPHERE_VM_NIC_VSWITCH1`","`echo -e $VMWARE_VSPHERE_VM_NIC_TYPE1`","`echo -e $VMWARE_VSPHERE_VM_MAC`
+		if [ "$VMWARE_VSPHERE_VM_MAC2" != "" ] && [ "$VMWARE_VSPHERE_VM_NIC_VSWITCH2" != "" ] && [ "$VMWARE_VSPHERE_VM_NIC_TYPE2" != "" ]; then
+			VMWARE_VSPHERE_VM_NETWORK_CONFIG=`echo -e $VMWARE_VSPHERE_VM_NETWORK_CONFIG`"|"`echo -e $VMWARE_VSPHERE_VM_NIC_VSWITCH2`","`echo -e $VMWARE_VSPHERE_VM_NIC_TYPE2`","`echo -e $VMWARE_VSPHERE_VM_MAC2`
+		fi
+		if [ "$VMWARE_VSPHERE_VM_MAC3" != "" ] && [ "$VMWARE_VSPHERE_VM_NIC_VSWITCH3" != "" ] && [ "$VMWARE_VSPHERE_VM_NIC_TYPE3" != "" ]; then
+			VMWARE_VSPHERE_VM_NETWORK_CONFIG=`echo -e $VMWARE_VSPHERE_VM_NETWORK_CONFIG`"|"`echo -e $VMWARE_VSPHERE_VM_NIC_VSWITCH3`","`echo -e $VMWARE_VSPHERE_VM_NIC_TYPE3`","`echo -e $VMWARE_VSPHERE_VM_MAC3`
+		fi
+		if [ "$VMWARE_VSPHERE_VM_MAC4" != "" ] && [ "$VMWARE_VSPHERE_VM_NIC_VSWITCH4" != "" ] && [ "$VMWARE_VSPHERE_VM_NIC_TYPE4" != "" ]; then
+			VMWARE_VSPHERE_VM_NETWORK_CONFIG=`echo -e $VMWARE_VSPHERE_VM_NETWORK_CONFIG`"|"`echo -e $VMWARE_VSPHERE_VM_NIC_VSWITCH4`","`echo -e $VMWARE_VSPHERE_VM_NIC_TYPE4`","`echo -e $VMWARE_VSPHERE_VM_MAC4`
+		fi
+		if [ "$VMWARE_VSPHERE_VM_MAC5" != "" ] && [ "$VMWARE_VSPHERE_VM_NIC_VSWITCH5" != "" ] && [ "$VMWARE_VSPHERE_VM_NIC_TYPE5" != "" ]; then
+			VMWARE_VSPHERE_VM_NETWORK_CONFIG=`echo -e $VMWARE_VSPHERE_VM_NETWORK_CONFIG`"|"`echo -e $VMWARE_VSPHERE_VM_NIC_VSWITCH5`","`echo -e $VMWARE_VSPHERE_VM_NIC_TYPE5`","`echo -e $VMWARE_VSPHERE_VM_MAC5`
+		fi
+		# "vSwitch0,e1000,00:50:56:8c:a9:24|vSwitch0,e1000,00:50:56:8c:a9:25"
+
+		if [ "$VMWARE_VSPHERE_VM_BOOT" == "" ]; then
+			VMWARE_VSPHERE_VM_BOOT="network"
+		fi
+
+		LOCK_TIME=`htvcenter_lock_queue aquire vmware-vsphere`
+		trap "htvcenter_lock_queue release vmware-vsphere $LOCK_TIME" EXIT
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+
+		htvcenter_post_event 0 "create" 5 "htvcenter-vmware-vsphere" "Creating VMware VM $VMWARE_VSPHERE_VM_NAME."
+
+
+		# use API to create the VM
+		CREATERETURN=$($htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/bin/python/vmcreate.py -s "$VMWARE_VSPHERE_HOST_IP" -o 443 -u "$VI_USERNAME" -p "$VI_PASSWORD" -n "$VMWARE_VSPHERE_VM_NAME" -d "$VMWARE_VSPHERE_VM_DATASTORE" -g "$VMWARE_VSPHERE_GUEST_ID" -x "$VMWARE_VSPHERE_VM_VMXVERSION" -b "$VMWARE_VSPHERE_VM_BOOT" --memory "$VMWARE_VSPHERE_VM_RAM" -m "$VMWARE_VSPHERE_VM_NETWORK_CONFIG" -v "$VMWARE_VSPHERE_VM_VNC_PORT" -c "HyperTask VMware vSphere VM $VMWARE_VSPHERE_VM_NAME" -t "$VMWARE_VSPHERE_VM_CPU" -w "$VMWARE_VSPHERE_VM_VNC_AUTH" -i "$VMWARE_VSPHERE_VM_ISO" -l "$VMWARE_VSPHERE_VM_DISK" -q "$VMWARE_VSPHERE_VM_RESOURCEPOOL" -y "$VMWARE_VSPHERE_VM_DISKTYPE" $VM_DATACENTER_PARAMETER 2>&1)
+		CREATEERROR=$(echo $CREATERETURN | grep "Error")
+
+		if [ -n "$CREATEERROR" ]; then
+			CREATEERROR=$(htvcenter_format_error_msg $CREATEERROR)
+			htvcenter_post_event 0 "create" 3 "htvcenter-vmware-vsphere" "Failed to create vSphere VM $VMWARE_VSPHERE_VM_NAME!<br>$CREATEERROR"
+			htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+			trap '' EXIT
+			exit 1
+		fi
+		# check the VM was created correctly
+		CHECK_VM_CREATED=false
+		if $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/bin/python/vmlist.py -s $VMWARE_VSPHERE_HOST_IP -o 443 -u "$VI_USERNAME" -p "$VI_PASSWORD" -n "$VMWARE_VSPHERE_VM_NAME" | grep -w $VMWARE_VSPHERE_VM_NAME 1>/dev/null; then
+			CHECK_VM_CREATED=true
+		fi
+		if [ "$CHECK_VM_CREATED" == "false" ]; then
+			htvcenter_post_event 0 "create" 3 "htvcenter-vmware-vsphere" "(check) Failed to create vSphere VM $VMWARE_VSPHERE_VM_NAME!"
+			htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+			trap '' EXIT
+			exit 1
+		fi
+
+		if [ "$VMWARE_VSPHERE_VM_EXISTING_VMDK" != "" ] && [ "$VMWARE_VSPHERE_VM_EXISTING_VMDK" != "none" ]; then
+			echo
+		fi
+
+
+		htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+		trap '' EXIT
+
+		# post_vm_list again
+		$0 post_vm_list -i $VMWARE_VSPHERE_HOST_IP --htvcenter-internal-cmd true
+		;;
+
+	update)
+		LOCK_TIME=`htvcenter_lock_queue aquire vmware-vsphere`
+		trap "htvcenter_lock_queue release vmware-vsphere $LOCK_TIME" EXIT
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+
+		htvcenter_post_event 0 "update" 5 "htvcenter-vmware-vsphere" "Updating VMware VM $VMWARE_VSPHERE_VM_NAME."
+		# get full vm configuration
+		VSPHERE_STATS="$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/web/vmware-vsphere-stat/$VMWARE_VSPHERE_HOST_IP.$VMWARE_VSPHERE_VM_NAME.vm_update"
+		VSPHERE_STATS_TMP="$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/web/vmware-vsphere-stat/$VMWARE_VSPHERE_HOST_IP.$VMWARE_VSPHERE_VM_NAME.vm_update.tmp"
+		rm -f $VSPHERE_STATS
+		> $VSPHERE_STATS_TMP
+		$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/bin/python/vmlist.py -s "$VMWARE_VSPHERE_HOST_IP" -o 443 -u "$VI_USERNAME" -p "$VI_PASSWORD" -n "$VMWARE_VSPHERE_VM_NAME" | sed -e "s/|/\n/g" >> $VSPHERE_STATS_TMP
+		/bin/mv $VSPHERE_STATS_TMP $VSPHERE_STATS
+		htvcenter_VMWARE_VSPHERE_VM_NAME=`grep ^name= $VSPHERE_STATS | cut -d'=' -f2`
+		htvcenter_VMWARE_VSPHERE_VM_CPUS=`grep ^numCpu= $VSPHERE_STATS | cut -d'=' -f2`
+		htvcenter_VMWARE_VSPHERE_VM_RAM=`grep ^memorySizeMB= $VSPHERE_STATS | cut -d'=' -f2`
+		htvcenter_VMWARE_VSPHERE_VM_VNC_PASSWORD=`grep ^vncpass= $VSPHERE_STATS | cut -d'=' -f2`
+		htvcenter_VMWARE_VSPHERE_VM_VNC_PORT=`grep ^vncport= $VSPHERE_STATS | cut -d'=' -f2`
+		htvcenter_VMWARE_VSPHERE_VM_ISO=`grep ^iso= $VSPHERE_STATS | cut -d'=' -f2`
+		htvcenter_VMWARE_VSPHERE_VM_BOOT="local"
+		VM_BOOT=`grep ^boot= $VSPHERE_STATS | cut -d'=' -f2`
+		if [ "$VM_BOOT" == "allow:hd,cd,net" ]; then
+			htvcenter_VMWARE_VSPHERE_VM_BOOT="local"
+		fi
+		if [ "$VM_BOOT" == "allow:cd,hd,net" ]; then
+			htvcenter_VMWARE_VSPHERE_VM_BOOT="cdrom"
+		fi
+		if [ "$VM_BOOT" == "allow:net,hd,cd" ]; then
+			htvcenter_VMWARE_VSPHERE_VM_BOOT="network"
+		fi
+
+
+		if [ "$htvcenter_VMWARE_VSPHERE_VM_NAME" != "$VMWARE_VSPHERE_VM_NAME" ]; then
+			htvcenter_post_event 0 "update" 3 "htvcenter-vmware-vsphere" "Failed to set configuration for vSphere VM $VMWARE_VSPHERE_VM_NAME!"
+
+			htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+			trap '' EXIT
+
+			exit 1
+		fi
+
+		
+		VMWARE_VSPHERE_VM_NETWORK=""
+		# nic 1
+		if [ "$VMWARE_VSPHERE_VM_MAC" != "" ] && [ "$VMWARE_VSPHERE_VM_NIC_VSWITCH1" != "" ] && [ "$VMWARE_VSPHERE_VM_NIC_TYPE1" != "" ]; then
+			VMWARE_VSPHERE_VM_NIC_VSWITCH1=`echo $VMWARE_VSPHERE_VM_NIC_VSWITCH1 | sed -e "s/@/ /g"`
+			VMWARE_VSPHERE_VM_NETWORK="$VMWARE_VSPHERE_VM_NIC_VSWITCH1,$VMWARE_VSPHERE_VM_NIC_TYPE1,$VMWARE_VSPHERE_VM_MAC"
+		fi
+		# nic 2
+		if [ "$VMWARE_VSPHERE_VM_MAC2" != "" ] && [ "$VMWARE_VSPHERE_VM_NIC_VSWITCH2" != "" ] && [ "$VMWARE_VSPHERE_VM_NIC_TYPE2" != "" ]; then
+			VMWARE_VSPHERE_VM_NIC_VSWITCH2=`echo $VMWARE_VSPHERE_VM_NIC_VSWITCH2 | sed -e "s/@/ /g"`
+			VMWARE_VSPHERE_VM_NETWORK="$VMWARE_VSPHERE_VM_NETWORK|$VMWARE_VSPHERE_VM_NIC_VSWITCH2,$VMWARE_VSPHERE_VM_NIC_TYPE2,$VMWARE_VSPHERE_VM_MAC2"
+		fi
+		# nic 3
+		if [ "$VMWARE_VSPHERE_VM_MAC3" != "" ] && [ "$VMWARE_VSPHERE_VM_NIC_VSWITCH3" != "" ] && [ "$VMWARE_VSPHERE_VM_NIC_TYPE3" != "" ]; then
+			VMWARE_VSPHERE_VM_NIC_VSWITCH3=`echo $VMWARE_VSPHERE_VM_NIC_VSWITCH3 | sed -e "s/@/ /g"`
+			VMWARE_VSPHERE_VM_NETWORK="$VMWARE_VSPHERE_VM_NETWORK|$VMWARE_VSPHERE_VM_NIC_VSWITCH3,$VMWARE_VSPHERE_VM_NIC_TYPE3,$VMWARE_VSPHERE_VM_MAC3"
+		fi
+		# nic 4
+		if [ "$VMWARE_VSPHERE_VM_MAC4" != "" ] && [ "$VMWARE_VSPHERE_VM_NIC_VSWITCH4" != "" ] && [ "$VMWARE_VSPHERE_VM_NIC_TYPE4" != "" ]; then
+			VMWARE_VSPHERE_VM_NIC_VSWITCH4=`echo $VMWARE_VSPHERE_VM_NIC_VSWITCH4 | sed -e "s/@/ /g"`
+			VMWARE_VSPHERE_VM_NETWORK="$VMWARE_VSPHERE_VM_NETWORK|$VMWARE_VSPHERE_VM_NIC_VSWITCH4,$VMWARE_VSPHERE_VM_NIC_TYPE4,$VMWARE_VSPHERE_VM_MAC4"
+		fi
+		# nic 5
+		if [ "$VMWARE_VSPHERE_VM_MAC5" != "" ] && [ "$VMWARE_VSPHERE_VM_NIC_VSWITCH5" != "" ] && [ "$VMWARE_VSPHERE_VM_NIC_TYPE5" != "" ]; then
+			VMWARE_VSPHERE_VM_NIC_VSWITCH5=`echo $VMWARE_VSPHERE_VM_NIC_VSWITCH5 | sed -e "s/@/ /g"`
+			VMWARE_VSPHERE_VM_NETWORK="$VMWARE_VSPHERE_VM_NETWORK|$VMWARE_VSPHERE_VM_NIC_VSWITCH5,$VMWARE_VSPHERE_VM_NIC_TYPE5,$VMWARE_VSPHERE_VM_MAC5"
+		fi
+
+		# cpu changed ?
+		if [ "$VMWARE_VSPHERE_VM_CPU" != "" ] && [ "$VMWARE_VSPHERE_VM_CPU" != "$htvcenter_VMWARE_VSPHERE_VM_CPUS" ]; then
+			htvcenter_post_event 0 "update" 5 "htvcenter-vmware-vsphere" "Updating CPUS to $VMWARE_VSPHERE_VM_CPU of vSphere VM $VMWARE_VSPHERE_VM_NAME."
+			if ! $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/bin/python/vmupdate.py -s "$VMWARE_VSPHERE_HOST_IP" -o 443 -u "$VI_USERNAME" -p "$VI_PASSWORD" -n "$VMWARE_VSPHERE_VM_NAME" -t "$VMWARE_VSPHERE_VM_CPU"; then
+				htvcenter_post_event 0 "update" 3 "htvcenter-vmware-vsphere" "Failed to update CPUS to $VMWARE_VSPHERE_VM_CPU of vSphere VM $VMWARE_VSPHERE_VM_NAME!"
+
+				htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+				trap '' EXIT
+
+				exit 1
+			fi
+		fi
+		# ram changed ?
+		if [ "$VMWARE_VSPHERE_VM_RAM" != "" ] && [ "$VMWARE_VSPHERE_VM_RAM" != "$htvcenter_VMWARE_VSPHERE_VM_RAM" ]; then
+			htvcenter_post_event 0 "update" 5 "htvcenter-vmware-vsphere" "Updating RAM to $VMWARE_VSPHERE_VM_RAM of vSphere VM $VMWARE_VSPHERE_VM_NAME."
+			if ! $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/bin/python/vmupdate.py -s "$VMWARE_VSPHERE_HOST_IP" -o 443 -u "$VI_USERNAME" -p "$VI_PASSWORD" -n "$VMWARE_VSPHERE_VM_NAME" -r "$VMWARE_VSPHERE_VM_RAM"; then
+				htvcenter_post_event 0 "update" 3 "htvcenter-vmware-vsphere" "Failed to update RAM to $VMWARE_VSPHERE_VM_RAM of vSphere VM $VMWARE_VSPHERE_VM_NAME!"
+
+				htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+				trap '' EXIT
+
+				exit 1
+			fi
+		fi
+
+
+		# boot sequence changed
+		if [ "$VMWARE_VSPHERE_VM_BOOT" != "" ] && [ "$VMWARE_VSPHERE_VM_BOOT" != "$htvcenter_VMWARE_VSPHERE_VM_BOOT" ]; then
+			htvcenter_post_event 0 "update" 5 "htvcenter-vmware-vsphere" "Updating bootsequence to $VMWARE_VSPHERE_VM_BOOT of vSphere VM $VMWARE_VSPHERE_VM_NAME."
+			if ! vm_setboot $VMWARE_VSPHERE_VM_NAME $VMWARE_VSPHERE_VM_BOOT; then
+				htvcenter_post_event 0 "update" 3 "htvcenter-vmware-vsphere" "Failed to setboot to $VMWARE_VSPHERE_VM_BOOT for vSphere VM $VMWARE_VSPHERE_VM_NAME!"
+
+				htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+				trap '' EXIT
+
+				exit 1
+			fi
+		fi
+		# iso/cdrom changed
+		if [ "$VMWARE_VSPHERE_VM_ISO" != "" ] && [ "$htvcenter_VMWARE_VSPHERE_VM_ISO" != "$VMWARE_VSPHERE_VM_ISO" ]; then
+			htvcenter_post_event 0 "update" 5 "htvcenter-vmware-vsphere" "Updating ISO/CDROM to $VMWARE_VSPHERE_VM_ISO of vSphere VM $VMWARE_VSPHERE_VM_NAME."
+			VM_ISO_DATASTORE=`echo $VMWARE_VSPHERE_VM_ISO | cut -d'[' -f2 | cut -d']' -f1`
+			VM_ISO_IMAGE_FILE=`echo $VMWARE_VSPHERE_VM_ISO | cut -d']' -f2`
+			if ! $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/bin/python/vmupdate.py -s "$VMWARE_VSPHERE_HOST_IP" -o 443 -u "$VI_USERNAME" -p "$VI_PASSWORD" -n "$VMWARE_VSPHERE_VM_NAME" -i "$VMWARE_VSPHERE_VM_ISO"; then
+				htvcenter_post_event 0 "update" 3 "htvcenter-vmware-vsphere" "Failed to add ISO $VMWARE_VSPHERE_VM_ISO to vSphere VM $VMWARE_VSPHERE_VM_NAME!"
+
+				htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+				trap '' EXIT
+
+				exit 1
+			fi
+		elif [ "$VMWARE_VSPHERE_VM_ISO" == "" ]; then
+			htvcenter_post_event 0 "update" 5 "htvcenter-vmware-vsphere" "Detaching ISO/CDROM from vSphere VM $VMWARE_VSPHERE_VM_NAME."
+			if ! $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/bin/python/vmupdate.py -s "$VMWARE_VSPHERE_HOST_IP" -o 443 -u "$VI_USERNAME" -p "$VI_PASSWORD" -n "$VMWARE_VSPHERE_VM_NAME" -i "none"; then
+				htvcenter_post_event 0 "update" 3 "htvcenter-vmware-vsphere" "Failed to detach ISO from vSphere VM $VMWARE_VSPHERE_VM_NAME!"
+
+				htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+				trap '' EXIT
+
+				exit 1
+			fi
+		fi
+
+		# vnc password changed
+		if [ "$VMWARE_VSPHERE_VM_VNC_AUTH" != "" ] && [ "$VMWARE_VSPHERE_VM_VNC_AUTH" != "$htvcenter_VMWARE_VSPHERE_VM_VNC_PASSWORD" ]; then
+			htvcenter_post_event 0 "update" 5 "htvcenter-vmware-vsphere" "Updating VNC Password to $VMWARE_VSPHERE_VM_VNC_AUTH of vSphere VM $VMWARE_VSPHERE_VM_NAME."
+			if ! $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/bin/python/vmupdate.py -s "$VMWARE_VSPHERE_HOST_IP" -o 443 -u "$VI_USERNAME" -p "$VI_PASSWORD" -n "$VMWARE_VSPHERE_VM_NAME" -w "$VMWARE_VSPHERE_VM_VNC_AUTH"; then
+				htvcenter_post_event 0 "update" 3 "htvcenter-vmware-vsphere" "Failed to set the VNC Password for vSphere VM $VMWARE_VSPHERE_VM_NAME!"
+			fi
+		fi
+
+		# vnc port changed
+		if [ "$VMWARE_VSPHERE_VM_VNC_PORT" != "" ] && [ "$VMWARE_VSPHERE_VM_VNC_PORT" != "$htvcenter_VMWARE_VSPHERE_VM_VNC_PORT" ]; then
+			htvcenter_post_event 0 "update" 5 "htvcenter-vmware-vsphere" "Updating VNC port to $VMWARE_VSPHERE_VM_VNC_PORT of vSphere VM $VMWARE_VSPHERE_VM_NAME."
+			if ! $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/bin/python/vmupdate.py -s "$VMWARE_VSPHERE_HOST_IP" -o 443 -u "$VI_USERNAME" -p "$VI_PASSWORD" -n "$VMWARE_VSPHERE_VM_NAME" -v "$VMWARE_VSPHERE_VM_VNC_PORT"; then
+				htvcenter_post_event 0 "update" 3 "htvcenter-vmware-vsphere" "Failed to set the VNC port for vSphere VM $VMWARE_VSPHERE_VM_NAME!"
+			fi
+		fi
+
+		# nics changed
+		if [ "$VMWARE_VSPHERE_VM_NETWORK" != "" ]; then
+			echo "updating nics of VM with $VMWARE_VSPHERE_VM_NETWORK" | logger
+			if ! $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/bin/python/vmupdate.py -s "$VMWARE_VSPHERE_HOST_IP" -o 443 -u "$VI_USERNAME" -p "$VI_PASSWORD" -n "$VMWARE_VSPHERE_VM_NAME" -m "$VMWARE_VSPHERE_VM_NETWORK"; then
+				htvcenter_post_event 0 "update" 3 "htvcenter-vmware-vsphere" "Failed to update network cards of vSphere VM $VMWARE_VSPHERE_VM_NAME!"
+				exit 1
+			fi
+		fi
+
+
+		htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+		trap '' EXIT
+
+		$0 post_vm_list -i $VMWARE_VSPHERE_HOST_IP --htvcenter-internal-cmd true
+		;;
+
+	clone)
+		# check requirements
+		VMWARE_VSPHERE_VM_NETWORK=""
+		if [ "$VMWARE_VSPHERE_VM_MAC" != "" ] && [ "$VMWARE_VSPHERE_VM_NIC_VSWITCH1" != "" ] && [ "$VMWARE_VSPHERE_VM_NIC_TYPE1" != "" ]; then
+			# e.g. vSwitch0,e1000,00:50:56:8c:a9:24
+			VMWARE_VSPHERE_VM_NIC_VSWITCH1=`echo $VMWARE_VSPHERE_VM_NIC_VSWITCH1 | sed -e "s/@/ /g"`
+			VMWARE_VSPHERE_VM_NETWORK="$VMWARE_VSPHERE_VM_NIC_VSWITCH1,$VMWARE_VSPHERE_VM_NIC_TYPE1,$VMWARE_VSPHERE_VM_MAC"
+			# nic 2
+			if [ "$VMWARE_VSPHERE_VM_MAC2" != "" ]; then
+				if  [ "$VMWARE_VSPHERE_VM_NIC_VSWITCH2" == "" ]; then
+					VMWARE_VSPHERE_VM_NIC_VSWITCH2=$VMWARE_VSPHERE_VM_NIC_VSWITCH1
+				fi
+				if [ "$VMWARE_VSPHERE_VM_NIC_TYPE2" == "" ]; then
+					VMWARE_VSPHERE_VM_NIC_TYPE2=$VMWARE_VSPHERE_VM_NIC_TYPE1
+				fi
+				VMWARE_VSPHERE_VM_NIC_VSWITCH2=`echo $VMWARE_VSPHERE_VM_NIC_VSWITCH2 | sed -e "s/@/ /g"`
+				VMWARE_VSPHERE_VM_NETWORK="$VMWARE_VSPHERE_VM_NETWORK|$VMWARE_VSPHERE_VM_NIC_VSWITCH2,$VMWARE_VSPHERE_VM_NIC_TYPE2,$VMWARE_VSPHERE_VM_MAC2"
+			fi
+			# nic 3
+			if [ "$VMWARE_VSPHERE_VM_MAC3" != "" ]; then
+				if  [ "$VMWARE_VSPHERE_VM_NIC_VSWITCH3" == "" ]; then
+					VMWARE_VSPHERE_VM_NIC_VSWITCH3=$VMWARE_VSPHERE_VM_NIC_VSWITCH1
+				fi
+				if [ "$VMWARE_VSPHERE_VM_NIC_TYPE3" == "" ]; then
+					VMWARE_VSPHERE_VM_NIC_TYPE3=$VMWARE_VSPHERE_VM_NIC_TYPE1
+				fi
+				VMWARE_VSPHERE_VM_NIC_VSWITCH3=`echo $VMWARE_VSPHERE_VM_NIC_VSWITCH3 | sed -e "s/@/ /g"`
+				VMWARE_VSPHERE_VM_NETWORK="$VMWARE_VSPHERE_VM_NETWORK|$VMWARE_VSPHERE_VM_NIC_VSWITCH3,$VMWARE_VSPHERE_VM_NIC_TYPE3,$VMWARE_VSPHERE_VM_MAC3"
+			fi
+			# nic 4
+			if [ "$VMWARE_VSPHERE_VM_MAC4" != "" ]; then
+				if  [ "$VMWARE_VSPHERE_VM_NIC_VSWITCH4" == "" ]; then
+					VMWARE_VSPHERE_VM_NIC_VSWITCH4=$VMWARE_VSPHERE_VM_NIC_VSWITCH1
+				fi
+				if [ "$VMWARE_VSPHERE_VM_NIC_TYPE4" == "" ]; then
+					VMWARE_VSPHERE_VM_NIC_TYPE4=$VMWARE_VSPHERE_VM_NIC_TYPE1
+				fi
+				VMWARE_VSPHERE_VM_NIC_VSWITCH4=`echo $VMWARE_VSPHERE_VM_NIC_VSWITCH4 | sed -e "s/@/ /g"`
+				VMWARE_VSPHERE_VM_NETWORK="$VMWARE_VSPHERE_VM_NETWORK|$VMWARE_VSPHERE_VM_NIC_VSWITCH4,$VMWARE_VSPHERE_VM_NIC_TYPE4,$VMWARE_VSPHERE_VM_MAC4"
+			fi
+			# nic 5
+			if [ "$VMWARE_VSPHERE_VM_MAC5" != "" ]; then
+				if  [ "$VMWARE_VSPHERE_VM_NIC_VSWITCH5" == "" ]; then
+					VMWARE_VSPHERE_VM_NIC_VSWITCH5=$VMWARE_VSPHERE_VM_NIC_VSWITCH1
+				fi
+				if [ "$VMWARE_VSPHERE_VM_NIC_TYPE5" == "" ]; then
+					VMWARE_VSPHERE_VM_NIC_TYPE5=$VMWARE_VSPHERE_VM_NIC_TYPE1
+				fi
+				VMWARE_VSPHERE_VM_NIC_VSWITCH5=`echo $VMWARE_VSPHERE_VM_NIC_VSWITCH5 | sed -e "s/@/ /g"`
+				VMWARE_VSPHERE_VM_NETWORK="$VMWARE_VSPHERE_VM_NETWORK|$VMWARE_VSPHERE_VM_NIC_VSWITCH5,$VMWARE_VSPHERE_VM_NIC_TYPE5,$VMWARE_VSPHERE_VM_MAC5"
+			fi
+		fi
+
+		# set some defaults
+		ADDITIONAL_PARAM=""
+		if [ "$VMWARE_VSPHERE_VM_DATASTORE" != "" ]; then
+			ADDITIONAL_PARAM="$ADDITIONAL_PARAM -d $VMWARE_VSPHERE_VM_DATASTORE"
+		fi
+
+		if [ "$VMWARE_VSPHERE_VM_RESOURCEPOOL" != "" ]; then
+			ADDITIONAL_PARAM="$ADDITIONAL_PARAM -q $VMWARE_VSPHERE_VM_RESOURCEPOOL"
+		fi
+
+		if [ "$VMWARE_VSPHERE_VM_DATACENTER" != "" ]; then
+			ADDITIONAL_PARAM="$ADDITIONAL_PARAM -c $VMWARE_VSPHERE_VM_DATACENTER"
+		fi
+
+
+		LOCK_TIME=`htvcenter_lock_queue aquire vmware-vsphere`
+		trap "htvcenter_lock_queue release vmware-vsphere $LOCK_TIME" EXIT
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+		# no locking for clone
+		htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+		trap '' EXIT
+
+		htvcenter_post_event 0 "clone" 9 "htvcenter-vmware-vsphere" "Cloning VMware VM $VMWARE_VSPHERE_VM_NAME from $VMWARE_VSPHERE_VM_TEMPLATE."
+
+		# use API to create the VM
+		CREATERETURN=$($htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/bin/python/vmclone.py -s "$VMWARE_VSPHERE_HOST_IP" -o 443 -u "$VI_USERNAME" -p "$VI_PASSWORD" -n "$VMWARE_VSPHERE_VM_NAME" -t "$VMWARE_VSPHERE_VM_TEMPLATE" $ADDITIONAL_PARAM 2>&1)
+		CREATEERROR=$(echo $CREATERETURN | grep "Error")
+
+		if [ -n "$CREATEERROR" ]; then
+			CREATEERROR=$(htvcenter_format_error_msg $CREATEERROR)
+			htvcenter_post_event 0 "clone" 10 "htvcenter-vmware-vsphere" "Cloning VMware VM $VMWARE_VSPHERE_VM_NAME from $VMWARE_VSPHERE_VM_TEMPLATE."
+			htvcenter_post_event 0 "clone" 3 "htvcenter-vmware-vsphere" "Failed to clone vSphere VM $VMWARE_VSPHERE_VM_NAME!<br>$CREATEERROR"
+			exit 1
+		fi
+		# check the VM was created correctly
+		CHECK_VM_CREATED=false
+		if $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/bin/python/vmlist.py -s $VMWARE_VSPHERE_HOST_IP -o 443 -u "$VI_USERNAME" -p "$VI_PASSWORD" -n "$VMWARE_VSPHERE_VM_NAME" | grep -w $VMWARE_VSPHERE_VM_NAME 1>/dev/null; then
+			CHECK_VM_CREATED=true
+		fi
+		if [ "$CHECK_VM_CREATED" == "false" ]; then
+			htvcenter_post_event 0 "clone" 10 "htvcenter-vmware-vsphere" "Cloning VMware VM $VMWARE_VSPHERE_VM_NAME from $VMWARE_VSPHERE_VM_TEMPLATE."
+			htvcenter_post_event 0 "clone" 3 "htvcenter-vmware-vsphere" "Failed to clone vSphere VM $VMWARE_VSPHERE_VM_NAME!"
+			exit 1
+		fi
+
+
+		# add nic with updated mac
+		if [ "$VMWARE_VSPHERE_VM_NETWORK" != "" ]; then
+			echo "updating nics of VM with $VMWARE_VSPHERE_VM_NETWORK" | logger
+			if ! $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/bin/python/vmupdate.py -s "$VMWARE_VSPHERE_HOST_IP" -o 443 -u "$VI_USERNAME" -p "$VI_PASSWORD" -n "$VMWARE_VSPHERE_VM_NAME" -m "$VMWARE_VSPHERE_VM_NETWORK"; then
+				htvcenter_post_event 0 "clone" 10 "htvcenter-vmware-vsphere" "Cloning VMware VM $VMWARE_VSPHERE_VM_NAME from $VMWARE_VSPHERE_VM_TEMPLATE."
+				htvcenter_post_event 0 "clone" 3 "htvcenter-vmware-vsphere" "Failed to update vSphere VM $VMWARE_VSPHERE_VM_NAME!"
+				exit 1
+			fi
+		fi
+
+		# vnc ?
+		if [ "$VMWARE_VSPHERE_VM_VNC_AUTH" != "" ] && [ "$VMWARE_VSPHERE_VM_VNC_PORT" != "" ]; then
+			echo "updating VNC parameter of VM $VMWARE_VSPHERE_VM_NAME"
+			if ! $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/bin/python/vmupdate.py -s "$VMWARE_VSPHERE_HOST_IP" -o 443 -u "$VI_USERNAME" -p "$VI_PASSWORD" -n "$VMWARE_VSPHERE_VM_NAME" --vncpassword "$VMWARE_VSPHERE_VM_VNC_AUTH" --vncport "$VMWARE_VSPHERE_VM_VNC_PORT"; then
+				htvcenter_post_event 0 "clone" 10 "htvcenter-vmware-vsphere" "Cloning VMware VM $VMWARE_VSPHERE_VM_NAME from $VMWARE_VSPHERE_VM_TEMPLATE."
+				htvcenter_post_event 0 "clone" 3 "htvcenter-vmware-vsphere" "Failed to update VNC parameter of VM $VMWARE_VSPHERE_VM_NAME!"
+				exit 1
+			fi
+		fi
+
+		# update cpu if set
+		if [ "$VMWARE_VSPHERE_VM_CPU" != "" ]; then
+			echo "updating cpu number of VM with $VMWARE_VSPHERE_VM_CPU"
+			if ! $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/bin/python/vmupdate.py -s "$VMWARE_VSPHERE_HOST_IP" -o 443 -u "$VI_USERNAME" -p "$VI_PASSWORD" -n "$VMWARE_VSPHERE_VM_NAME" -t "$VMWARE_VSPHERE_VM_CPU"; then
+				htvcenter_post_event 0 "clone" 10 "htvcenter-vmware-vsphere" "Cloning VMware VM $VMWARE_VSPHERE_VM_NAME from $VMWARE_VSPHERE_VM_TEMPLATE."
+				htvcenter_post_event 0 "clone" 3 "htvcenter-vmware-vsphere" "Failed to update cpu of vSphere VM $VMWARE_VSPHERE_VM_NAME!"
+				exit 1
+			fi
+		fi
+
+		# update memory if set
+		if [ "$VMWARE_VSPHERE_VM_RAM" != "" ]; then
+			echo "updating memory of VM with $VMWARE_VSPHERE_VM_RAM"
+			if ! $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/bin/python/vmupdate.py -s "$VMWARE_VSPHERE_HOST_IP" -o 443 -u "$VI_USERNAME" -p "$VI_PASSWORD" -n "$VMWARE_VSPHERE_VM_NAME" -r "$VMWARE_VSPHERE_VM_RAM"; then
+				htvcenter_post_event 0 "clone" 10 "htvcenter-vmware-vsphere" "Cloning VMware VM $VMWARE_VSPHERE_VM_NAME from $VMWARE_VSPHERE_VM_TEMPLATE."
+				htvcenter_post_event 0 "clone" 3 "htvcenter-vmware-vsphere" "Failed to update memory of vSphere VM $VMWARE_VSPHERE_VM_NAME!"
+				exit 1
+			fi
+		fi
+
+
+		htvcenter_post_event 0 "clone" 10 "htvcenter-vmware-vsphere" "Cloning VMware VM $VMWARE_VSPHERE_VM_NAME from $VMWARE_VSPHERE_VM_TEMPLATE."
+
+		htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+		trap '' EXIT
+
+		# post_vm_list again
+		$0 post_vm_list -i $VMWARE_VSPHERE_HOST_IP --htvcenter-internal-cmd true
+		;;
+
+	start)
+		LOCK_TIME=`htvcenter_lock_queue aquire vmware-vsphere`
+		trap "htvcenter_lock_queue release vmware-vsphere $LOCK_TIME" EXIT
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+
+		if ! $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/bin/python/vmstart.py -s "$VMWARE_VSPHERE_HOST_IP" -o 443 -u "$VI_USERNAME" -p "$VI_PASSWORD" -n "$VMWARE_VSPHERE_VM_NAME"; then
+			htvcenter_post_event 0 "start" 3 "htvcenter-vmware-vsphere" "Failed to start vSphere VM $VMWARE_VSPHERE_VM_NAME!"
+
+			htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+			trap '' EXIT
+
+			exit 1
+		fi
+
+		htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+		trap '' EXIT
+		# post_vm_list again
+		$0 post_vm_list -i $VMWARE_VSPHERE_HOST_IP --htvcenter-internal-cmd true
+		;;
+	stop)
+		LOCK_TIME=`htvcenter_lock_queue aquire vmware-vsphere`
+		trap "htvcenter_lock_queue release vmware-vsphere $LOCK_TIME" EXIT
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+
+		if ! $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/bin/python/vmstop.py -s "$VMWARE_VSPHERE_HOST_IP" -o 443 -u "$VI_USERNAME" -p "$VI_PASSWORD" -n "$VMWARE_VSPHERE_VM_NAME"; then
+			htvcenter_post_event 0 "stop" 3 "htvcenter-vmware-vsphere" "Failed to stop vSphere VM $VMWARE_VSPHERE_VM_NAME!"
+
+			htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+			trap '' EXIT
+
+			exit 1
+		fi
+
+		htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+		trap '' EXIT
+		# post_vm_list again
+		$0 post_vm_list -i $VMWARE_VSPHERE_HOST_IP --htvcenter-internal-cmd true
+		;;
+	reboot)
+		LOCK_TIME=`htvcenter_lock_queue aquire vmware-vsphere`
+		trap "htvcenter_lock_queue release vmware-vsphere $LOCK_TIME" EXIT
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+
+		if ! $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/bin/python/vmstop.py -s "$VMWARE_VSPHERE_HOST_IP" -o 443 -u "$VI_USERNAME" -p "$VI_PASSWORD" -n "$VMWARE_VSPHERE_VM_NAME"; then
+			htvcenter_post_event 0 "reboot" 3 "htvcenter-vmware-vsphere" "Failed to stop vSphere VM $VMWARE_VSPHERE_VM_NAME!"
+
+			htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+			trap '' EXIT
+
+			exit 1
+		fi
+		if ! $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/bin/python/vmstart.py -s "$VMWARE_VSPHERE_HOST_IP" -o 443 -u "$VI_USERNAME" -p "$VI_PASSWORD" -n "$VMWARE_VSPHERE_VM_NAME"; then
+			htvcenter_post_event 0 "reboot" 3 "htvcenter-vmware-vsphere" "Failed to start vSphere VM $VMWARE_VSPHERE_VM_NAME!"
+
+			htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+			trap '' EXIT
+
+			exit 1
+		fi
+
+		htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+		trap '' EXIT
+		# post_vm_list again
+		$0 post_vm_list -i $VMWARE_VSPHERE_HOST_IP --htvcenter-internal-cmd true
+		;;
+	remove)
+		LOCK_TIME=`htvcenter_lock_queue aquire vmware-vsphere`
+		trap "htvcenter_lock_queue release vmware-vsphere $LOCK_TIME" EXIT
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+
+		if ! $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/bin/python/vmdestroy.py -s "$VMWARE_VSPHERE_HOST_IP" -o 443 -u "$VI_USERNAME" -p "$VI_PASSWORD" -n "$VMWARE_VSPHERE_VM_NAME"; then
+			htvcenter_post_event 0 "stop" 3 "htvcenter-vmware-vsphere" "Failed to remove vSphere VM $VMWARE_VSPHERE_VM_NAME!"
+
+			htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+			trap '' EXIT
+
+			exit 1
+		fi
+
+		htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+		trap '' EXIT
+		if [ "$NO_POST" != "true" ]; then
+			# post_vm_list again
+			$0 post_vm_list -i $VMWARE_VSPHERE_HOST_IP --htvcenter-internal-cmd true
+		fi
+		;;
+
+	list)
+		# run API command
+		$htvcenter_VMWARE_VSPHERE_SDK_DIR/apps/vm/vminfo.py | grep ^Name: | awk '{ print $2 }'
+		;;
+
+	post_vm_list)
+		VSPHERE_STATS="$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/web/vmware-vsphere-stat/$VMWARE_VSPHERE_HOST_IP.vm_list"
+		VSPHERE_STATS_TMP="$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/web/vmware-vsphere-stat/$VMWARE_VSPHERE_HOST_IP.vm_list.tmp"
+		rm -f $VSPHERE_STATS
+		> $VSPHERE_STATS_TMP
+		$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/bin/python/vmlist.py -s "$VMWARE_VSPHERE_HOST_IP" -o 443 -u "$VI_USERNAME" -p "$VI_PASSWORD" >> $VSPHERE_STATS_TMP
+		/bin/mv $VSPHERE_STATS_TMP $VSPHERE_STATS
+		chmod 777 $VSPHERE_STATS
+		;;
+
+	post_vm_components)
+		VSPHERE_STATS="$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/web/vmware-vsphere-stat/$VMWARE_VSPHERE_HOST_IP.vm_components"
+		VSPHERE_STATS_TMP="$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/web/vmware-vsphere-stat/$VMWARE_VSPHERE_HOST_IP.components.tmp"
+		rm -f $VSPHERE_STATS
+		> $VSPHERE_STATS_TMP
+		$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/bin/python/vmcomponents.py -s "$VMWARE_VSPHERE_HOST_IP" -o 443 -u "$VI_USERNAME" -p "$VI_PASSWORD" >> $VSPHERE_STATS_TMP
+		/bin/mv $VSPHERE_STATS_TMP $VSPHERE_STATS
+		chmod 777 $VSPHERE_STATS
+		;;
+
+	post_vm_config)
+		VSPHERE_STATS="$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/web/vmware-vsphere-stat/$VMWARE_VSPHERE_HOST_IP.$VMWARE_VSPHERE_VM_NAME.vm_config"
+		VSPHERE_STATS_TMP="$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/web/vmware-vsphere-stat/$VMWARE_VSPHERE_HOST_IP.$VMWARE_VSPHERE_VM_NAME.vm_config.tmp"
+		rm -f $VSPHERE_STATS
+		> $VSPHERE_STATS_TMP
+		$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/bin/python/vmlist.py -s "$VMWARE_VSPHERE_HOST_IP" -o 443 -u "$VI_USERNAME" -p "$VI_PASSWORD" -n "$VMWARE_VSPHERE_VM_NAME" >> $VSPHERE_STATS_TMP
+		/bin/mv $VSPHERE_STATS_TMP $VSPHERE_STATS
+		chmod 777 $VSPHERE_STATS
+		;;
+
+
+
+	setboot_by_mac)
+		# this command is is running from the HyperTask engine which does not know about the vm-name
+	   unset VMWARE_VSPHERE_VM_NAME
+		if [ "$VMWARE_VSPHERE_VM_MAC" == "" ] || [ "$VMWARE_VSPHERE_VM_BOOT" == "" ]; then
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			vmware_vsphere_usage
+		fi
+
+		LOCK_TIME=`htvcenter_lock_queue aquire vmware-vsphere`
+		trap "htvcenter_lock_queue release vmware-vsphere $LOCK_TIME" EXIT
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+
+		VMWARE_VSPHERE_VM_NAME=`get_vm_name_by_mac $VMWARE_VSPHERE_VM_MAC`
+		if [ "$VMWARE_VSPHERE_VM_NAME" == "" ]; then
+				htvcenter_post_event 0 "setboot_by_mac" 3 "htvcenter-vmware-vsphere" "VM with MAC address $VM_MAC is not existing on vSphere Host $VI_SERVER_HOSTNAME!"
+
+				htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+				trap '' EXIT
+
+				exit 1
+		else
+			if ! vm_setboot $VMWARE_VSPHERE_VM_NAME $VMWARE_VSPHERE_VM_BOOT; then
+				htvcenter_post_event 0 "setboot_by_mac" 3 "htvcenter-vmware-vsphere" "Failed to setboot to $VMWARE_VSPHERE_VM_BOOT for vSphere VM $VMWARE_VSPHERE_VM_NAME!"
+
+				htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+				trap '' EXIT
+
+				exit 1
+			fi
+			htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+			trap '' EXIT
+		fi
+		;;
+
+
+	setboot)
+		if [ "$VMWARE_VSPHERE_VM_BOOT" == "" ]; then
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			vmware_vsphere_usage
+		fi
+
+		LOCK_TIME=`htvcenter_lock_queue aquire vmware-vsphere`
+		trap "htvcenter_lock_queue release vmware-vsphere $LOCK_TIME" EXIT
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+
+		if ! vm_setboot $VMWARE_VSPHERE_VM_NAME $VMWARE_VSPHERE_VM_BOOT; then
+			htvcenter_post_event 0 "setboot" 3 "htvcenter-vmware-vsphere" "Failed to setboot to $VMWARE_VSPHERE_VM_BOOT for vSphere VM $VMWARE_VSPHERE_VM_NAME!"
+
+			htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+			trap '' EXIT
+
+			exit 1
+		fi
+
+		htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+		trap '' EXIT
+
+		$0 post_vm_list -i $VMWARE_VSPHERE_HOST_IP --htvcenter-internal-cmd true
+		;;
+
+
+	add_vm_nic)
+		if [ "$VMWARE_VSPHERE_VM_NAME" == "" ] || [ "$VMWARE_VSPHERE_VM_MAC" == "" ] || [ "$VMWARE_VSPHERE_VM_COMPONENT_NUMBER" == "" ] || [ "$VMWARE_VSPHERE_VM_NIC_TYPE1" == "" ] || [ "$VMWARE_VSPHERE_VM_NIC_VSWITCH1" == "" ]; then
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			vmware_vsphere_usage
+		fi
+
+		LOCK_TIME=`htvcenter_lock_queue aquire vmware-vsphere`
+		trap "htvcenter_lock_queue release vmware-vsphere $LOCK_TIME" EXIT
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+
+		if ! vm_add_nic $VMWARE_VSPHERE_VM_NAME $VMWARE_VSPHERE_VM_COMPONENT_NUMBER $VMWARE_VSPHERE_VM_MAC $VMWARE_VSPHERE_VM_NIC_TYPE1 $VMWARE_VSPHERE_VM_NIC_VSWITCH1; then
+			htvcenter_post_event 0 "add_vm_nic" 3 "htvcenter-vmware-vsphere" "Failed to add the $VMWARE_VSPHERE_VM_COMPONENT_NUMBER network card to vSphere VM $VMWARE_VSPHERE_VM_NAME!"
+
+			htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+			trap '' EXIT
+
+			exit 1
+		fi
+		htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+		trap '' EXIT
+
+		$0 post_vm_config -i $VMWARE_VSPHERE_HOST_IP -n $VMWARE_VSPHERE_VM_NAME --htvcenter-internal-cmd true
+		;;
+
+
+	remove_vm_nic)
+		if [ "$VMWARE_VSPHERE_VM_NAME" == "" ] || [ "$VMWARE_VSPHERE_VM_COMPONENT_NUMBER" == "" ]; then
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			vmware_vsphere_usage
+		fi
+
+		LOCK_TIME=`htvcenter_lock_queue aquire vmware-vsphere`
+		trap "htvcenter_lock_queue release vmware-vsphere $LOCK_TIME" EXIT
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+
+		echo "Removing nic $VMWARE_VSPHERE_VM_COMPONENT_NUMBER from VMWare vSphere VM $VMWARE_VSPHERE_VM_NAME"
+		if ! vm_remove_nic $VMWARE_VSPHERE_VM_NAME $VMWARE_VSPHERE_VM_COMPONENT_NUMBER; then
+			htvcenter_post_event 0 "remove_vm_nic" 3 "htvcenter-vmware-vsphere" "Failed to remove the $VMWARE_VSPHERE_VM_COMPONENT_NUMBER network card from vSphere VM $VMWARE_VSPHERE_VM_NAME!"
+
+			htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+			trap '' EXIT
+
+			exit 1
+		fi
+		htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+		trap '' EXIT
+
+		$0 post_vm_config -i $VMWARE_VSPHERE_HOST_IP -n $VMWARE_VSPHERE_VM_NAME --htvcenter-internal-cmd true
+		;;
+
+
+	fence)
+		# this command is is running from the HyperTask engine which does not know about the vm-name
+	   unset VMWARE_VSPHERE_VM_NAME
+		if [ "$VMWARE_VSPHERE_VM_MAC" == "" ]; then
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			vmware_vsphere_usage
+		fi
+
+		LOCK_TIME=`htvcenter_lock_queue aquire vmware-vsphere`
+		trap "htvcenter_lock_queue release vmware-vsphere $LOCK_TIME" EXIT
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+
+		VMWARE_VSPHERE_VM_NAME=`get_vm_name_by_mac $VMWARE_VSPHERE_VM_MAC`
+		if [ "$VMWARE_VSPHERE_VM_NAME" == "" ]; then
+				htvcenter_post_event 0 "fence" 3 "htvcenter-vmware-vsphere" "VM with MAC address $VM_MAC is not existing on vSphere Host $VI_SERVER_HOSTNAME!"
+
+				htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+				trap '' EXIT
+
+				exit 1
+		else
+			# stop vm
+			if ! $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/bin/python/vmstop.py -s "$VMWARE_VSPHERE_HOST_IP" -o 443 -u "$VI_USERNAME" -p "$VI_PASSWORD" -n "$VMWARE_VSPHERE_VM_NAME"; then
+				htvcenter_post_event 0 "fence" 3 "htvcenter-vmware-vsphere" "Failed to stop vSphere VM $VMWARE_VSPHERE_VM_NAME!"
+
+				htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+				trap '' EXIT
+
+				exit 1
+			fi
+		fi
+
+		htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+		trap '' EXIT
+		;;
+
+
+	assign_by_mac)
+		# this command is is running from the HyperTask engine which does not know about the vm-name
+		unset VMWARE_VSPHERE_VM_NAME
+		if [ "$VMWARE_VSPHERE_VM_MAC" == "" ] || [ "$VMWARE_VSPHERE_VM_DISK" == "" ] || [ "$VMWARE_VSPHERE_VM_DATASTORE" == "" ]; then
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			vmware_vsphere_usage
+		fi
+
+		LOCK_TIME=`htvcenter_lock_queue aquire vmware-vsphere`
+		trap "htvcenter_lock_queue release vmware-vsphere $LOCK_TIME" EXIT
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+
+		VMWARE_VSPHERE_VM_NAME=`get_vm_name_by_mac $VMWARE_VSPHERE_VM_MAC`
+		if [ "$VMWARE_VSPHERE_VM_NAME" == "" ]; then
+			htvcenter_post_event 0 "assign_by_mac" 3 "htvcenter-vmware-vsphere" "VM with MAC address $VM_MAC is not existing on vSphere Host $VI_SERVER_HOSTNAME!"
+
+			htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+			trap '' EXIT
+
+			exit 1
+		fi
+		# stop vm
+		if ! $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/bin/python/vmstop.py -s "$VMWARE_VSPHERE_HOST_IP" -o 443 -u "$VI_USERNAME" -p "$VI_PASSWORD" -n "$VMWARE_VSPHERE_VM_NAME"; then
+			htvcenter_post_event 0 "stop" 3 "htvcenter-vmware-vsphere" "Failed to stop vSphere VM $VMWARE_VSPHERE_VM_NAME!"
+
+			htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+			trap '' EXIT
+
+			exit 1
+		fi
+
+		# attach existing disk
+		if ! $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/bin/python/vmdisk.py -s "$VMWARE_VSPHERE_HOST_IP" -o 443 -u "$VI_USERNAME" -p "$VI_PASSWORD" -n "$VMWARE_VSPHERE_VM_NAME" -a "attach" -d "[$VMWARE_VSPHERE_VM_DATASTORE]$VMWARE_VSPHERE_VM_DISK"; then
+			htvcenter_post_event 0 "deassign_by_mac" 3 "htvcenter-vmware-vsphere" "Failed to attach [$VMWARE_VSPHERE_VM_DATASTORE]$VMWARE_VSPHERE_VM_DISK to vSphere VM $VMWARE_VSPHERE_VM_NAME!"
+
+			htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+			trap '' EXIT
+
+			exit 1
+		fi
+
+		# we leave the VM stopped to make the virtual-resource reboot_by_mac command start it again
+
+		htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+		trap '' EXIT
+		;;
+
+	deassign_by_mac)
+		# this command is is running from the HyperTask engine which does not know about the vm-name
+		unset VMWARE_VSPHERE_VM_NAME
+		if [ "$VMWARE_VSPHERE_VM_MAC" == "" ]; then
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			vmware_vsphere_usage
+		fi
+
+		LOCK_TIME=`htvcenter_lock_queue aquire vmware-vsphere`
+		trap "htvcenter_lock_queue release vmware-vsphere $LOCK_TIME" EXIT
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+
+		VMWARE_VSPHERE_VM_NAME=`get_vm_name_by_mac $VMWARE_VSPHERE_VM_MAC`
+		if [ "$VMWARE_VSPHERE_VM_NAME" == "" ]; then
+			htvcenter_post_event 0 "deassign_by_mac" 3 "htvcenter-vmware-vsphere" "VM with MAC address $VM_MAC is not existing on vSphere Host $VI_SERVER_HOSTNAME!"
+
+			htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+			trap '' EXIT
+
+			exit 1
+		fi
+
+		# stop vm
+		if ! $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/bin/python/vmstop.py -s "$VMWARE_VSPHERE_HOST_IP" -o 443 -u "$VI_USERNAME" -p "$VI_PASSWORD" -n "$VMWARE_VSPHERE_VM_NAME"; then
+			htvcenter_post_event 0 "stop" 3 "htvcenter-vmware-vsphere" "Failed to stop vSphere VM $VMWARE_VSPHERE_VM_NAME!"
+
+			htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+			trap '' EXIT
+
+			exit 1
+		fi
+
+		# remove disk
+		if ! $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/bin/python/vmdisk.py -s "$VMWARE_VSPHERE_HOST_IP" -o 443 -u "$VI_USERNAME" -p "$VI_PASSWORD" -n "$VMWARE_VSPHERE_VM_NAME" -a "detach"; then
+			htvcenter_post_event 0 "deassign_by_mac" 3 "htvcenter-vmware-vsphere" "Failed to remove $VMWARE_VSPHERE_VM_DISK from vSphere VM $VMWARE_VSPHERE_VM_NAME!"
+
+			htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+			trap '' EXIT
+
+			exit 1
+		fi
+		# we leave the VM stopped to make the virtual-resource reboot_by_mac command start it again
+
+		htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+		trap '' EXIT
+		;;
+
+
+	stop_by_mac)
+		# this command is is running from the HyperTask engine which does not know about the vm-name
+		unset VMWARE_VSPHERE_VM_NAME
+		if [ "$VMWARE_VSPHERE_VM_MAC" == "" ]; then
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			vmware_vsphere_usage
+		fi
+
+		LOCK_TIME=`htvcenter_lock_queue aquire vmware-vsphere`
+		trap "htvcenter_lock_queue release vmware-vsphere $LOCK_TIME" EXIT
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+
+		VMWARE_VSPHERE_VM_NAME=`get_vm_name_by_mac $VMWARE_VSPHERE_VM_MAC`
+		if [ "$VMWARE_VSPHERE_VM_NAME" == "" ]; then
+			htvcenter_post_event 0 "stop_by_mac" 3 "htvcenter-vmware-vsphere" "VM with MAC address $VM_MAC is not existing on vSphere Host $VI_SERVER_HOSTNAME!"
+
+			htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+			trap '' EXIT
+
+			exit 1
+		fi
+		if ! $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/bin/python/vmstop.py -s "$VMWARE_VSPHERE_HOST_IP" -o 443 -u "$VI_USERNAME" -p "$VI_PASSWORD" -n "$VMWARE_VSPHERE_VM_NAME"; then
+			htvcenter_post_event 0 "stop" 3 "htvcenter-vmware-vsphere" "Failed to stop vSphere VM $VMWARE_VSPHERE_VM_NAME!"
+
+			htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+			trap '' EXIT
+
+			exit 1
+		fi
+
+		htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+		trap '' EXIT
+		;;
+
+	reboot_by_mac)
+		# check if the VM is running
+		# if yes, reboot it
+		# if not just start it
+		# this command is is running from the HyperTask engine which does not know about the vm-name
+		unset VMWARE_VSPHERE_VM_NAME
+		if [ "$VMWARE_VSPHERE_VM_MAC" == "" ]; then
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			vmware_vsphere_usage
+		fi
+
+		LOCK_TIME=`htvcenter_lock_queue aquire vmware-vsphere`
+		trap "htvcenter_lock_queue release vmware-vsphere $LOCK_TIME" EXIT
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+
+		VMWARE_VSPHERE_VM_NAME=`get_vm_name_by_mac $VMWARE_VSPHERE_VM_MAC`
+		if [ "$VMWARE_VSPHERE_VM_NAME" == "" ]; then
+			htvcenter_post_event 0 "reboot_by_mac" 3 "htvcenter-vmware-vsphere" "VM with MAC address $VM_MAC is not existing on vSphere Host $VI_SERVER_HOSTNAME!"
+
+			htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+			trap '' EXIT
+
+			exit 1
+		fi
+
+		if ! $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/bin/python/vmstop.py -s "$VMWARE_VSPHERE_HOST_IP" -o 443 -u "$VI_USERNAME" -p "$VI_PASSWORD" -n "$VMWARE_VSPHERE_VM_NAME"; then
+			htvcenter_post_event 0 "reboot_by_mac" 3 "htvcenter-vmware-vsphere" "Failed to stop vSphere VM $VMWARE_VSPHERE_VM_NAME!"
+
+			htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+			trap '' EXIT
+
+			exit 1
+		fi
+		if ! $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/bin/python/vmstart.py -s "$VMWARE_VSPHERE_HOST_IP" -o 443 -u "$VI_USERNAME" -p "$VI_PASSWORD" -n "$VMWARE_VSPHERE_VM_NAME"; then
+			htvcenter_post_event 0 "reboot_by_mac" 3 "htvcenter-vmware-vsphere" "Failed to start vSphere VM $VMWARE_VSPHERE_VM_NAME!"
+
+			htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+			trap '' EXIT
+
+			exit 1
+		fi
+
+		htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+		trap '' EXIT
+		;;
+
+# host functions
+
+	host_shutdown)
+		LOCK_TIME=`htvcenter_lock_queue aquire vmware-vsphere`
+		trap "htvcenter_lock_queue release vmware-vsphere $LOCK_TIME" EXIT
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+
+		mkdir -p $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/tmp
+		VSPHERE_SHUTDOWN=`mktemp $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/tmp/vmware-vsphere.shutdown.XXXXXX` || exit 1
+		VSPHERE_HOSTFILE=`mktemp $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/tmp/vmware-vsphere.hostfile.XXXXXX` || exit 1
+		/bin/cp -f $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/bin/python/shutdownHostViaSOAPAPICall.py $VSPHERE_SHUTDOWN
+		sed -i -e "s/username = 'fillmein'/username = \'$VI_USERNAME\'/" $VSPHERE_SHUTDOWN
+		sed -i -e "s/fillmein/$VI_PASSWORD/" $VSPHERE_SHUTDOWN
+		chmod +x $VSPHERE_SHUTDOWN
+		echo "$VMWARE_VSPHERE_HOST_IP" > $VSPHERE_HOSTFILE
+		vmware_vsphere_lock aquire
+		if ! $VSPHERE_SHUTDOWN $VSPHERE_HOSTFILE; then
+			htvcenter_post_event 0 "create" 3 "htvcenter-vmware-vsphere" "Failed to shutdown vSphere Host $VI_SERVER_HOSTNAME - $VMWARE_VSPHERE_HOST_IP!"
+
+			htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+			trap '' EXIT
+
+			exit 1
+		fi
+		rm -f $VSPHERE_SHUTDOWN $VSPHERE_HOSTFILE
+
+		htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+		trap '' EXIT
+		;;
+
+
+	host_reboot)
+		LOCK_TIME=`htvcenter_lock_queue aquire vmware-vsphere`
+		trap "htvcenter_lock_queue release vmware-vsphere $LOCK_TIME" EXIT
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+
+
+		#htvcenter_post_event 0 "create" 3 "htvcenter-vmware-vsphere" "/dev/tcp/$VMWARE_VSPHERE_HOST_IP/$htvcenter_EXEC_PORT"
+
+		# the vSphere may eventually be in idle state and the host_reboot is coming through assignment
+		# then we need to use the regular dropbear/ssh mechanism to reboot the idle system
+		#if read < /dev/tcp/$VMWARE_VSPHERE_HOST_IP/$htvcenter_EXEC_PORT 2>/dev/null; then
+		#	# in idle state
+		#	CMD_TOKEN=`echo $RANDOM | md5sum | awk '{ print $1 }'`
+		#	HOST_REBOOT_COMMAND="$htvcenter_SERVER_BASE_DIR/htvcenter/sbin/htvcenter-exec -i $VMWARE_VSPHERE_HOST_IP -t $CMD_TOKEN -c reboot"
+		#	$HOST_REBOOT_COMMAND
+		#else
+			# running vSphere Host
+			mkdir -p $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/tmp
+			VSPHERE_REBOOT=`mktemp $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/tmp/vmware-vsphere.shutdown.XXXXXX` || exit 1
+			VSPHERE_HOSTFILE=`mktemp $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/tmp/vmware-vsphere.hostfile.XXXXXX` || exit 1
+			/bin/cp -f $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/bin/python/shutdownHostViaSOAPAPICall.py $VSPHERE_REBOOT
+			sed -i -e "s/username = 'fillmein'/username = \'$VI_USERNAME\'/" $VSPHERE_REBOOT
+			sed -i -e "s/fillmein/$VI_PASSWORD/" $VSPHERE_REBOOT
+			# change ShutdownTask to RebootTask
+			sed -i -e "s/ShutdownHost_Task/RebootHost_Task/" $VSPHERE_REBOOT
+			chmod +x $VSPHERE_REBOOT
+			echo "$VMWARE_VSPHERE_HOST_IP" > $VSPHERE_HOSTFILE
+			if ! $VSPHERE_REBOOT $VSPHERE_HOSTFILE; then
+				htvcenter_post_event 0 "create" 3 "htvcenter-vmware-vsphere" "Failed to reboot vSphere Host $VI_SERVER_HOSTNAME - $VMWARE_VSPHERE_HOST_IP!"
+
+				htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+				trap '' EXIT
+
+				exit 1
+			fi
+			rm -f $VSPHERE_REBOOT $VSPHERE_HOSTFILE
+		#fi
+
+		htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+		trap '' EXIT
+		;;
+
+	post_iso_list)
+		# post dir list
+		PICK_ISO_CONFIG_TMP=$VMWARE_VSPHERE_HOST_IP.pick_iso_config
+		VSPHERE_ISO_STATS="$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/web/vmware-vsphere-stat/$VMWARE_VSPHERE_HOST_IP.pick_iso_config"
+		> $PICK_ISO_CONFIG_TMP
+		for ISO in `$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/bin/python/dslistfiles.py -s "$VMWARE_VSPHERE_HOST_IP" -o 443 -u "$VI_USERNAME" -p "$VI_PASSWORD"`; do
+			echo "$ISO" >> $PICK_ISO_CONFIG_TMP
+		done
+		/bin/mv $PICK_ISO_CONFIG_TMP $VSPHERE_ISO_STATS
+		chmod 777 $VSPHERE_ISO_STATS
+		;;
+
+	enable_vnc)
+		LOCK_TIME=`htvcenter_lock_queue aquire vmware-vsphere`
+		trap "htvcenter_lock_queue release vmware-vsphere $LOCK_TIME" EXIT
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+
+		# check if enabled already
+		if $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/bin/python/hostfirewall.py --vmhost $VI_SERVER_HOSTNAME | grep VNC 1>/dev/null; then
+			htvcenter_post_event 0 "enable_vnc" 5 "htvcenter-vmware-vsphere" "VNC access is enabled on vSphere Host $VI_SERVER_HOSTNAME - $VMWARE_VSPHERE_HOST_IP!"
+
+			htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+			trap '' EXIT
+
+			exit 0
+		fi
+		# make sure vnc is enabled in the vSphere firewall
+		VSPHERE_SSH_ENABLED=false
+		if ! $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/bin/python/hostServiceManagement.py --operation query | grep TSM-SSH | grep -i NOT 1>/dev/null; then
+			VSPHERE_SSH_ENABLED=true
+		else
+			# not running
+			vmware_vsphere_lock aquire
+			if ! $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/bin/python/hostServiceManagement.py --operation start --service TSM-SSH; then
+				htvcenter_post_event 0 "enable_vnc" 3 "htvcenter-vmware-vsphere" "Failed to start TSM-SSH on vSphere Host $VI_SERVER_HOSTNAME - $VMWARE_VSPHERE_HOST_IP!"
+
+				htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+				trap '' EXIT
+
+				exit 1
+			fi
+		fi
+
+		if ! $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/bin/expect/htvcenter-vmware-vsphere-ssh.exp $VI_SERVER $VI_USERNAME $VI_PASSWORD "cp -f /etc/vmware/firewall/service.xml /etc/vmware/firewall/service.xml.backup"; then
+			htvcenter_post_event 0 "enable_vnc" 3 "htvcenter-vmware-vsphere" "Failed to configure /etc/vmware/firewall/service.xml on vSphere Host $VI_SERVER_HOSTNAME - $VMWARE_VSPHERE_HOST_IP!"
+
+			htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+			trap '' EXIT
+
+			exit 1
+		fi
+		if ! $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/bin/expect/htvcenter-vmware-vsphere-ssh.exp $VI_SERVER $VI_USERNAME $VI_PASSWORD "chmod 644 /etc/vmware/firewall/service.xml"; then
+			htvcenter_post_event 0 "enable_vnc" 3 "htvcenter-vmware-vsphere" "Failed to configure /etc/vmware/firewall/service.xml on vSphere Host $VI_SERVER_HOSTNAME - $VMWARE_VSPHERE_HOST_IP!"
+
+			htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+			trap '' EXIT
+
+			exit 1
+		fi
+		if ! $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/bin/expect/htvcenter-vmware-vsphere-ssh.exp $VI_SERVER $VI_USERNAME $VI_PASSWORD "chmod +t /etc/vmware/firewall/service.xml"; then
+			htvcenter_post_event 0 "enable_vnc" 3 "htvcenter-vmware-vsphere" "Failed to configure /etc/vmware/firewall/service.xml on vSphere Host $VI_SERVER_HOSTNAME - $VMWARE_VSPHERE_HOST_IP!"
+
+			htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+			trap '' EXIT
+
+			exit 1
+		fi
+		if ! $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/bin/expect/htvcenter-vmware-vsphere-ssh.exp $VI_SERVER $VI_USERNAME $VI_PASSWORD "sed -i -e 's#</ConfigRoot>##g' /etc/vmware/firewall/service.xml"; then
+			htvcenter_post_event 0 "enable_vnc" 3 "htvcenter-vmware-vsphere" "Failed to configure /etc/vmware/firewall/service.xml on vSphere Host $VI_SERVER_HOSTNAME - $VMWARE_VSPHERE_HOST_IP!"
+
+			htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+			trap '' EXIT
+
+			exit 1
+		fi
+		if ! $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/bin/expect/htvcenter-vmware-vsphere-scp.exp $VI_SERVER $VI_USERNAME $VI_PASSWORD $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/etc/templates/htvcenter-vmware-vsphere-vnc-firewall.xml /tmp/; then
+			htvcenter_post_event 0 "enable_vnc" 3 "htvcenter-vmware-vsphere" "Failed to configure /etc/vmware/firewall/service.xml on vSphere Host $VI_SERVER_HOSTNAME - $VMWARE_VSPHERE_HOST_IP!"
+
+			htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+			trap '' EXIT
+
+			exit 1
+		fi
+		if ! $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/bin/expect/htvcenter-vmware-vsphere-ssh.exp $VI_SERVER $VI_USERNAME $VI_PASSWORD "cat /tmp/htvcenter-vmware-vsphere-vnc-firewall.xml >> /etc/vmware/firewall/service.xml"; then
+			htvcenter_post_event 0 "enable_vnc" 3 "htvcenter-vmware-vsphere" "Failed to configure /etc/vmware/firewall/service.xml on vSphere Host $VI_SERVER_HOSTNAME - $VMWARE_VSPHERE_HOST_IP!"
+
+			htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+			trap '' EXIT
+
+			exit 1
+		fi
+		if ! $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/bin/expect/htvcenter-vmware-vsphere-ssh.exp $VI_SERVER $VI_USERNAME $VI_PASSWORD "rm -f /tmp/htvcenter-vmware-vsphere-vnc-firewall.xml"; then
+			htvcenter_post_event 0 "enable_vnc" 3 "htvcenter-vmware-vsphere" "Failed to configure /etc/vmware/firewall/service.xml on vSphere Host $VI_SERVER_HOSTNAME - $VMWARE_VSPHERE_HOST_IP!"
+
+			htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+			trap '' EXIT
+
+			exit 1
+		fi
+		if ! $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/bin/expect/htvcenter-vmware-vsphere-ssh.exp $VI_SERVER $VI_USERNAME $VI_PASSWORD "vspherecli network firewall refresh"; then
+			htvcenter_post_event 0 "enable_vnc" 3 "htvcenter-vmware-vsphere" "Failed to configure /etc/vmware/firewall/service.xml on vSphere Host $VI_SERVER_HOSTNAME - $VMWARE_VSPHERE_HOST_IP!"
+
+			htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+			trap '' EXIT
+
+			exit 1
+		fi
+		if ! $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/bin/expect/htvcenter-vmware-vsphere-ssh.exp $VI_SERVER $VI_USERNAME $VI_PASSWORD "vspherecli network firewall ruleset list"; then
+			htvcenter_post_event 0 "enable_vnc" 3 "htvcenter-vmware-vsphere" "Failed to configure /etc/vmware/firewall/service.xml on vSphere Host $VI_SERVER_HOSTNAME - $VMWARE_VSPHERE_HOST_IP!"
+
+			htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+			trap '' EXIT
+
+			exit 1
+		fi
+
+		# should we stop the ssh service again ?
+		if [ "$VSPHERE_SSH_ENABLED" == "false" ]; then
+			if ! $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/bin/python/hostServiceManagement.py --operation stop --service TSM-SSH; then
+				htvcenter_post_event 0 "enable_vnc" 3 "htvcenter-vmware-vsphere" "Failed to stop TSM-SSH on vSphere Host $VI_SERVER_HOSTNAME - $VMWARE_VSPHERE_HOST_IP!"
+
+				htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+				trap '' EXIT
+
+				exit 1
+			fi
+
+		fi
+
+		htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+		trap '' EXIT
+		;;
+
+
+	post_host_statistics)
+		VSPHERE_STATS="$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/web/vmware-vsphere-stat/$VMWARE_VSPHERE_HOST_IP.host_statistics"
+		VSPHERE_STATS_TMP="$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/web/vmware-vsphere-stat/$VMWARE_VSPHERE_HOST_IP.host_statistics.tmp"
+		rm -f $VSPHERE_STATS
+		# check if host is online, we are not trying to connect an offline host via the VMware API
+		wget -T 10 -t 1 -O /dev/null --no-check-certificate https://$VMWARE_VSPHERE_HOST_IP/folder/ &>/dev/null
+		WGET_RET=$?
+		# an exit code 6 means online but auth failed
+		if [ "$WGET_RET" != "6" ]; then
+			exit 0
+		fi
+		# we make another try here to avoid ESX hosts
+		wget -T 10 -t 1 -O /dev/null --no-check-certificate https://$VMWARE_VSPHERE_HOST_IP//websso/SAML2/ &>/dev/null
+		WGET_RET=$?
+		# we expect an exit code of 8 here
+		if [ "$WGET_RET" != "8" ]; then
+			exit 0
+		fi
+
+		> $VSPHERE_STATS_TMP
+		# get host stats
+		$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/bin/python/hostinfo.py -s $VMWARE_VSPHERE_HOST_IP -o 443 -u $VI_USERNAME -p $VI_PASSWORD > $VSPHERE_STATS_TMP
+		# get the vm status
+		$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/bin/python/vmlist.py -s $VMWARE_VSPHERE_HOST_IP -o 443 -u $VI_USERNAME -p $VI_PASSWORD >> $VSPHERE_STATS_TMP
+		/bin/mv $VSPHERE_STATS_TMP $VSPHERE_STATS
+		chmod 777 $VSPHERE_STATS
+		;;
+
+
+
+
+	relocate)
+		# non blocking
+		if [ "$VMWARE_VSPHERE_VM_RESOURCEPOOL" == "" ]; then
+			vmware_vsphere_usage
+		fi
+		if [ "$VMWARE_VSPHERE_VM_DATASTORE" != "" ]; then
+			DATASTORE_PARAMETER=" -d $VMWARE_VSPHERE_VM_DATASTORE"
+			DATASTORE_NAME="datastore $VMWARE_VSPHERE_VM_DATASTORE"
+		fi
+
+		htvcenter_post_event 0 "clone" 9 "htvcenter-vmware-vsphere" "Relocating VM $VMWARE_VSPHERE_VM_NAME to $VMWARE_VSPHERE_VM_RESOURCEPOOL $DATASTORE_NAME."
+
+		if ! $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-vsphere/bin/python/vmrelocate.py -s "$VMWARE_VSPHERE_HOST_IP" -o 443 -u "$VI_USERNAME" -p "$VI_PASSWORD" -n "$VMWARE_VSPHERE_VM_NAME" -q "$VMWARE_VSPHERE_VM_RESOURCEPOOL" $DATASTORE_PARAMETER; then
+			htvcenter_post_event 0 "relocate" 3 "htvcenter-vmware-vsphere" "Failed to relocate vSphere VM $VMWARE_VSPHERE_VM_NAME!"
+			htvcenter_post_event 0 "clone" 10 "htvcenter-vmware-vsphere" "Relocating VM $VMWARE_VSPHERE_VM_NAME to $VMWARE_VSPHERE_VM_RESOURCEPOOL $DATASTORE_NAME."
+
+			htvcenter_lock_queue release vmware-vsphere $LOCK_TIME
+			trap '' EXIT
+
+			exit 1
+		fi
+
+		htvcenter_post_event 0 "clone" 10 "htvcenter-vmware-vsphere" "Relocating VM $VMWARE_VSPHERE_VM_NAME to $VMWARE_VSPHERE_VM_RESOURCEPOOL $DATASTORE_NAME."
+
+		# post_vm_list again
+		$0 post_vm_list -i $VMWARE_VSPHERE_HOST_IP --htvcenter-internal-cmd true
+		;;
+
+
+	*)
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+		vmware_vsphere_usage
+		;;
+
+esac
+

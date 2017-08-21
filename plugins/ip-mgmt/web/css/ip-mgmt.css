@@ -1,0 +1,47 @@
+.htmlobject_td.edit {
+	text-align:center;
+	width:80px;
+}
+.htmlobject_td.details {
+	text-align:center;
+}
+
+#details .htmlobject_table {
+	width: 100%;
+}
+
+div#volumepopup div#storageform div.htmlobject_box {
+	margin: 0 0 10px 0;
+}
+
+div#volumepopup div#storageform div.htmlobject_box div.left {
+	width: 30%;
+	float: left;
+}
+
+div#volumepopup div#storageform div.htmlobject_box div.right {
+	width: 60%;
+	float: left;
+}
+div#volumepopupinfo{
+	display: none;
+}
+
+div.pull-right-add {
+	float: right;
+	margin: 0 8px 0 0;
+}
+
+div#ip_mgmt_tab {
+	float: right;
+	margin: 0 8px 0 0;
+}
+
+div#ip_mgmt_tab ul {
+	margin: 0;
+	padding: 0;
+}
+
+div#ip_mgmt_tab ul li a {
+	right: 0 !important;
+}

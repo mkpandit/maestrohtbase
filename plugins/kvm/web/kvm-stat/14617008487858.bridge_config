@@ -1,0 +1,1 @@
+htvcenter_KVM_BRIDGES="br0:vnet0:vnet1:vnet2:vnet3:vnet4:vnet5:virbr0:"

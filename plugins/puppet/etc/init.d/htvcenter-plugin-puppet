@@ -1,0 +1,240 @@
+#!/bin/bash
+# init script for the htvcenter puppet-plugin
+#
+# htvcenter Enterprise developed by htvcenter Enterprise GmbH.
+#
+# All source code and content (c) Copyright 2014, htvcenter Enterprise GmbH unless specifically noted otherwise.
+#
+# This source code is released under the htvcenter Enterprise Server and Client License, unless otherwise agreed with htvcenter Enterprise GmbH.
+# The latest version of this license can be found here: http://htvcenter-enterprise.com/license
+#
+# By using this software, you acknowledge having read this license and agree to be bound thereby.
+#
+#           http://htvcenter-enterprise.com
+#
+# Copyright 2014, htvcenter Enterprise GmbH <info@htvcenter-enterprise.com>
+#
+
+htvcenter_SERVER_BASE_DIR=$(pushd $(dirname $0)/../../../../.. > /dev/null; echo $PWD; popd > /dev/null)
+. $htvcenter_SERVER_BASE_DIR/htvcenter/etc/htvcenter-server.conf
+. $htvcenter_SERVER_BASE_DIR/htvcenter/include/htvcenter-functions
+. $htvcenter_SERVER_BASE_DIR/htvcenter/include/htvcenter-server-functions
+. $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/puppet/include/htvcenter-plugin-puppet-functions
+. $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/puppet/etc/htvcenter-plugin-puppet.conf
+htvcenter_server_get_config
+export resource_htvcenterserver=$htvcenter_SERVER_IP_ADDRESS
+export LANG=C
+# define wget to use with https
+if [ "$htvcenter_WEB_PROTOCOL" == "https" ]; then
+	WGET_NO_CERT_CHECK="--no-check-certificate"
+fi
+
+
+function htvcenter_plugin_puppet_start() {
+	echo "Starting the htvcenter puppet-plugin"
+	stop_puppet
+	stop_puppet_master
+	htvcenter_chkconfig del puppet
+	htvcenter_chkconfig del puppetmaster
+	start_puppet_master
+	start_puppet
+	# linking further install scripts
+	mkdir -p $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/boot-service/puppet/
+	ln -sf $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/puppet/etc/install/openstack/openstack-all-in-one $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/boot-service/puppet/openstack-all-in-one
+
+	touch $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/puppet/.running
+}
+
+
+function htvcenter_plugin_puppet_stop() {
+	echo "Stopping the htvcenter puppet-plugin"
+	stop_puppet
+	stop_puppet_master
+	rm -f $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/puppet/.running
+}
+
+function htvcenter_plugin_puppet_uninstall() {
+	local USERNAME=$1
+	local PASSWORD=$2
+	if [ "$USERNAME" == "" ] && [ "$PASSWORD" == "" ]; then
+		echo -n "puppet: Please give a username to uninstall the plugin : "
+		read USERNAME
+		echo
+		echo -n "puppet: Please give the password for user $USERNAME : "
+		read PASSWORD
+		echo
+	fi
+	echo "Uninstalling the htvcenter puppet-plugin"
+	htvcenter_plugin_puppet_stop
+
+	# remove from cron
+	rm -f /etc/cron.d/htvcenter-puppetm-config
+	if [ -x "/etc/init.d/cron" ]; then
+		if [ -x "`which invoke-rc.d 2>/dev/null`" ]; then
+			invoke-rc.d cron reload
+		else
+			/etc/init.d/cron reload
+		fi
+	elif [ -x /etc/init.d/crond ]; then
+		if [ -x "`which invoke-rc.d 2>/dev/null`" ]; then
+			invoke-rc.d crond reload
+		else
+			/etc/init.d/crond reload
+		fi
+	else
+		echo "Could not find cron init script in /etc/init.d/. Please reload cron manually!"
+	fi
+
+	# removing the puppet tables
+	if ! wget -q $WGET_NO_CERT_CHECK -O /dev/null --http-user=$USERNAME --http-password=$PASSWORD "$htvcenter_WEB_PROTOCOL://$resource_htvcenterserver/htvcenter/base/plugins/puppet/puppet-action.php?puppet_command=uninstall"; then
+		puppet_manager_log uninstall "ERROR: Could not drop the puppet-plugin tables in the database!"
+		return 1
+	fi
+	# restore orgigin puppet dir
+	if [ -d /etc/puppet.htvcenter-puppet-plugin.bak ]; then
+		rm -rf /etc/puppet
+		cp -aR /etc/puppet.htvcenter-puppet-plugin.bak /etc/puppet
+	fi
+	rm -f $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/puppet
+	rm -f $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/boot-service/boot-service-puppet.tgz
+	rm -rf $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/boot-service/puppet
+	rm -rf $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/puppet/etc/puppet
+}
+
+function htvcenter_plugin_puppet_init() {
+	local USERNAME=$1
+	local PASSWORD=$2
+	if [ "$USERNAME" == "" ] && [ "$PASSWORD" == "" ]; then
+		echo -n "puppet: Please give a username to init the plugin : "
+		read USERNAME
+		echo
+		echo -n "puppet: Please give the password for user $USERNAME : "
+		read PASSWORD
+		echo
+	fi
+
+	# the puppet plugin depends on dns working so it needs the dns plugin available+enabled
+	# puppet autosigning needs a domain name. This we get from the dns-plugin config
+	if [ ! -f $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/dns/etc/htvcenter-plugin-dns.conf ]; then
+		echo "ERROR: The htvcenter puppet-plugin depends on the dns-plugin. Please enable the dns-plugin first!"
+		htvcenter_post_event 0 "puppet-plugin" 3 "puppet-plugin" "The htvcenter puppet-plugin depends on the dns-plugin. Please enable the dns-plugin first!"
+		return 1
+	fi
+	. $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/dns/etc/htvcenter-plugin-dns.conf
+
+	CURRENTD=`pwd`
+	echo "Initializing the htvcenter puppet-plugin"
+	# linking the web dir
+	ln -sf $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/puppet/web $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/puppet
+	# link the boot-service
+	ln -sf $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/puppet/web/boot-service-puppet.tgz $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/boot-service/boot-service-puppet.tgz
+	# linking further install scripts
+	mkdir -p $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/boot-service/puppet/
+	ln -sf $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/puppet/etc/install/openstack/openstack-all-in-one $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/boot-service/puppet/openstack-all-in-one
+
+	# creating the tables
+	if ! wget -q $WGET_NO_CERT_CHECK -O /dev/null --http-user=$USERNAME --http-password=$PASSWORD "$htvcenter_WEB_PROTOCOL://$resource_htvcenterserver/htvcenter/base/plugins/puppet/puppet-action.php?puppet_command=init&puppet_domain=$htvcenter_SERVER_DOMAIN"; then
+		puppet_manager_log init "ERROR: Could not create the puppet-plugin tables in the database!"
+		return 1
+	fi
+
+	# creating the svn dir at /etc/puppet to store the puppet configuration
+	# backup orgigin puppet dir first
+	if [ ! -d /etc/puppet.htvcenter-puppet-plugin.bak ]; then
+		mv /etc/puppet /etc/puppet.htvcenter-puppet-plugin.bak
+	fi
+	# create the svn dir
+	rm -rf $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/puppet/etc/puppet
+	mkdir -p $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/puppet/etc/default/files
+	svnadmin create $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/puppet/etc/puppet
+	svn import -q $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/puppet/etc/default/ file://$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/puppet/etc/puppet/ -m "initial import"
+	# and import to /etc/puppet
+	rm -rf /etc/puppet/*
+	rm -rf /etc/puppet/.svn
+	mkdir -p /etc/puppet
+	cd /etc/puppet
+	svn co -q file://$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/puppet/etc/puppet/ .
+	# also co the files for the web-dir
+	rm -rf $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/puppet/web/puppet/
+	mkdir -p $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/puppet/web/puppet/
+	cd $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/puppet/web/puppet/
+	svn co -q file://$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/puppet/etc/puppet/ .
+	chmod -R 777 $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/puppet/web/puppet/
+	# setup access through ssh+svn
+	rm -f $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/puppet/etc/puppet/conf/svnserve.conf
+	echo "[general]" > $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/puppet/etc/puppet/conf/svnserve.conf
+	echo "anon-access = read" >> $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/puppet/etc/puppet/conf/svnserve.conf
+	echo "auth-access = write" >> $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/puppet/etc/puppet/conf/svnserve.conf
+	echo "realm = htvcenter Puppet configuration" >> $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/puppet/etc/puppet/conf/svnserve.conf
+	echo "password-db = passwd" >> $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/puppet/etc/puppet/conf/svnserve.conf
+	chmod -R 777 $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/puppet/etc/puppet/db
+	cd $CURRENTD
+	# configure autosigning
+	echo "*.$htvcenter_SERVER_DOMAIN" > /etc/puppet/autosign.conf
+	# create cron job which will update the svn repo with files which were added by the web gui
+	cat $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/puppet/etc/cron.d/htvcenter-puppetm-config.cron | \
+		sed -e "s#@@htvcenter_SERVER_BASE_DIR@@#$htvcenter_SERVER_BASE_DIR#g" > /etc/cron.d/htvcenter-puppetm-config
+	if [ -x "/etc/init.d/cron" ]; then
+		if [ -x "`which invoke-rc.d 2>/dev/null`" ]; then
+			invoke-rc.d cron reload
+		else
+			/etc/init.d/cron reload
+		fi
+	elif [ -x /etc/init.d/crond ]; then
+		if [ -x "`which invoke-rc.d 2>/dev/null`" ]; then
+			invoke-rc.d crond reload
+		else
+			/etc/init.d/crond reload
+		fi
+	else
+		echo "Could not find cron init script in /etc/init.d/. Please reload cron manually!"
+	fi
+	# create svn post-commit hook to immediately update the puppet configuration
+	cat $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/puppet/etc/svn-hook/post-commit.tmpl | \
+		sed -e "s#@@htvcenter_SERVER_BASE_DIR@@#$htvcenter_SERVER_BASE_DIR#g" > $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/puppet/etc/puppet/hooks/post-commit
+	chmod 755 $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/puppet/etc/puppet/hooks/post-commit
+
+	# eventually clean up old ssl dir before starting
+	rm -rf /var/lib/puppet/ssl/*
+	rm -rf /var/lib/puppet/yaml/node/*
+	rm -rf /var/lib/puppet/yaml/facts/*
+
+}
+
+
+
+
+
+
+
+USER=$2
+PASS=$3
+
+case "$1" in
+	start)
+		htvcenter_plugin_puppet_start
+		;;
+	stop)
+		htvcenter_plugin_puppet_stop
+		;;
+	restart)
+		htvcenter_plugin_puppet_stop
+		sleep 1
+		htvcenter_plugin_puppet_start
+		;;
+	init)
+		htvcenter_plugin_puppet_init $USER $PASS
+		;;
+	uninstall)
+		htvcenter_plugin_puppet_uninstall $USER $PASS
+		;;
+	*)
+		echo "Usage: $0 {start|stop|restart|init|uninstall}"
+		exit 1
+
+esac
+exit $?
+
+
+
+

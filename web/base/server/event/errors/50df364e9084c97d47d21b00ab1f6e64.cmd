@@ -1,0 +1,1 @@
+dbclient -K 10 -y -i /usr/share/htvcenter/etc/dropbear/dropbear_rsa_host_key -p 1667 root@192.168.0.7 "/usr/share/htvcenter/bin/htvcenter-cmd /usr/share/htvcenter/plugins/dhcpd/bin/htvcenter-dhcpd-appliance add_hostname -m 7c:d3:0a:cd:c6:da -n HTSrv001 -d 14938578212088 --htvcenter-cmd-mode background"

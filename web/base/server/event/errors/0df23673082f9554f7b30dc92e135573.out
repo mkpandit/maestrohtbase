@@ -1,0 +1,4 @@
+
+Host '192.168.0.235' key accepted unconditionally.
+(fingerprint md5 68:13:3f:2b:95:14:b4:e3:ec:a7:ec:69:e1:5e:57:f4)
+lockfile: Forcing lock on "/var/run/htvcenter/starting-queue-command.lock.bg-cmd-queue"

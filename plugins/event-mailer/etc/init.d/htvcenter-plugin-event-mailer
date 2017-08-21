@@ -1,0 +1,133 @@
+#!/bin/bash
+#
+# htvcenter Enterprise developed by htvcenter Enterprise GmbH.
+#
+# All source code and content (c) Copyright 2014, htvcenter Enterprise GmbH unless specifically noted otherwise.
+#
+# This source code is released under the htvcenter Enterprise Server and Client License, unless otherwise agreed with htvcenter Enterprise GmbH.
+# The latest version of this license can be found here: http://htvcenter-enterprise.com/license
+#
+# By using this software, you acknowledge having read this license and agree to be bound thereby.
+#
+#           http://htvcenter-enterprise.com
+#
+# Copyright 2014, htvcenter Enterprise GmbH <info@htvcenter-enterprise.com>
+
+#$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/event-mailer/include/htvcenter-plugin-event-mailer-functions
+
+htvcenter_SERVER_BASE_DIR=$(pushd $(dirname $0)/../../../../.. > /dev/null; echo $PWD; popd > /dev/null)
+. $htvcenter_SERVER_BASE_DIR/htvcenter/etc/htvcenter-server.conf
+. $htvcenter_SERVER_BASE_DIR/htvcenter/include/htvcenter-functions
+. $htvcenter_SERVER_BASE_DIR/htvcenter/include/htvcenter-server-functions
+. $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/event-mailer/etc/htvcenter-plugin-event-mailer.conf
+
+
+function htvcenter_plugin_event_mailer_start() {
+	echo "Starting the htvcenter event-mailer-plugin"
+	htvcenter_plugin_event_mailer_stop 1>/dev/null 2>&1
+	touch $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/event-mailer/.running
+}
+
+
+function htvcenter_plugin_event_mailer_stop() {
+	echo "Stopping the htvcenter event-mailer-plugin"
+	rm -f $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/event-mailer/.running
+	return 0
+}
+
+
+function htvcenter_plugin_event_mailer_activate() {
+	echo "Activating the htvcenter event-mailer-plugin" | logger
+}
+
+
+function htvcenter_plugin_event_mailer_deactivate() {
+	echo "De-Activating the htvcenter event-mailer-plugin" | logger
+}
+
+
+
+function htvcenter_plugin_event_mailer_init() {
+	local USERNAME=$1
+	local PASSWORD=$2
+	if [ "$USERNAME" == "" ] && [ "$PASSWORD" == "" ]; then
+		echo -n "event-mailer: Please give a username to install the plugin : "
+		read USERNAME
+		echo
+		echo -n "event-mailer: Please give the password for user $USERNAME : "
+		read PASSWORD
+		echo
+	fi
+	echo "Initializing the htvcenter event-mailer-plugin"
+	# linking the web dir
+	ln -sf $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/event-mailer/web $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/event-mailer
+
+	#creating the event-mailer table
+	if ! wget -q -O /dev/null --http-user=$USERNAME --http-password=$PASSWORD "http://localhost/htvcenter/base/plugins/event-mailer/event-mailer-action.php?event_mailer_command=init"; then
+		echo "ERROR: Could not create the event-mailer-plugin tables in the database!" | logger
+		exit 1
+	fi
+	return 0
+}
+
+
+function htvcenter_plugin_event_mailer_uninstall() {
+	local USERNAME=$1
+	local PASSWORD=$2
+	if [ "$USERNAME" == "" ] && [ "$PASSWORD" == "" ]; then
+		echo -n "event-mailer: Please give a username to uninstall the plugin : "
+		read USERNAME
+		echo
+		echo -n "event-mailer: Please give the password for user $USERNAME : "
+		read PASSWORD
+		echo
+	fi
+	echo "Uninstalling the htvcenter event-mailer-plugin"
+	htvcenter_plugin_event_mailer_stop
+
+	# removing the tables
+	if ! wget -q -O /dev/null --http-user=$USERNAME --http-password=$PASSWORD "http://localhost/htvcenter/base/plugins/event-mailer/event-mailer-action.php?event_mailer_command=uninstall"; then
+		echo "ERROR: Could not drop the support-plugin tables in the database!" | logger
+	fi
+	# unlinking the web dir
+	rm -f $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/event-mailer
+
+
+}
+
+
+USER=$2
+PASS=$3
+
+case "$1" in
+	start)
+		htvcenter_plugin_event_mailer_start
+		;;
+	stop)
+		htvcenter_plugin_event_mailer_stop
+		;;
+	restart)
+		htvcenter_plugin_event_mailer_stop
+		sleep 1
+		htvcenter_plugin_event_mailer_start
+		;;
+	activate)
+		htvcenter_plugin_event_mailer_activate
+		;;
+	deactivate)
+		htvcenter_plugin_event_mailer_deactivate
+		;;
+	init)
+		htvcenter_plugin_event_mailer_init $USER $PASS
+		;;
+	uninstall)
+		htvcenter_plugin_event_mailer_uninstall $USER $PASS
+		;;
+	*)
+		echo "Usage: $0 {start|stop|activate|deactivate|restart|init|uninstall}"
+		exit 1
+
+esac
+exit $?
+
+

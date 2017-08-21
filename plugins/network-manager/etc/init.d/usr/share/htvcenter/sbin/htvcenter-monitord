@@ -1,0 +1,243 @@
+#!/bin/bash
+# htvcenter-monitord, a htvcenter daemon for gathering system statistics
+#
+# htvcenter Enterprise developed by htvcenter Enterprise GmbH.
+#
+# All source code and content (c) Copyright 2014, htvcenter Enterprise GmbH unless specifically noted otherwise.
+#
+# This source code is released under the htvcenter Enterprise Server and Client License, unless otherwise agreed with htvcenter Enterprise GmbH.
+# The latest version of this license can be found here: http://htvcenter-enterprise.com/license
+#
+# By using this software, you acknowledge having read this license and agree to be bound thereby.
+#
+#           http://htvcenter-enterprise.com
+#
+# Copyright 2014, htvcenter Enterprise GmbH <info@htvcenter-enterprise.com>
+#
+
+htvcenter_SBIN_DIR=`dirname $0`
+htvcenter_BASE_DIR=`pushd $htvcenter_SBIN_DIR/.. 1>/dev/null && pwd && popd 1>/dev/null`
+htvcenter_EVENT="statistics"
+htvcenter_ACTIVE_STATE="active"
+htvcenter_STARTING_STATE="starting"
+
+# check if running on the server or on a managed resource
+if [ -f "$htvcenter_BASE_DIR/include/htvcenter-server-functions" ]; then
+	# we are running on the server
+	. $htvcenter_BASE_DIR/include/htvcenter-functions
+	. $htvcenter_BASE_DIR/include/htvcenter-server-functions
+	export resource_id=0
+	export resource_senddelay=10
+	export resource_htvcenterserver=$htvcenter_SERVER_IP_ADDRESS
+	export SERVER_PROTOCOL=$htvcenter_WEB_PROTOCOL
+	export resource_mac=`ifconfig $htvcenter_SERVER_INTERFACE | grep HWaddr| sed -e "s/.*HWaddr //g" | head -n1`
+else
+	# we are running on a managed resource
+	export htvcenter_SERVER_BASE_DIR=$htvcenter_BASE_DIR
+	. $htvcenter_BASE_DIR/include/htvcenter-functions
+	. $htvcenter_RESOURCE_PARAMETER_FILE
+	export SERVER_PROTOCOL=$htvcenter_web_protocol
+fi
+# define wget to use with https
+if [ "$SERVER_PROTOCOL" == "https" ]; then
+	export WGET="wget --no-check-certificate -q -O /dev/null"
+	if [ "$resource_id" == "0" ]; then
+		export WGET="wget --bind-address=$htvcenter_SERVER_IP_ADDRESS --no-check-certificate -q -O /dev/null"
+	fi
+else
+	export WGET="wget -q -O /dev/null"
+	if [ "$resource_id" == "0" ]; then
+		export WGET="wget --bind-address=$htvcenter_SERVER_IP_ADDRESS -q -O /dev/null"
+	fi
+fi
+# set timeout
+export WGET="$WGET -T 300 -t 1"
+
+
+# local used functions
+function send_info() {
+	if [ -f /etc/initrd-devices.conf ] && [ "$image_type" != "ram" ]; then
+		current_state=`urlencodestring $htvcenter_STARTING_STATE`
+	else
+		current_state=`urlencodestring $htvcenter_ACTIVE_STATE`
+	fi
+
+	current_event=`urlencodestring $htvcenter_EVENT`
+	MESSAGEDATA="resource_id=$resource_id&resource_uptime=$current_uptime&resource_cpunumber=$current_cpu_number&resource_cpuspeed=$current_cpu_speed&resource_cpumodel=$current_cpu_model&resource_memtotal=$current_mem_total&resource_memused=$current_mem_used&resource_swaptotal=$current_swap_total&resource_swapused=$current_swap_used&resource_hostname=$current_hostname&resource_load=$current_cpu_load&resource_nics=$current_nic_count&resource_state=$current_state&resource_event=$current_event";
+	# add mac of htvcenter to messagedata
+	if [ "$resource_id" == "0" ]; then
+		MESSAGEDATA=$MESSAGEDATA"&resource_mac=$resource_mac"
+	fi
+	htvcenter_RESOURCE_INFO_URL="$SERVER_PROTOCOL://$resource_htvcenterserver/htvcenter/action/resource-monitor.php?resource_command=update_info&$MESSAGEDATA"
+	$WGET "$htvcenter_RESOURCE_INFO_URL"
+}
+
+
+# converts bytes to mega-bytes
+function bytes_to_mega() {
+	echo $1 | awk '{printf("%.0f",  $1 /  1024/ 1024)}'
+}
+
+
+# statistic gathering functions
+
+# uptime
+function find_uptime() {
+	if [ -f /proc/uptime ]; then
+		current_uptime=`cat /proc/uptime | cut -d'.' -f 1`
+	fi
+	if [ -z "$current_uptime" ]; then
+		current_uptime=0
+	fi
+}
+
+
+
+# cpu_number
+function find_cpu_number() {
+	if [ -f /proc/stat ]; then
+		current_cpu_number=`grep '^cpu[0-9]' /proc/stat | wc -l`
+		current_cpu_number=${current_cpu_number// /}
+	fi
+	if [ -z "$current_cpu_number" ]; then
+		current_cpu_number=0
+	fi
+}
+
+# cpu_speed
+function find_cpu_speed() {
+	if [ -f /proc/cpuinfo ]; then
+		current_cpu_speed=(`cat /proc/cpuinfo | grep "cpu.*MHz"`)
+		current_cpu_speed=${current_cpu_speed[3]/\.*/}
+	fi
+	if [ -z "$current_cpu_speed" ]; then
+		current_cpu_speed=0
+	fi
+}
+
+
+# cpu_model
+function find_cpu_model() {
+	if [ -f /proc/cpuinfo ]; then
+		current_cpu_model=`cat /proc/cpuinfo | grep "model.*name" | head -n 1 | tr -s ' ' | cut -d' ' -f 3-`
+		current_cpu_model=`urlencodestring $current_cpu_model`
+	fi
+	if [ -z "$current_cpu_model" ]; then
+		current_cpu_model=0
+	fi
+}
+
+# how many nics we have
+function find_nics() {
+	current_nic_count=`ifconfig -a | grep ^eth | awk {' print $1 '} | grep -v : | wc -l`
+	if [ -z "$current_nic_count" ]; then
+		current_nic_count=0
+	fi
+}
+
+# mem_total
+function find_mem_total() {
+	if [ -f /proc/meminfo ]; then
+		current_mem_total=`cat /proc/meminfo | awk '/MemTotal:/ { print int($2/1024) };'`
+	fi
+}
+
+# mem_used
+function find_mem_used() {
+	if [ -f /proc/meminfo ]; then
+		if [ -z "$current_mem_total" ]; then
+			current_mem_total=`cat /proc/meminfo | awk '/MemTotal:/ { print int($2/1024) };'`
+		fi
+		current_mem_free=`cat /proc/meminfo | awk '/MemFree:/ { print int($2/1024) };'`
+		current_mem_used=$((current_mem_total - current_mem_free))
+	fi
+	if [ -z "$current_mem_used" ]; then
+		current_mem_used=0
+	fi
+}
+
+
+# swap_total
+function find_swap_total() {
+	if [ -f /proc/meminfo ]; then
+		current_swap_total=`cat /proc/meminfo | awk '/SwapTotal:/ { print int($2/1024) };'`
+	fi
+}
+
+# swap_used
+function find_swap_used() {
+	if [ -f /proc/meminfo ]; then
+		if [ -z "$current_swap_total" ]; then
+			current_swap_total=`cat /proc/meminfo | awk '/SwapTotal:/ { print int($2/1024) };'`
+		fi
+		current_swap_free=`cat /proc/meminfo | awk '/SwapFree:/ { print int($2/1024) };'`
+		current_swap_used=$((current_swap_total - current_swap_free))
+	fi
+	if [ -z "$current_swap_used" ]; then
+		current_swap_used=0
+	fi
+}
+
+# hostname
+function find_hostname() {
+	current_hostname=`hostname`
+	current_hostname=`urlencodestring $current_hostname`
+	if [ -z "$current_hostname" ]; then
+		current_hostname=0
+	fi
+}
+
+
+
+# cpu_load
+function find_cpu_load() {
+	if [ -f /proc/loadavg ]; then
+		current_cpu_load=`cat /proc/loadavg | cut -d' ' -f 1`
+	fi
+	if [ -z "$current_cpu_load" ]; then
+		current_cpu_load=0
+	fi
+}
+
+
+# start after /proc is mounted
+while [ ! -f /proc/cpuinfo ]; do
+	sleep 5
+done
+
+# gathering the static values
+echo "$0: Gathering resources-information" | logger
+# cpu_number
+find_cpu_number
+# cpu_speed
+find_cpu_speed
+# cpu_model
+find_cpu_model
+# mem_total
+find_mem_total
+# nics
+find_nics
+
+# main loop
+while (true); do
+	# uptime
+	find_uptime
+	# mem_used
+	find_mem_used
+	# swap_total
+	find_swap_total
+	# swap_used
+	find_swap_used
+	# hostname
+	find_hostname
+	# cpu_load
+	find_cpu_load
+	# sending statistics
+	send_info
+	# delay
+	sleep $resource_senddelay
+done
+# never reached
+exit 0
+
+

@@ -1,0 +1,198 @@
+#!/usr/bin/python
+#
+# htvcenter Enterprise developed by htvcenter Enterprise GmbH.
+#
+# All source code and content (c) Copyright 2014, htvcenter Enterprise GmbH unless specifically noted otherwise.
+#
+# This source code is released under the htvcenter Enterprise Server and Client License, unless otherwise agreed with htvcenter Enterprise GmbH.
+# The latest version of this license can be found here: http://htvcenter-enterprise.com/license
+#
+# By using this software, you acknowledge having read this license and agree to be bound thereby.
+#
+#           http://htvcenter-enterprise.com
+#
+# Copyright 2014, htvcenter Enterprise GmbH <info@htvcenter-enterprise.com>
+#
+import sys
+import syslog
+import time
+from oqlibcloudcompute import *
+
+def main(argv):
+
+	ssh_endpoint = {
+		'name': 'SSH',
+		'protocol': 'tcp',
+		'port': '22',
+		'local_port': '22'
+	}
+	http_endpoint = {
+		'name': 'HTTP',
+		'protocol': 'tcp',
+		'port': '80',
+		'local_port': '80'
+	}
+	rdp_endpoint = {
+		'name': 'RPD',
+		'protocol': 'tcp',
+		'port': '3389',
+		'local_port': '3389'
+	}
+
+
+
+	syslog.syslog("Starting to create instance")
+
+	cmdline = htvcenter_lc_parse_cmdline(argv)
+	instance_userdata = ''
+	if cmdline['IDENTIFIER'] == '':
+		syslog.syslog("Instance identifier missing")
+		sys.exit(1)
+	if cmdline['AMI'] == '':
+		syslog.syslog("AMI identifier missing")
+		sys.exit(1)
+	if cmdline['SIZE'] == '':
+		syslog.syslog("SIZE identifier missing")
+		sys.exit(1)
+	if cmdline['GROUP'] == '':
+		syslog.syslog("GROUP identifier missing")
+		sys.exit(1)
+	instance_group = cmdline['GROUP']
+	if cmdline['USERDATA'] != '':
+		instance_userdata = cmdline['USERDATA']
+		userdata_contents = open(instance_userdata).read()
+
+	instance_name = cmdline['IDENTIFIER']
+	instance_ami = cmdline['AMI']
+	instance_size = cmdline['SIZE']
+	conn = htvcenter_lc_get_connection(cmdline)
+
+	if cmdline['PROVIDER'] == 'AZURE':
+		if cmdline['REGION'] == '':
+			syslog.syslog("REGION identifier missing")
+			sys.exit(1)
+		instance_region = cmdline['REGION']
+		if cmdline['USERNAME'] == '':
+			syslog.syslog("USERNAME identifier missing")
+			sys.exit(1)
+		instance_username =  cmdline['USERNAME']
+		if cmdline['PASSWORD'] == '':
+			syslog.syslog("PASSWORD identifier missing")
+			sys.exit(1)
+		instance_password = cmdline['PASSWORD']
+		if cmdline['SERVICENAME'] == '':
+			syslog.syslog("SERVICENAME identifier missing")
+			sys.exit(1)
+		instance_service_name = cmdline['SERVICENAME']
+
+		# create cloud-service
+		try:
+			result = conn.ex_create_cloud_service(name=instance_service_name, location=instance_region.replace("@", " "))
+		except Exception as e:
+			syslog.syslog("Failed creating cloud-service - %s" % e.message)
+
+
+		# create node in cloud-service
+		kwargs = {
+			"ex_deployment_name": instance_service_name,
+			"ex_deployment_slot": instance_group,
+			"ex_admin_user_id": instance_username
+		}
+		kwargs["size"] = NodeSize(
+			id=instance_size,
+			name=instance_size,
+			ram=0,
+			disk=0,
+			bandwidth=0,
+			price=0,
+			driver=conn
+		)
+		auth = NodeAuthPassword(instance_password, False)
+		kwargs["auth"] = auth
+		kwargs["name"] = instance_name
+		kwargs["image"] = NodeImage(
+			id=instance_ami,
+			name="",
+			driver=conn
+			)
+		try:
+			node = conn.create_node(ex_cloud_service_name=instance_service_name, **kwargs)
+		except Exception as e:
+			syslog.syslog("Failed creating Instance - %s" % e.message)
+
+		print "INSTANCE %s %s %s" % (node.name, node.uuid, node.state)
+
+		syslog.syslog("Created Instance - waiting until it is running")
+		time.sleep( 60 )
+
+		syslog.syslog("Setting endpoints for Instance")
+
+		if cmdline['ENDPOINT'] != '':
+			endpoint_config = []
+			endpoint_param = cmdline['ENDPOINT']
+			endpoint_arr = endpoint_param.split(",")
+			for endpoint in endpoint_arr:
+				if (endpoint == "http"):
+					syslog.syslog("Adding %s endpoint for Instance" % endpoint)
+					endpoint_config.append(http_endpoint)
+				if (endpoint == "rdp"):
+					syslog.syslog("Adding %s endpoint for Instance" % endpoint)
+					endpoint_config.append(rdp_endpoint)
+				if (endpoint == "ssh"):
+					syslog.syslog("Adding %s endpoint for Instance" % endpoint)
+					endpoint_config.append(ssh_endpoint)
+
+			# try in a loop, setting endpoints requires a starting/running instance
+			loop = 0
+			while True:
+				try:
+					syslog.syslog("Applying endpoints to Instance")
+					result1 = conn.ex_set_instance_endpoints(node, endpoint_config, ex_deployment_slot=instance_group)
+					syslog.syslog("After applying endpoints of Instance result - %s" % result1)
+					break
+				except Exception as e:
+					syslog.syslog("Unexpected error setting endpoints of Instance - %s" % e.message)
+
+				time.sleep( 10 )
+				loop += 1
+				if (loop > 10 ):
+					syslog.syslog("Timeout applying endpoints")
+					break
+				else:
+					syslog.syslog("Retrying to apply endpoints")
+
+		syslog.syslog("After applying endpoints")
+
+
+	else:
+		if cmdline['KEYPAIR'] == '':
+			syslog.syslog("KEYPAIR identifier missing")
+			sys.exit(1)
+		instance_keypair = cmdline['KEYPAIR']
+
+		image = [i for i in conn.list_images() if i.name == instance_ami][0]
+		size = [s for s in conn.list_sizes() if s.name == instance_size][0]
+		group = [s for s in conn.ex_list_security_groups() if s.name == instance_group][0]
+
+		# EC2
+		# size = [s for s in conn.list_sizes() if s.id == 't1.micro'][0]
+		# location = [l for l in conn.list_locations() if l.name == zone][0]
+		#key_path = '/home/matt/ec2/dev.pem'
+		#node = conn.deploy_node(name='iuiuiuiu00', image=image, size=size, deploy=script, ssh_username='ubuntu', ssh_key=key_path, ex_keyname=key_name)
+		#node = conn.create_node(name='iuiuiuiu00', image=image, size=size, location=location, ex_keyname=key_name, ex_userdata=userdata_contents)
+
+		try:
+			node = conn.create_node(name=instance_name, image=image, size=size, ex_keyname=instance_keypair, ex_security_groups=[group], ex_userdata=userdata_contents)
+		except Exception as e:
+			syslog.syslog("Failed creating instance - %s" % e.message)
+
+		print "INSTANCE %s %s %s" % (node.name, node.uuid, node.state)
+
+		syslog.syslog("Created Instance")
+
+
+if __name__ == "__main__":
+	main(sys.argv[1:])
+
+
+

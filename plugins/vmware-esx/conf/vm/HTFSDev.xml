@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<Virtual-Machines>
+         <Virtual-Machine>
+            <Name>HTFSDev</Name>
+           	<Host>HTBASESRV7.htbase.com</Host>
+	        <Datacenter>ha-datacenter</Datacenter>
+           	<Guest-Id>ubuntu64Guest</Guest-Id>
+           	<Datastore>HTFS</Datastore>
+           	<Disksize>51200000</Disksize>
+           	<Memory>8192</Memory>
+           	<Number-of-Processor>4</Number-of-Processor>
+           	<Nic-Network>VM Network</Nic-Network>
+           	<Nic-Poweron>0</Nic-Poweron>
+         </Virtual-Machine>
+</Virtual-Machines>

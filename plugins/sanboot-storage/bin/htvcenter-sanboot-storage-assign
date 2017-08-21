@@ -1,0 +1,295 @@
+#!/bin/bash
+# this script automatically assigns aoe and iscsi sanboot images to resources
+#
+# htvcenter Enterprise developed by htvcenter Enterprise GmbH.
+#
+# All source code and content (c) Copyright 2014, htvcenter Enterprise GmbH unless specifically noted otherwise.
+#
+# This source code is released under the htvcenter Enterprise Server and Client License, unless otherwise agreed with htvcenter Enterprise GmbH.
+# The latest version of this license can be found here: http://htvcenter-enterprise.com/license
+#
+# By using this software, you acknowledge having read this license and agree to be bound thereby.
+#
+#           http://htvcenter-enterprise.com
+#
+# Copyright 2014, htvcenter Enterprise GmbH <info@htvcenter-enterprise.com>
+#
+htvcenter_SERVER_BASE_DIR=$(dirname $0)/../../../..
+htvcenter_SERVER_BASE_DIR=$(pushd $htvcenter_SERVER_BASE_DIR > /dev/null && echo $PWD && popd > /dev/null)
+. $htvcenter_SERVER_BASE_DIR/htvcenter/include/htvcenter-functions
+# unblock starting command queue early for non-blocking + ui commands
+# only blocking commands
+
+export htvcenter_SOURCE_DIR="$htvcenter_SERVER_BASE_DIR/htvcenter/"
+. $htvcenter_SERVER_BASE_DIR/htvcenter/include/htvcenter-package-functions
+. $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/sanboot-storage/include/htvcenter-plugin-sanboot-storage-functions
+. $htvcenter_SERVER_BASE_DIR/htvcenter/etc/htvcenter-server.conf
+. $htvcenter_SERVER_BASE_DIR/htvcenter/include/htvcenter-server-functions
+htvcenter_server_get_config
+htvcenter_SERVER_IP=$htvcenter_SERVER_IP_ADDRESS
+resource_id=0
+resource_htvcenterserver=$htvcenter_SERVER_IP_ADDRESS
+htvcenter_web_protocol=$htvcenter_WEB_PROTOCOL
+export LANG=C
+LINEBR='
+'
+DHCPD_CONF="$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/dhcpd/etc/dhcpd.conf"
+SANBOOT_DHCPD_HOST_ISCSI_BOOT_TEMPLATE="$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/sanboot-storage/etc/templates/htvcenter-plugin-sanboot-storage-host.iscsi.template"
+SANBOOT_DHCPD_HOST_AOE_BOOT_TEMPLATE="$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/sanboot-storage/etc/templates/htvcenter-plugin-sanboot-storage-host.aoe.template"
+DHCPD_HOST_TEMPLATE="$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/dhcpd/etc/templates/htvcenter-plugin-dhcpd-host.template"
+
+# define wget to use with https
+if [ "$htvcenter_web_protocol" == "https" ]; then
+	WGET_NO_CERT_CHECK="--no-check-certificate"
+fi
+
+# using the resource_id as the shelf-id
+AOE_SHELF=$resource_id
+export AOE_SHELF
+
+# let only root run this script
+WHOAMI=`whoami`
+if [ "$WHOAMI" != "root" ]; then
+	echo "ERROR: Please run this script as root!"
+	exit 6
+fi
+
+# make sure required deps are installed
+if ! check_sanboot_storage_deps; then
+	if [ "$NON_BLOCKING" != "true" ]; then
+		htvcenter_unblock_starting_queue $@
+	fi
+	exit 1
+fi
+
+function sanboot_storage_usage() {
+	echo "Usage : $0 assign/deassign <-n image-name> <-i storage-ip> <-m resource-mac> <-r resource-id> <-z resource-ip> <-p password> <-t iscsi-san-deployment/aoe-san-deployment> [-a aoe-device-name]"
+	echo ""
+	echo "Optional parameters:"
+	echo "             [--htvcenter-ui-user <username>]"
+	echo "             [--htvcenter-internal-cmd <true/false>]"
+	echo "             [--htvcenter-cmd-mode <regular/background/fork>]"
+	exit 1
+}
+
+
+FULL_COMMANDLINE="$0 $@"
+SANBOOT_COMMAND=$1
+shift
+
+while [ $# -ne 0 ]; do
+	case "$1" in
+		-n)
+			SANBOOT_IMAGE_NAME=$2
+			shift
+			;;
+		-m)
+			SANBOOT_RESOURCE_MAC=$2
+			shift
+			;;
+		-r)
+			SANBOOT_RESOURCE_ID=$2
+			shift
+			;;
+		-z)
+			SANBOOT_RESOURCE_IP=$2
+			shift
+			;;
+		-i)
+			SANBOOT_STORAGE_IP=$2
+			shift
+			;;
+		-p)
+			SANBOOT_IMAGE_PASSWORD=$2
+			shift
+			;;
+		-a)
+			SANBOOT_AOE_DEVICE_NAME=$2
+			shift
+			;;
+		-t)
+			SANBOOT_IMAGE_TYPE=$2
+			shift
+			;;
+		--htvcenter-ui-user)
+			htvcenter_UI_USER=$2
+			shift
+			;;
+		--htvcenter-internal-cmd)
+			htvcenter_INTERNAL_CMD=$2
+			shift
+			;;
+		--htvcenter-cmd-mode)
+			htvcenter_CMD_MODE=$2
+			shift
+			;;
+
+		*)
+			if [ "$NON_BLOCKING" != "true" ]; then
+				htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			fi
+			echo "ERROR: Free commandline arguments are not allowed"
+			sanboot_storage_usage
+			exit 6
+			;;
+	esac
+	shift
+done
+
+if [ "$htvcenter_UI_USER" != "" ]; then
+	htvcenter_UI_USER_PARAMETER=" --htvcenter-ui-user $htvcenter_UI_USER"
+fi
+# main
+if [ "$SANBOOT_COMMAND" == "" ]; then
+	htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+	sanboot_storage_usage
+fi
+
+SANBOOT_HOSTNAME="resource$SANBOOT_RESOURCE_ID"
+
+
+case "$SANBOOT_COMMAND" in 
+
+	assign)
+		echo "sanboot: Assigning $SANBOOT_RESOURCE_MAC ($SANBOOT_RESOURCE_ID) to $SANBOOT_IMAGE_NAME ($SANBOOT_IMAGE_TYPE) using pass $SANBOOT_IMAGE_PASSWORD on storage $SANBOOT_STORAGE_IP" | logger
+
+		LOCK_TIME=`htvcenter_lock_queue aquire dhcpd`
+		trap "htvcenter_lock_queue release dhcpd $LOCK_TIME" EXIT
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+
+		if ! grep $SANBOOT_HOSTNAME $DHCPD_CONF 1>/dev/null; then
+			htvcenter_post_event 0 "assign" 3 "sanboot-storage" "Resource $SANBOOT_HOSTNAME $SANBOOT_RESOURCE_ID $SANBOOT_RESOURCE_MAC $SANBOOT_RESOURCE_IP not existing in the dhcpd-server."
+
+			htvcenter_lock_queue release dhcpd $LOCK_TIME
+			trap '' EXIT
+
+			exit 0
+		fi
+		if grep -A 1 $SANBOOT_HOSTNAME $DHCPD_CONF | grep "# sanboot" 1>/dev/null; then
+			htvcenter_post_event 0 "assign" 3 "sanboot-storage" "Resource $SANBOOT_HOSTNAME $SANBOOT_RESOURCE_ID $SANBOOT_RESOURCE_MAC $SANBOOT_RESOURCE_IP already assigned to sanboot."
+
+			htvcenter_lock_queue release dhcpd $LOCK_TIME
+			trap '' EXIT
+
+			exit 0
+		fi
+
+		htvcenter_post_event 0 "assign" 5 "sanboot-storage" "Removing $SANBOOT_HOSTNAME $SANBOOT_RESOURCE_ID $SANBOOT_RESOURCE_MAC $SANBOOT_RESOURCE_IP"
+
+		cp -f $DHCPD_CONF $DHCPD_CONF.htvcenter-dhcpd-manager
+		# find the resource entry + remove it
+		# first - resource
+		grep -B 10000 -A 4 "^host $SANBOOT_HOSTNAME {" $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/dhcpd/etc/dhcpd.conf | sed -e :a -e '$d;N;2,5ba' -e 'P;D' > $DHCPD_CONF.first_part
+		# after resource
+		grep -A 10000 "^host $SANBOOT_HOSTNAME {" $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/dhcpd/etc/dhcpd.conf | sed '1,5d' > $DHCPD_CONF.last_part
+
+		case "$SANBOOT_IMAGE_TYPE" in
+
+			iscsi-san-deployment)
+				echo "sanboot: $SANBOOT_IMAGE_NAME is from type iscsi-san-deployment" | logger
+
+
+				# now add the resource entry again with the new sanboot config
+				cat $SANBOOT_DHCPD_HOST_ISCSI_BOOT_TEMPLATE | \
+					sed -e "s/SANBOOT_RESOURCE_HOSTNAME/$SANBOOT_HOSTNAME/g" |	\
+					sed -e "s/SANBOOT_RESOURCE_MAC/$SANBOOT_RESOURCE_MAC/g" |	\
+					sed -e "s/SANBOOT_STORAGE_IP/$SANBOOT_STORAGE_IP/g" |	\
+					sed -e "s/SANBOOT_IMAGE_NAME/$SANBOOT_IMAGE_NAME/g" |	\
+					sed -e "s/SANBOOT_RESOURCE_IP/$SANBOOT_RESOURCE_IP/g" > $DHCPD_CONF.sanboot_part
+			;;
+
+			aoe-san-deployment)
+				echo "sanboot: $SANBOOT_IMAGE_NAME is from type aoe-san-deployment ($SANBOOT_AOE_DEVICE_NAME)" | logger
+				SANBOOT_DEVICE=`echo $SANBOOT_AOE_DEVICE_NAME | cut -d'/' -f4`
+				# now add the resource entry again with the new sanboot config
+				cat $SANBOOT_DHCPD_HOST_AOE_BOOT_TEMPLATE | \
+					sed -e "s/SANBOOT_RESOURCE_HOSTNAME/$SANBOOT_HOSTNAME/g" |	\
+					sed -e "s/SANBOOT_RESOURCE_MAC/$SANBOOT_RESOURCE_MAC/g" |	\
+					sed -e "s/SANBOOT_DEVICE/$SANBOOT_DEVICE/g" |	\
+					sed -e "s/SANBOOT_RESOURCE_IP/$SANBOOT_RESOURCE_IP/g" > $DHCPD_CONF.sanboot_part
+			;;
+
+		esac
+
+		# create new config
+		cat $DHCPD_CONF.first_part $DHCPD_CONF.sanboot_part $DHCPD_CONF.last_part > $DHCPD_CONF
+		# restart dhcpd
+		if [ -f "$htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/dhcpd/.running" ]; then
+			$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/dhcpd/etc/init.d/htvcenter-plugin-dhcpd stop
+			if ! $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/dhcpd/etc/init.d/htvcenter-plugin-dhcpd start; then
+				dhcpd_log htvcenter-dhcpd-manager "Removing Resource  $SANBOOT_HOSTNAME $SANBOOT_RESOURCE_ID $SANBOOT_RESOURCE_MAC $SANBOOT_RESOURCE_IP failed. Reverting dhcpd-configuration."
+				# restore previous version, better not to add it than to corrupt the config
+				cp -f $DHCPD_CONF.htvcenter-dhcpd-manager $DHCPD_CONF
+				$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/dhcpd/etc/init.d/htvcenter-plugin-dhcpd start
+			fi
+		fi
+
+		htvcenter_lock_queue release dhcpd $LOCK_TIME
+		trap '' EXIT
+		;;
+
+
+	deassign)
+		LOCK_TIME=`htvcenter_lock_queue aquire dhcpd`
+		trap "htvcenter_lock_queue release dhcpd $LOCK_TIME" EXIT
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+
+		htvcenter_post_event 0 "deassign" 5 "sanboot-storage" "De-Assigning $SANBOOT_RESOURCE_MAC to $SANBOOT_IMAGE_NAME ($SANBOOT_IMAGE_TYPE) using pass $SANBOOT_IMAGE_PASSWORD on storage $SANBOOT_STORAGE_IP"
+
+		dhcpd_lock aquire
+		if ! grep $SANBOOT_HOSTNAME $DHCPD_CONF 1>/dev/null; then
+			htvcenter_post_event 0 "deassign" 3 "sanboot-storage" "Resource $SANBOOT_HOSTNAME $SANBOOT_RESOURCE_ID $SANBOOT_RESOURCE_MAC $SANBOOT_RESOURCE_IP not existing in the dhcpd-server."
+
+			htvcenter_lock_queue release dhcpd $LOCK_TIME
+			trap '' EXIT
+
+			exit 0
+		fi
+		if ! grep -A 1 $SANBOOT_HOSTNAME $DHCPD_CONF | grep "# sanboot" 1>/dev/null; then
+			htvcenter_post_event 0 "deassign" 3 "sanboot-storage" "Resource $SANBOOT_HOSTNAME $SANBOOT_RESOURCE_ID $SANBOOT_RESOURCE_MAC $SANBOOT_RESOURCE_IP already de-assigned from sanboot."
+
+			htvcenter_lock_queue release dhcpd $LOCK_TIME
+			trap '' EXIT
+
+			exit 0
+		fi
+
+		htvcenter_post_event 0 "deassign" 5 "sanboot-storage" "Removing $SANBOOT_HOSTNAME $SANBOOT_RESOURCE_ID $SANBOOT_RESOURCE_MAC $SANBOOT_RESOURCE_IP"
+
+		cp -f $DHCPD_CONF $DHCPD_CONF.htvcenter-dhcpd-manager
+		# find the resource entry + remove it
+		# first - resource
+		grep -B 10000 -A 10 "^host $SANBOOT_HOSTNAME {" $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/dhcpd/etc/dhcpd.conf | sed -e :a -e '$d;N;2,11ba' -e 'P;D' > $DHCPD_CONF.first_part
+		# after resource
+		grep -A 10000 "^host $SANBOOT_HOSTNAME {" $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/dhcpd/etc/dhcpd.conf | sed '1,11d' > $DHCPD_CONF.last_part
+		# create the new resouce config using the dhcpd-plugin template
+		cat $DHCPD_HOST_TEMPLATE | \
+			sed -e "s/DHCPD_RESOURCE_HOSTNAME/$SANBOOT_HOSTNAME/g" |	\
+			sed -e "s/DHCPD_RESOURCE_MAC/$SANBOOT_RESOURCE_MAC/g" |	\
+			sed -e "s/DHCPD_RESOURCE_IP/$SANBOOT_RESOURCE_IP/g" > $DHCPD_CONF.host_part
+		# create new config
+		cat $DHCPD_CONF.first_part $DHCPD_CONF.host_part $DHCPD_CONF.last_part > $DHCPD_CONF
+		# restart dhcpd
+		if [ -f "$htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/dhcpd/.running" ]; then
+			$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/dhcpd/etc/init.d/htvcenter-plugin-dhcpd stop
+			if ! $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/dhcpd/etc/init.d/htvcenter-plugin-dhcpd start; then
+				dhcpd_log htvcenter-dhcpd-manager "Removing Resource  $SANBOOT_HOSTNAME $SANBOOT_RESOURCE_ID $SANBOOT_RESOURCE_MAC $SANBOOT_RESOURCE_IP failed. Reverting dhcpd-configuration."
+				# restore previous version, better not to add it than to corrupt the config
+				cp -f $DHCPD_CONF.htvcenter-dhcpd-manager $DHCPD_CONF
+				$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/dhcpd/etc/init.d/htvcenter-plugin-dhcpd start
+			fi
+		fi
+
+		htvcenter_lock_queue release dhcpd $LOCK_TIME
+		trap '' EXIT
+		;;
+
+
+	*)
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+		sanboot_storage_usage
+		;;
+
+
+esac
+

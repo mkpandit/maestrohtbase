@@ -1,0 +1,106 @@
+.htmlobject_td.role_id,
+.htmlobject_td.permission_group_id {
+	width: 40px;
+}
+.htmlobject_td.name,
+.htmlobject_td.permission_group_name {
+	width: 150px;
+}
+.htmlobject_td.edit {
+	text-align: center;
+	vertical-align: top;
+	width: 40px;
+}
+.role2groups {
+	width: 250px;
+}
+.togglebutton {
+	font-weight: normal;
+	display: block;
+	float:left;
+	margin: 0 0 0 0;
+	text-decoration:none;
+	border: 1px solid;
+	width:20px;
+	line-height:20px;
+	text-align:center;
+	color:black;
+}
+
+div.span4 div.wrapper {
+	width: 95%;
+	padding: 0 0 0 23px !important;
+}
+
+
+div.span4 div.wrapper div.htmlobject_box {
+	margin: 0 0 10px 0;
+	padding: 0 0 10px 0;
+}
+
+div.span4 div.wrapper div.htmlobject_box div.left {
+	width: 70%;
+	float:left;
+}
+
+div.span4 div.wrapper div.htmlobject_box div.left label {
+	margin: 0;
+}
+
+div.span4 div.wrapper div.htmlobject_box div.right {
+	width: 25%;
+	float: right;
+}
+
+div.span4 div.wrapper div.htmlobject_box div.right input.checkbox {
+	float: right;
+}
+
+.wrapper .htmlobject_box {
+	border-bottom: 1px solid #ccc;
+}
+
+#role_administration_tab1 #buttons {
+	top:0px;
+}
+
+#role_administration_tab1 #role_comment_box{
+	top:0px;
+}
+
+.wrapper .htmlobject_box label,
+.wrapper .htmlobject_box input {
+	cursor: pointer;
+}
+
+.permissionbox {
+	height: 290px;
+	background: #f5f5f5;
+	border: 1px solid #ccc;
+	padding: 10px;
+	border: 1px solid #ccc;
+	background: #f5f5f5;
+	overflow: auto;
+	overflow-y : scroll;
+}
+.permission_label, .permission_label.expand {
+	text-decoration: none;
+	color: #444;
+	background: url(/htvcenter/base/img/menu/tree_expand.png) no-repeat 0 -5px;
+	padding-left: 22px;
+	display:block;
+}
+.permission_label.collapse {
+		background: url(/htvcenter/base/img/menu/tree_collapse.png) no-repeat 0 -5px;
+		display: block;
+		visibility: visible;
+}
+
+#storageformaddn #role_comment {
+	width: 100%;
+	border: 1px solid #e9e9e9;
+}
+
+#storageformaddn .role2groups{
+	width: 100%;
+}

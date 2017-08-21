@@ -1,0 +1,355 @@
+htvcenter_SERVER_CONF="/usr/share/htvcenter/etc/htvcenter-server.conf"
+htvcenter_DB_BACKUP_DIR="/var/spool/htvcenter_db"
+htvcenter_alerts="cloud_price_alert"
+htvcenter_limits="cloud_price_limits"
+
+
+if [ ! -e "$htvcenter_SERVER_CONF" ]; then
+        echo "ERROR: $htvcenter_SERVER_CONF is not existing"
+        exit 1
+fi
+. $htvcenter_SERVER_CONF
+
+if  [ "$htvcenter_DATABASE_PASSWORD" != "" ]; then
+	DB_PASS="-p$htvcenter_DATABASE_PASSWORD"
+fi
+
+if ! which mysql 1>/dev/null 2>&1; then
+	echo "ERROR: Mysql client 'mysql' not installed/found on this system" | logger
+	exit 1
+else
+	export MYSQL_CLIENT=`which mysql`
+fi
+
+MYSQL="$MYSQL_CLIENT -N -B -u $htvcenter_DATABASE_USER $DB_PASS --host $htvcenter_DATABASE_SERVER htvcenter"
+echo "$MYSQL_CLIENT -N -B -u $htvcenter_DATABASE_USER $DB_PASS --host $htvcenter_DATABASE_SERVER htvcenter"
+
+function htvcenter_alerts_usage() {
+	echo "Usage : $0 alert -u <cloud-username>"
+	exit 1
+}
+
+function getpercent() {
+	
+	ARRAY=()
+	while read percent idb
+	do
+		echo "${idb}: ${percent}%"
+		ARRAY+=(${percent})
+		
+	done < <(echo "SELECT percent, budget_id from cloud_price_alert" | mysql htvcenter -u $htvcenter_DATABASE_USER -p $DB_PASS)
+
+	echo ${#ARRAY[@]}
+}
+
+function getprices() {
+	USERNAME=$1
+
+	USERID=''
+	EMAIL=''
+
+	while read userid usermail
+	do
+		USERID="${userid}"
+		EMAIL="${usermail}"
+	done < <(echo "SELECT cu_id, cu_email from cloud_users where cu_name=\"$USERNAME\"" | mysql htvcenter -u $htvcenter_DATABASE_USER -p $DB_PASS)
+
+	PRICE=''
+
+	while read pricee
+	do
+		PRICE="${pricee}"
+	done < <(echo "SELECT cc_value from cloud_config where cc_key=\"cloud_1000_ccus\"" | mysql htvcenter -u $htvcenter_DATABASE_USER -p $DB_PASS)
+
+	cpupoints=0
+	memorypoints=0
+	storagepoints=0
+	vmpoints=0
+	netpoints=0
+
+	while read ccu comment
+	do
+		SKIP="0"
+
+		if echo "${comment}" | grep -q "CPU"; then
+		   cpupoints="$((cpupoints+${ccu}))"
+		   SKIP="1"
+		fi
+
+		if echo "${comment}" | grep -q "Memory"; then
+		 	if [ "$SKIP" != "1" ]; then
+		   		memorypoints="$((memorypoints+${ccu}))"
+		   		SKIP="1"
+			fi
+		fi
+
+		if echo "${comment}" | grep -q "RAM"; then
+			if [ "$SKIP" != "1" ]; then
+		   		memorypoints="$((memorypoints+${ccu}))"
+		   	fi
+		fi
+
+		if echo "${comment}" | grep -q "Disk Space"; then
+		   	if [ "$SKIP" != "1" ]; then
+		   		storagepoints="$((storagepoints+${ccu}))"
+		   		SKIP="1"
+			fi
+		fi
+
+		if echo "${comment}" | grep -q "MB"; then
+		   	if [ "$SKIP" != "1" ]; then
+		   		storagepoints="$((storagepoints+${ccu}))"
+		   		SKIP="1"
+			fi
+		fi
+
+		if echo "${comment}" | grep -q "GB"; then
+		   	if [ SKIP != 1 ]; then
+		   		storagepoints="$((storagepoints+${ccu}))"
+		   		SKIP=1
+			fi
+		fi
+
+		if echo "${comment}" | grep -q "storage"; then
+		   	if [ "$SKIP" != "1" ]; then
+		   		storagepoints="$((storagepoints+${ccu}))"
+		   		SKIP="1"
+			fi
+		fi
+
+		if echo "${comment}" | grep -q "Kernel"; then
+			if [ "$SKIP" != "1" ]; then
+		   		vmpoints="$((vmpoints+${ccu}))"
+		   		SKIP="1"
+		   	fi
+		fi
+
+		if echo "${comment}" | grep -q "KVM"; then
+			if [ "$SKIP" != "1" ]; then
+		   		vmpoints="$((vmpoints+${ccu}))"
+		   		SKIP="1"
+		   	fi
+		fi
+
+		if echo "${comment}" | grep -q "VM"; then
+			if [ "$SKIP" != "1" ]; then
+		   		vmpoints="$((vmpoints+${ccu}))"
+		   		SKIP="1"
+		   	fi
+		fi
+
+		if echo "${comment}" | grep -q "Network"; then
+			if [ "$SKIP" != "1" ]; then
+		   		netpoints="$((netpoints+${ccu}))"
+		   		SKIP="1"
+		   	fi
+		fi
+		
+	done < <(echo "SELECT ct_ccu_charge, ct_comment from cloud_transaction where ct_cu_id=\"$USERID\"" | mysql htvcenter -u $htvcenter_DATABASE_USER -p $DB_PASS)
+
+	
+}
+
+function funcmail() {
+	MAILADDR=$1
+	paramval=$2
+	percent=$3
+	username=$4
+	MAILTEXT="Hello $username,Your budget set for the $paramval resource is reaching its limit set. You are currently reaching $percent% according to the alert settings.In order for you to manage your resources, please log into your Cloud portal to manage your existing Virtual Machines consuming the resources. Thank you"
+	
+	echo "$MAILTEXT" >> /tmp/mailsenderz
+	mail -s "Fortis Resource Alert" "$MAILADDR" < /tmp/mailsenderz
+}
+
+function getparams() {
+	
+	parname=$1
+  	USERNAME=$2
+  	val=$3
+  	percent=$4
+
+  	echo "Checking $parname for user $user - limit:$val\$, alert on $percent%" 
+  	getprices "$USERNAME" 
+
+	echo "price = $PRICE"
+	echo "limit = $val"
+	echo "percent = $percent"
+	
+	MAINPOINTS=$(($val * 1000))
+	PERPOINTS=$(($MAINPOINTS / 1000))
+	PERPOINTS=$(($PERPOINTS*$percent))
+
+	echo "limit points = $MAINPOINTS"
+	echo "percent points = $PERPOINTS"
+
+	if [ "$parname" == "cpu" ]; then
+		if [ "$cpupoints" -lt "$PERPOINTS" ]; then
+			#mail
+			funcmail "$EMAIL" "cpu" "$percent" "$USERNAME"
+		fi
+	fi
+
+	if [ "$parname" == "storage" ]; then
+		if [ "$storagepoints" -lt "$PERPOINTS" ]; then
+			#mail
+			funcmail "$EMAIL" "storage" "$percent" "$USERNAME"
+		fi
+	fi
+
+	if [ "$parname" == "memory" ]; then
+		if [ "$memorypoints" -lt "$PERPOINTS" ]; then
+			#mail
+			funcmail "$EMAIL" "memory" "$percent" "$USERNAME"
+		fi
+	fi
+
+	if [ "$parname" == "network" ]; then
+		if [ "$networkpoints" -lt "$PERPOINTS" ]; then
+			#mail
+			funcmail "$EMAIL" "networking" "$percent" "$USERNAME"
+		fi
+	fi
+
+	if [ "$parname" == "vm" ]; then
+		if [ "$vmpoints" -lt "$PERPOINTS" ]; then
+			#mail
+			funcmail "$EMAIL" "virtualization" "$percent" "$USERNAME"
+		fi
+	fi
+}
+
+function htvcenter_alerts() {
+	
+	MYDATE=`date +%s`
+	
+
+	#DATE_START=`$MYSQL "select date_start from cloud_price_limits where user=\"$PARAM_USER\""`
+	
+	
+	while read date_start date_end name cpu storage memory network vm idb
+	do
+		if [ "${date_start}" == "unlim" ] && [ "${date_end}" == "unlim" ]
+		then
+		{
+		        PERIOD="1"
+		}
+		else
+		{		
+				START=`date --date="${date_start}" +%s`
+				END=`date --date="${date_end}" +%s`
+
+				if [ "$START" -lt "$MYDATE" ] && [ "$MYDATE" -lt "$END" ]
+				then
+					{
+						PERIOD="1"
+					}
+					else
+					{	
+			        	PERIOD="0"
+			        }
+		    	fi
+		}
+		fi
+
+		 	if [ "$PERIOD" == "1" ]
+			then
+			{
+			        echo "${name} IN period"
+
+			        while read percent
+					do
+						
+						if [ "${percent}" != "percent" ]; then
+								
+
+							  	if [ "${cpu}" != "0" ]; then
+						        	
+						        	getparams 'cpu' "$PARAM_USER" "${cpu}" "${percent}"
+						        fi
+
+						        if [ "${storage}" != "0" ]; then
+						        	
+						        	getparams 'storage' "$PARAM_USER" "${storage}" "${percent}"
+						        fi
+
+						        if [ "${memory}" != "0" ]; then
+						        	
+						        	getparams 'memory' "$PARAM_USER" "${memory}" "${percent}"
+						        fi
+
+						        if [ "${network}" != "0" ]; then
+						        	
+						        	getparams 'network' "$PARAM_USER" "${network}" "${percent}"
+						        fi
+
+						        if [ "${vm}" != "0" ]; then
+						        	
+						        	getparams 'vm' "$PARAM_USER" "${vm}" "${percent}"
+						        fi
+		
+						 fi
+					
+					done < <(echo "SELECT percent from cloud_price_alert where budget_id=${idb}" | mysql htvcenter -u $htvcenter_DATABASE_USER -p $DB_PASS)
+
+
+			      
+
+			    
+
+			        echo "==================="
+			}
+			else
+			{
+			        echo "${name} NOT IN period"
+			        echo "==================="
+			}
+			fi
+		
+		 
+		 #echo "..${date_start}..${date_end}..${name}....${cpu}..${storage}..${memory}..${network}..${vm}!!!"
+	done < <(echo "SELECT date_start, date_end, name, cpu, storage, memory, network, vm, id from cloud_price_limits where user=\"$PARAM_USER\"" | mysql htvcenter -u $htvcenter_DATABASE_USER -p $DB_PASS)
+
+	exit 1;
+}
+
+
+
+
+HTVCENTER_COMMAND=$1
+shift
+
+while [ $# -ne 0 ]; do
+	case "$1" in
+		-u)
+			PARAM_USER=$2
+			shift
+			;;
+		*)
+			echo "ERROR: Free commandline arguments are not allowed"
+			htvcenter_alerts_usage
+			exit 6
+			;;
+	esac
+	shift
+done
+
+
+
+
+# main
+case "$HTVCENTER_COMMAND" in 
+
+	alert)
+		htvcenter_alerts
+		;;
+
+	percent)
+		getpercent
+		;;
+
+	*)
+		htvcenter_alerts_usage
+		;;
+
+esac
+

@@ -1,0 +1,146 @@
+# main
+case "$HYPERV_COMMAND" in
+
+
+	add_vs)
+		# check requirements
+		if [ "$HYPERV_VSWITCH_NAME" == "" ]; then
+			htvcenter_post_event 0 "add_vs" 3 "htvcenter-hyperv-network" "Wrong usage, VSwitch Name missing!"
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			hyperv_usage
+		fi
+		if [ "$HYPERV_VSWITCH_PORTS" == "" ]; then
+			htvcenter_post_event 0 "add_vs" 3 "htvcenter-hyperv-network" "Wrong usage, Adapater Name missing!"
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			hyperv_usage
+		fi
+
+		LOCK_TIME=`htvcenter_lock_queue aquire hyperv`
+		trap "htvcenter_lock_queue release hyperv $LOCK_TIME" EXIT
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+
+		# use API to create the vswitch / this commands reconnects the network on the Hyper-V host
+		# this will make winexe hang and not returning -> we give it a timeout and stop it manually
+		$WINEXE -A $htvcenter_HYPERV_HOST_CONF_DIR/$HYPERV_HOST_IP.conf //$HYPERV_HOST_IP "powershell.exe -inputformat none -ExecutionPolicy RemoteSigned New-VMSwitch -Name '$HYPERV_VSWITCH_NAME' -NetAdapterName '$HYPERV_VSWITCH_PORTS' -AllowManagementOS \$true -Notes 'Parent OS, VMs, LAN'" &
+		cmd_pid=$!
+		sleep $HYPERV_NETWORK_CMD_TIMEOUT
+		kill $cmd_pid
+
+
+#		if ! $WINEXE -A $htvcenter_HYPERV_HOST_CONF_DIR/$HYPERV_HOST_IP.conf //$HYPERV_HOST_IP "powershell.exe -inputformat none -ExecutionPolicy RemoteSigned New-VMSwitch -Name '$HYPERV_VSWITCH_NAME' -NetAdapterName '$HYPERV_VSWITCH_PORTS' -AllowManagementOS \$true -Notes 'Parent OS, VMs, LAN'"; then
+#			htvcenter_post_event 0 "add_vs" 3 "htvcenter-hyperv-network" "Failed to create VSwitch $HYPERV_VSWITCH_NAME on Hyper-V Host $HYPERV_HOST_IP!"
+#
+#			htvcenter_lock_queue release hyperv $LOCK_TIME
+#			trap '' EXIT
+#
+#			exit 1
+#		fi
+
+		htvcenter_lock_queue release hyperv $LOCK_TIME
+		trap '' EXIT
+
+		$0 post_net_config -i $HYPERV_HOST_IP --htvcenter-internal-cmd true
+		;;
+
+	remove_vs)
+		# check requirements
+		if [ "$HYPERV_VSWITCH_NAME" == "" ]; then
+			htvcenter_post_event 0 "remove_vs" 3 "htvcenter-hyperv-network" "Wrong usage, VSwitch Name missing!"
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			hyperv_usage
+		fi
+
+		LOCK_TIME=`htvcenter_lock_queue aquire hyperv`
+		trap "htvcenter_lock_queue release hyperv $LOCK_TIME" EXIT
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+
+		# use API to remove the vswitch
+		# use API to create the vswitch / this commands reconnects the network on the Hyper-V host
+		# this will make winexe hang and not returning -> we give it a timeout and stop it manually
+		$WINEXE -A $htvcenter_HYPERV_HOST_CONF_DIR/$HYPERV_HOST_IP.conf //$HYPERV_HOST_IP "powershell.exe -inputformat none -ExecutionPolicy RemoteSigned Remove-VMSwitch -Name '$HYPERV_VSWITCH_NAME' -Force" &
+		cmd_pid=$!
+		sleep $HYPERV_NETWORK_CMD_TIMEOUT
+		kill $cmd_pid
+
+#		if ! $WINEXE -A $htvcenter_HYPERV_HOST_CONF_DIR/$HYPERV_HOST_IP.conf //$HYPERV_HOST_IP "powershell.exe -inputformat none -ExecutionPolicy RemoteSigned Remove-VMSwitch -Name '$HYPERV_VSWITCH_NAME'"; then
+#			htvcenter_post_event 0 "remove_vs" 3 "htvcenter-hyperv-network" "Failed to remove VSwitch $HYPERV_VSWITCH_NAME on Hyper-V Host $HYPERV_HOST_IP!"
+#
+#			htvcenter_lock_queue release hyperv $LOCK_TIME
+#			trap '' EXIT
+#
+#			exit 1
+#		fi
+
+		htvcenter_lock_queue release hyperv $LOCK_TIME
+		trap '' EXIT
+
+		$0 post_net_config -i $HYPERV_HOST_IP --htvcenter-internal-cmd true
+		;;
+
+
+	list)
+		# run API command
+		$WINEXE -A $htvcenter_HYPERV_HOST_CONF_DIR/$HYPERV_HOST_IP.conf //$HYPERV_HOST_IP 'powershell.exe -inputformat none -ExecutionPolicy RemoteSigned Get-VMSwitch |  fl Name' | cut -d ':' -f2- | sed -e "s/ //"
+		;;
+
+
+	post_net_config)
+		HYPERV_STATS="$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/hyperv/web/hyperv-stat/$HYPERV_HOST_IP.net_config"
+		HYPERV_STATS_TMP="$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/hyperv/web/hyperv-stat/$HYPERV_HOST_IP.net_config.tmp"
+		rm -f $HYPERV_STATS
+		> $HYPERV_STATS_TMP
+IFS='
+'
+		for VS in `$WINEXE -A $htvcenter_HYPERV_HOST_CONF_DIR/$HYPERV_HOST_IP.conf //$HYPERV_HOST_IP 'powershell.exe -inputformat none -ExecutionPolicy RemoteSigned Get-VMSwitch |  fl ElementName' | cut -d ':' -f2- | sed -e "s/ //"`; do
+			if ! echo $VS | grep '[[:alnum:]]' 1>/dev/null; then
+				continue
+			fi
+			VS=`echo $VS | sed -e "s/\r//g"`
+			VSTMP=`mktemp /tmp/hyperv-vm.XXXXXX` || exit 1
+			VS_DETAILS=""
+			IFS="$ORG_IFS"
+			$WINEXE -A $htvcenter_HYPERV_HOST_CONF_DIR/$HYPERV_HOST_IP.conf //$HYPERV_HOST_IP "powershell.exe -inputformat none -ExecutionPolicy RemoteSigned Get-VMSwitch -Name '$VS' | fl *" | grep '[[:alnum:]]' > $VSTMP
+			sed -i -e 's/: /="/g; s/ * //; s/{//g; s/}//g; s/\r/"/g' $VSTMP
+			VS_DETAILS=`tr '\n' '|'  < $VSTMP`
+			echo $VS_DETAILS >> $HYPERV_STATS_TMP
+			rm -f $VSTMP
+		done
+		chmod 777 $HYPERV_STATS_TMP
+		/bin/mv $HYPERV_STATS_TMP $HYPERV_STATS
+		;;
+
+
+
+	post_net_adapters)
+		HYPERV_STATS="$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/hyperv/web/hyperv-stat/$HYPERV_HOST_IP.net_adapters"
+		HYPERV_STATS_TMP="$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/hyperv/web/hyperv-stat/$HYPERV_HOST_IP.net_adapters.tmp"
+		rm -f $HYPERV_STATS
+		> $HYPERV_STATS_TMP
+IFS='
+'
+		for VS in `$WINEXE -A $htvcenter_HYPERV_HOST_CONF_DIR/$HYPERV_HOST_IP.conf //$HYPERV_HOST_IP 'powershell.exe -inputformat none -ExecutionPolicy RemoteSigned Get-NetAdapter |  fl Name' | cut -d ':' -f2- | sed -e "s/ //"`; do
+			if ! echo $VS | grep '[[:alnum:]]' 1>/dev/null; then
+				continue
+			fi
+			VS=`echo $VS | sed -e "s/\r//g"`
+			VSTMP=`mktemp /tmp/hyperv-vm.XXXXXX` || exit 1
+			VS_DETAILS=""
+			IFS="$ORG_IFS"
+			$WINEXE -A $htvcenter_HYPERV_HOST_CONF_DIR/$HYPERV_HOST_IP.conf //$HYPERV_HOST_IP "powershell.exe -inputformat none -ExecutionPolicy RemoteSigned Get-NetAdapter -Name '$VS' | fl Name,ifDesc" | grep '[[:alnum:]]' > $VSTMP
+			sed -i -e 's/: /="/g; s/ * //; s/{//g; s/}//g; s/\r/"/g' $VSTMP
+			VS_DETAILS=`tr '\n' '|'  < $VSTMP`
+			echo "name="$VS"|"$VS_DETAILS >> $HYPERV_STATS_TMP
+			rm -f $VSTMP
+		done
+		chmod 777 $HYPERV_STATS_TMP
+		/bin/mv $HYPERV_STATS_TMP $HYPERV_STATS
+		;;
+
+	*)
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+		hyperv_usage
+		;;
+
+
+esac
+

@@ -1,0 +1,135 @@
+#!/bin/bash
+# this script manages the linuxcoe profiles
+#
+# htvcenter Enterprise developed by htvcenter Enterprise GmbH.
+#
+# All source code and content (c) Copyright 2014, htvcenter Enterprise GmbH unless specifically noted otherwise.
+#
+# This source code is released under the htvcenter Enterprise Server and Client License, unless otherwise agreed with htvcenter Enterprise GmbH.
+# The latest version of this license can be found here: http://htvcenter-enterprise.com/license
+#
+# By using this software, you acknowledge having read this license and agree to be bound thereby.
+#
+#           http://htvcenter-enterprise.com
+#
+# Copyright 2014, htvcenter Enterprise GmbH <info@htvcenter-enterprise.com>
+#
+# some defines
+htvcenter_RESOURCE_PARAMETER_FILE="/var/htvcenter/htvcenter-resource.conf"
+# be sure cmd output is english
+export LANGUAGE=C
+export LANG=C
+export LC_ALL=C
+# cmdline params
+htvcenter_SERVER_IP=$1
+RESOURCE_MAC=$2
+
+function try_to_get_resource_parameters() {
+	local RES_MAC=$1
+	# gather resource parameters, try http first
+	mkdir -p `dirname $htvcenter_RESOURCE_PARAMETER_FILE`
+	rm -f $htvcenter_RESOURCE_PARAMETER_FILE
+	if ! wget -O $htvcenter_RESOURCE_PARAMETER_FILE "http://$htvcenter_SERVER_IP/htvcenter/action/resource-monitor.php?resource_command=get_parameter&resource_mac=$RES_MAC"; then
+		if ! wget --no-check-certificate -O $htvcenter_RESOURCE_PARAMETER_FILE "https://$htvcenter_SERVER_IP/htvcenter/action/resource-monitor.php?resource_command=get_parameter&resource_mac=$RES_MAC"; then
+			echo "ERROR: Could not get the resource parameters from htvcenter Server at $htvcenter_SERVER_IP!"
+			return 1
+		else
+			# wget returned ok but are the parameters valid ?
+			unset resource_id
+			. $htvcenter_RESOURCE_PARAMETER_FILE
+			if [ "$resource_id" != "" ]; then
+				return 0
+			else
+				return 1
+			fi
+		fi
+	else
+		# wget returned ok but are the parameters valid ?
+		unset resource_id
+		. $htvcenter_RESOURCE_PARAMETER_FILE
+		if [ "$resource_id" != "" ]; then
+			return 0
+		else
+			return 1
+		fi
+	fi
+}
+
+
+# checks
+if [ "$htvcenter_SERVER_IP" == "" ]; then
+	echo "This tool automatically install the htvcenter Client on a Linux system"
+	echo "Usage: $0 <htvcenter_SERVER_IP> [RESOURCE_MAC]"
+	exit 1
+fi
+# are we running from kickstart post ?
+if [ "$RESOURCE_MAC" != "" ]; then
+	if ! ifconfig -a | grep -i $RESOURCE_MAC &>/dev/null; then
+		echo "ERROR: Mac address $RESOURCE_MAC not found on this system!"
+		exit 1
+	fi
+else
+	# we build a list of all available mac addresses
+	for MAC in `ifconfig -a | grep ^eth | awk '{ print $5 }'`; do
+		RESOURCE_MAC="$RESOURCE_MAC $MAC"
+	done
+fi
+# try to find the right nic
+FOUND_htvcenter_NIC=false
+for AVAILABLE_MAC in `echo $RESOURCE_MAC`; do
+	if try_to_get_resource_parameters $AVAILABLE_MAC; then
+		FOUND_htvcenter_NIC=true
+		break
+	fi
+done
+if [ "$FOUND_htvcenter_NIC" == "false" ]; then
+	echo "ERROR: Could not find out which Network card to use!"
+	exit 1
+fi
+# here we have valid resource-parameter config file
+. $htvcenter_RESOURCE_PARAMETER_FILE
+if [ "$htvcenter_web_protocol" == "https" ]; then
+	WGET_NO_CERT_CHECK="--no-check-certificate"
+fi
+
+echo "Getting htvcenter-client package"
+# run default htvcenter-client boot-service
+KERNEL_ARCH=`uname -m`
+if echo $KERNEL_ARCH | grep i.*86 1>/dev/null; then
+	# i386
+	htvcenter_CLIENT_ARCH=i386
+else
+	htvcenter_CLIENT_ARCH=$KERNEL_ARCH
+fi
+# find out the short distri name
+if [ -f /etc/debian_version ]; then
+	# debian or ubuntu, try to find out without lsb-release which may not be installed
+	if grep -i ubuntu /etc/apt/sources.list 1>/dev/null; then
+		htvcenter_SHORT_DISTRI_NAME="ubuntu"
+	else
+		htvcenter_SHORT_DISTRI_NAME="debian"
+	fi
+elif [ -f /etc/redhat-release ]; then
+	htvcenter_SHORT_DISTRI_NAME="centos"
+fi
+
+cd /
+echo "Getting htvcenter-client package"
+if ! wget $WGET_NO_CERT_CHECK -O htvcenter-client.tgz "$htvcenter_web_protocol://$htvcenter_SERVER_IP/htvcenter/boot-service/htvcenter-client.tgz"; then
+	rm -f htvcenter-client.tgz
+	echo "ERROR: Could not download the htvcenter-client package from htvcenter Server $htvcenter_SERVER_IP!"
+	exit 1
+fi
+
+tar -xzf htvcenter-client.tgz
+rm -f htvcenter-client.tgz
+ln -sf $resource_basedir/htvcenter/etc/init.d/htvcenter-client /etc/init.d/htvcenter-client
+export htvcenter_SERVER_BASE_DIR=$resource_basedir
+. $resource_basedir/htvcenter/include/htvcenter-functions
+htvcenter_chkconfig add htvcenter-client
+
+
+
+
+
+

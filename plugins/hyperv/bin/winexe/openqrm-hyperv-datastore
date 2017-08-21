@@ -1,0 +1,146 @@
+#!/bin/bash
+# this script automatically manages hyperv datastores
+#
+# htvcenter Enterprise developed by htvcenter Enterprise GmbH.
+#
+# All source code and content (c) Copyright 2014, htvcenter Enterprise GmbH unless specifically noted otherwise.
+#
+# This source code is released under the htvcenter Enterprise Server and Client License, unless otherwise agreed with htvcenter Enterprise GmbH.
+# The latest version of this license can be found here: http://htvcenter-enterprise.com/license
+#
+# By using this software, you acknowledge having read this license and agree to be bound thereby.
+#
+#           http://htvcenter-enterprise.com
+#
+# Copyright 2014, htvcenter Enterprise GmbH <info@htvcenter-enterprise.com>
+#
+htvcenter_SERVER_BASE_DIR=$(dirname $0)/../../../..
+htvcenter_SERVER_BASE_DIR=$(pushd $htvcenter_SERVER_BASE_DIR > /dev/null && echo $PWD && popd > /dev/null)
+. $htvcenter_SERVER_BASE_DIR/htvcenter/include/htvcenter-functions
+# unblock starting command queue early for non-blocking + ui commands
+HYPERV_COMMAND=$1
+export htvcenter_SOURCE_DIR="$htvcenter_SERVER_BASE_DIR/htvcenter/"
+. $htvcenter_SERVER_BASE_DIR/htvcenter/include/htvcenter-package-functions
+. $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/hyperv/include/htvcenter-plugin-hyperv-functions
+. $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/hyperv/etc/htvcenter-plugin-hyperv.conf
+. $htvcenter_SERVER_BASE_DIR/htvcenter/etc/htvcenter-server.conf
+. $htvcenter_SERVER_BASE_DIR/htvcenter/include/htvcenter-server-functions
+htvcenter_server_get_config
+export resource_htvcenterserver=$htvcenter_SERVER_IP_ADDRESS
+htvcenter_HYPERV_HOST_CONF_DIR="$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/hyperv/conf/host"
+htvcenter_HYPERV_STAT_DIR="$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/hyperv/web/hyperv-stat/"
+export LANG=C
+ORG_IFS="$IFS"
+WINEXE="$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/hyperv/bin/winexe/winexe"
+
+# let only root run this script
+WHOAMI=`whoami`
+if [ "$WHOAMI" != "root" ]; then
+	echo "ERROR: Please run this script as root!"
+	exit 6
+fi
+
+# make sure required deps are installed
+if ! check_hyperv_deps; then
+	if [ "$NON_BLOCKING" != "true" ]; then
+		htvcenter_unblock_starting_queue $@
+	fi
+	exit 1
+fi
+
+
+function hyperv_usage() {
+	echo "Usage : $0 create <-i hyperv-server-ip> <-s size-in-MB> <-l volume-path> <-n volume-name>"
+	echo "        $0 clone <-i hyperv-server-ip> <-l volume-path> <-n volume-name> <-c volume-clone-name>"
+	echo "        $0 remove <-i hyperv-server-ip> <-l volume-path>"
+	echo "Optional parameters:"
+	echo "             [--htvcenter-ui-user <username>]"
+	echo "             [--htvcenter-internal-cmd <true/false>]"
+	echo "             [--htvcenter-cmd-mode <regular/background/fork>]"
+	exit 1
+}
+
+
+
+FULL_COMMANDLINE="$0 $@"
+HYPERV_COMMAND=$1
+shift
+while [ $# -ne 0 ]; do
+	case "$1" in
+		-n)
+			HYPERV_VOLUME_NAME=$2
+			shift
+			;;
+		-i)
+			HYPERV_HOST_IP=$2
+			shift
+			;;
+		-l)
+			HYPERV_VOLUME_PATH=$2
+			shift
+			;;
+		-s)
+			HYPERV_VOLUME_SIZE=$2
+			shift
+			;;
+		-c)
+			HYPERV_VOLUME_CLONE_NAME=$2
+			shift
+			;;
+		--htvcenter-ui-user)
+			htvcenter_UI_USER=$2
+			shift
+			;;
+		--htvcenter-internal-cmd)
+			htvcenter_INTERNAL_CMD=$2
+			shift
+			;;
+		--htvcenter-cmd-mode)
+			htvcenter_CMD_MODE=$2
+			shift
+			;;
+
+		*)
+			if [ "$NON_BLOCKING" != "true" ]; then
+				htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			fi
+			echo "ERROR: Free commandline arguments are not allowed"
+			hyperv_usage
+			exit 6
+			;;
+	esac
+	shift
+done
+
+
+# command set ?
+if [ "$HYPERV_COMMAND" == "" ]; then
+	htvcenter_post_event 0 "parameter_check" 3 "htvcenter-hyperv-datastore" "Wrong usage, no command given!"
+	htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+	hyperv_usage
+fi
+# Hyper-V ip set ?
+if [ "$HYPERV_HOST_IP" == "" ]; then
+	htvcenter_post_event 0 "parameter_check" 3 "htvcenter-hyperv-datastore" "Wrong usage, no Hyper-V ip-adress given!"
+	if [ "$NON_BLOCKING" != "true" ]; then
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+	fi
+	hyperv_usage
+fi
+# host configured ?
+if [ ! -f "$htvcenter_HYPERV_HOST_CONF_DIR/$HYPERV_HOST_IP.conf" ]; then
+	htvcenter_post_event 0 "parameter_check" 3 "htvcenter-hyperv-datastore" "Hyper-V Host configuration missing! Please create the configuration first."
+	if [ "$NON_BLOCKING" != "true" ]; then
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+	fi
+	hyperv_usage
+else
+	# source the host configuration
+	. $htvcenter_HYPERV_HOST_CONF_DIR/$HYPERV_HOST_IP.conf
+fi
+if [ "$htvcenter_UI_USER" != "" ]; then
+	htvcenter_UI_USER_PARAMETER=" --htvcenter-ui-user $htvcenter_UI_USER"
+fi
+
+. $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/hyperv/bin/htvcenter-hyperv-datastore-$version
+

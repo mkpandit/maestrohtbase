@@ -1,0 +1,6870 @@
+.paddingrow {
+    padding: 10px 18px;
+}
+
+.minih {
+    font-size: 14px !important;
+    position: relative;
+    left: -9px !important;
+}
+
+#vmware-right-move {
+    float: right !important;
+    margin-right: 30px;
+}
+
+.vmaplfeatures {
+    float: right;
+    left: 75px;
+    position: relative;
+    top: 400px;
+}
+
+#getChecked {
+    float: right;
+    margin-right: 30px;
+    position: relative;
+    top: -70px;
+}
+
+#treefiles {
+    position: relative;
+    top: -120px;
+}
+
+#nodisplay {
+    display: none;
+}
+
+#treefiles {
+    background: white !important;
+}
+
+#treefiles a, .jstree-ocl {
+    position: relative;
+    top: 20px;
+}
+
+.unimgpath, .fspath {
+    display: none;
+}
+
+.spacerleft {
+    margin-left: 40px;
+}
+
+.jstree-default .jstree-node {
+    line-height: 60px !important;
+    min-height: 60px !important;
+    min-width: 100% !important;
+}
+
+.treefa {
+    margin-left: 20px !important;
+    margin-right: 10px !important;
+}
+
+.jstree-default .jstree-wholerow {
+    height: 60px !important;
+}
+
+.treefa {
+    color: #579ddb;
+}
+
+.kvm_identifier a.add span {
+   margin-left: 24px !important; 
+}
+
+.kvm_identifier a.add  {
+   
+}
+
+#kvm_tab2 a.add {
+    float: right;
+    position: relative;
+    left: -6%;
+    margin-top: 5px;
+}
+
+.treefa {
+    padding: 20px;
+}
+
+.kvmtbl tr.odd, .kvmtbl tr.even {
+    min-height: 200px !important;
+}
+
+.kvmtbl .widget-header {
+     left: -10px;
+    min-height: 0 !important;
+    position: relative;
+    top: -11px;
+    width: 300px;
+}
+
+.kvmtbl .widget-body {
+    position: relative;
+    top: -15px;
+}
+
+.kvmtbl .pill {
+    position: relative;
+    top: -20px;
+    right: 80px;
+     color: white;
+    position: relative;
+    right: 5px;
+    top: 5px;
+
+}
+
+.bbbrrr legend {
+    display: none;
+}
+
+.volgrrripo .panel-body {
+    height: 200px !important;
+}
+
+#volumepopupclose, #storageformkvmclose, #volumepopupclosevmware, #volumepopupmigrclose {
+    z-index: 9999 !important;
+}
+
+.bbbrrr #form {
+    position: relative;
+    top: -20px;
+}
+
+.bbbrrr #buttons {
+    position: relative;
+    top: -30px;
+}
+
+
+
+
+.clonera, .protera  {
+    font-size: 14px;
+    cursor: pointer;
+    margin-bottom: 4px;
+    color: #2b866e;
+}
+
+#hyperv_tab2 #boot_iso {
+    left: 80px !important;
+    top: -21px !important;
+}
+
+#storagekvmid {
+    display: none;
+}
+
+.clonera {
+    position: relative;
+    top: -5px;
+}
+
+.kvmooo {
+    position: relative;
+    top: -25px;
+}
+
+.clonera:hover, .protera:hover  {
+    opacity: 0.8;
+}
+
+
+#showpooldetail {
+    color: #579ddb;
+    font-size: 13px;
+    left: 7px;
+    position: relative;
+    text-decoration: underline;
+    top: 26px;
+    cursor: pointer;
+    display: none;
+}
+
+.dashcola .window {
+    min-height: 290px !important;
+}
+
+.dashcolanode .window {
+    min-height: 604px !important;
+}
+
+.prspano b {
+    font-size: 12px !important;
+    color: #579ddb;
+}
+
+.nodestable .bbadger {
+    float: left;
+    margin-left: 20px;
+    text-align: center;
+    top: 0 !important;
+}
+
+#poolcpudash, #poolmemorydash, #poolstoragedash {
+    height: 180px;
+    width: 180px;
+    position: relative;
+    top: 0px;
+    left: -15px;
+    float: left;
+}
+
+#poolinfa {
+    float: right;
+    position: relative;
+    left: -10px;
+    top: 35px;
+}
+
+.toprow {
+    position: relative;
+    top: -20px;
+}
+
+#poolsdashboard {
+    display: none;
+}
+
+#showpooldetail:hover {
+    text-decoration: none;
+}
+
+
+.carbudget {
+    display: none;
+}
+
+#fortisnonono {
+    display: none;
+}
+
+.h22 {
+    font-size: 12px !important;
+    position: relative;
+    top: -10px;
+}
+
+#hyperv_ds_tab2 b {
+    margin-left: 20px;
+}
+
+#reportuserdashmain, #reportmonthdashmain, #reportyeardashmain {
+    display: none !important;
+}
+
+#hostpoolcrt {
+    float: right;
+    position: relative;
+    right: 20px;
+    top: -40px;
+}
+
+#hostpoolcontent {
+    display: none;
+}
+
+#closepooldetail {
+    float: right;
+    margin-right: 45px;
+    position: relative;
+    top: -20px;
+    cursor: pointer;
+    color: #579ddb;
+    font-size: 20px;
+}
+
+#vmware_esx_discovery_tab0 #Tabellerr a.remove {
+    float: right !important;
+}
+
+#appliance_tab1 #buttons {
+    display: block !important;
+}
+
+#vlolgaaa {
+    margin-left: 20px;
+}
+
+.trashservn, .trashservnpool {
+    float: right;
+}
+
+.rembtnoo {
+    float: right;
+}
+
+.rembtnoo a {
+    width: 80px;
+}
+
+.trashers, .pooltrashers, .poolhosttrashers {
+    bottom: 22px;
+    color: white;
+    cursor: pointer;
+    font-size: 20px;
+    position: relative;
+    right: 10px;
+}
+
+.poolhosttrashers {
+       right: 2px;
+    top: -55px;
+}
+
+.removbtnplace {
+    text-align: right;
+}
+
+#totalamauntmain {
+    display: none;
+}
+
+.botpanel {
+    position: relative;
+    top: -10px;
+}
+
+
+
+td.hyperv_pool_action a {
+    margin-right: 5px;
+}
+
+#totalamauntmain {
+     position: relative;
+    top: 70px;
+    text-align: center;
+}
+
+.shorto {
+    left: -4px;
+    position: relative;
+    top: 28px;
+    width: 70px !important;
+    z-index: 3;
+} 
+
+#donutrendermaino {
+   
+    height: 180px;
+    position: relative;
+    top: 0px;
+}
+
+.maindonutrenderrr {
+    min-height: 284px;
+}
+
+.rowe {
+     height: 52px !important;
+    position: relative;
+    top: -7px;
+    left: 10px;
+}
+
+#main {
+
+}
+
+.carbudgbtn {
+    display: none;
+}
+
+.infoblockbudget {
+    display: none;
+}
+
+#resbudget {
+  display: none;
+}
+
+#resbudgetchoose {
+    position: relative;
+    top: 10px;
+}
+
+#percentbudg {
+    width: 50px !important;
+    min-width: 50px !important;
+}
+
+.selectype .plan-icon i {
+    font-size: 70px;
+    position: relative;
+    top: -60px;
+}
+
+
+.selectype .pad-btm input {
+    position: relative;
+    top: 15px;
+}
+
+.datedatedate .input-group-addon {
+   font-size: 15px;
+}
+
+.datedatedate .date input {
+     height: 33px;
+    margin-bottom: 0 !important;
+    padding-bottom: 0 !important;
+}
+
+.subprice {
+    width: 400px;
+    text-align: center;
+}
+
+.datedatedate label {
+    min-width: 20px !important;
+    margin-right: 10px;
+}
+
+.budgetnamemain label {
+    min-width: 20px !important;
+    margin-right: 10px;
+}
+
+.budgetname input {
+    width: 265px !important;
+}
+
+.datedatedate .date {
+    padding: 0px !important;
+    margin: 0px !important;
+    height: 20px !important;
+}
+
+.selectype .pad-btm, .selectype button {
+   font-size: 13px;
+    position: relative;
+    top: -80px;
+}
+
+.selectype .pad-btm {
+    font-size: 14px;
+}
+
+.selectype .panel, .selectype .panel-body {
+    height: 290px;
+}
+
+.rempercent {
+    cursor: pointer;
+}
+
+.left {
+    float: left;
+    margin-left: 15px;
+    margin-right: 15px;
+}
+
+.table-alerts {
+    display: none;
+}
+
+.creatbudg {
+    float: right;
+}
+
+.selectype input[type=text] {
+    width: 90px;
+}
+
+.submitallprice {
+    float: right;
+    
+    width: 120px !important;
+}
+
+#uzerexpo {
+	display: none;
+}
+
+.alertprice {
+    float: left;
+    width: 120px !important;
+}
+
+.rempercent {
+    position: relative;
+    color: #579ddb;
+}
+
+#statusexp {
+    color: white;
+    padding: 2px;
+    font-size: 10px;
+}
+
+.buttonspace {
+     padding-left: 29%;
+    text-align: center !important;
+    width: 100%;
+}
+
+.alertprice {
+    width: 200px;
+}
+
+.selectype {
+    width: 19%;
+    position: relative;
+    left: 1%;
+    cursor: pointer;
+}
+
+.selectype:hover {
+    opacity: 0.8;
+}
+
+#categorysel {
+    display: block;
+    float: left;
+    width: 202px;
+}
+
+#categorysel, .budgetform input[type=text] {
+    margin-bottom: 10px;
+}
+
+.budgetform .row {
+    margin-left: 20px;
+}
+
+.budgetform label {
+    min-width: 220px;
+    float: left;
+}
+
+.gobackprint {
+    cursor: pointer;
+    display: none;
+    float: right;
+    font-size: 12px;
+    margin-right: 10px;
+    margin-top: 7px;
+    text-decoration: underline;
+}
+
+.nodadonut, .nodatadonut {
+    margin-top: 122px;
+    text-align: center; 
+}
+
+.nodatabars {
+    margin-top: 120px;
+    text-align: center;    
+}
+
+.nav-tabs a {
+    height: 35px !important;
+}
+
+.resinfo {
+    margin-bottom: 40px;
+    padding-top: 20px;
+}
+
+.whiteback {
+	background-color: white;
+}
+
+#popupremconfirm {
+    display: none;
+}
+
+.tabzo a {
+	position: relative;
+    top: 4px;
+}
+
+
+
+.carcarbtn, .carbudgbtn {
+    text-align: center;
+    left: -15px;
+    position: relative;
+}
+
+
+.carcarbtn a, .carbudgbtn a {
+    width: 120px;
+    margin-right: 3px;
+    margin-left: 3px;
+}
+
+.buttoncarouselback i {
+    position: relative;
+    left: -10px;
+    top: -2px;
+}
+
+.buttoncarousel i {
+    position: relative;
+    left: 10px;
+    top: -2px;
+}
+
+#namespaces li {
+    left: -25px;
+    list-style-image: none;
+    list-style-type: none;
+    position: relative;
+    width: 520px !important;
+    border: none !important; 
+}
+
+.valspan {
+    border: medium none !important;
+    font-size: 15px;
+    text-decoration: none !important;
+}
+
+.moredisk label {
+    min-width: 60px;
+    float: left;
+}
+
+.moredisk input {
+    width: 220px;
+}
+
+.storagedit, .storageremove {
+    cursor: pointer;
+}
+
+
+#uzerrep, #monzrep, #yearzrep {
+	display: none;
+}
+
+.explorer {
+    margin-bottom: 40px;
+    padding-top: 20px;
+}
+
+.printlogo {
+    padding: 20px 20px 20px 20px;
+    background-color: #32404e;
+    display: none;
+    margin-bottom: 20px;
+}
+
+.shortselect {
+	position: relative;
+	top: 5px;
+}
+
+
+#donutrender {
+    height: 230px !important;
+    margin-bottom: 50px;
+}
+
+#barcharts {
+    height: 532px !important;
+    margin-bottom: 50px;
+}
+
+.hideslider {
+    display: none;
+}
+
+.slideractive {
+    cursor: pointer;
+}
+
+
+.shortselect {
+    float: left;
+    width: 200px !important;
+    margin-left: 20px;
+    margin-right: 20px;
+    margin-bottom: 20px;
+}
+
+.shortlabelo {
+    float: left;
+    min-width: 30px !important;
+    margin-bottom: 20px;
+}
+
+
+.shortlabel {
+    float: left;
+    min-width: 20px !important;
+    margin-bottom: 20px;
+}
+
+.redh2 {
+  
+    border-bottom: 1px solid silver;
+}
+
+
+.reportbtnbill {
+    position: relative;
+    top: 5px;
+    float: right;
+}
+
+tr.header, div.header {
+  
+    background-color: #4ebcda;
+    color: white;
+    padding: 15px;
+}
+
+tr.header td {
+    padding-bottom: 15px !important;
+    padding-top: 15px !important;
+}
+
+tr.header:hover {
+    background-color: #4ebcda !important;
+}
+
+.servn, .budgservn, .servnpool, .servnpoolhost {
+    cursor: pointer;
+    float: left;
+    height: 210px;
+    margin-right: 20px;
+    width: 150px;
+}
+
+.budgremove {
+    color: white;
+}
+
+#timebudget {
+    display: none;
+}
+
+.servn:hover, .budgservn:hover, .servnpool:hover, .servnpoolhost:hover {
+    opacity: 0.8;
+}
+
+.servn span, .budgservn span, .servnpool span {
+    display: block;
+    margin-top: 45px !important;
+    text-align: center;
+}
+
+#cloud_appliances td.comment {
+	float: left; 
+	width: 300px;
+	margin-top: 20px;
+}
+
+#appliance_edit .htmlobject_box .left {
+	width: 140px !important;
+}
+
+#cloud_appliances tr.headrow, #cloud_images tr.headrow {
+	display: none;
+}
+
+.dropfa {
+	position: relative;
+	top: 10px;
+}
+
+.headspan {
+	position: relative;
+	top: 8px;
+}
+
+#storageidvolvol {
+    display: none;
+}
+
+.shedulerli .headspan {
+    position: relative;
+    top: 0px;
+}
+
+#cloud_appliances .sort_box {
+	float: right;
+	margin-right: 30px;
+}
+
+#cloud_appliances .pill {
+	  color: white;
+    display: block;
+    margin-left: 235px;
+    margin-top: -125px !important;
+    z-index: 9999;
+}
+
+#cloud_appliances hr {
+	display: none !important; 
+}
+
+#cloud_appliances td.comment a {
+	background-color: #579ddb !important;
+    color: white;
+    cursor: pointer;
+    float: left;
+    margin: 10px 10px 10px 3px;
+    padding: 3px 11px;
+    left: 53px;
+    display: none;
+}
+
+#hyperv_ds_tab3 #path {
+    position: relative;
+    left: 120px;
+    top: -15px;
+}
+
+#hyperv_ds_tab3 #browsebutton {
+    left: 117px;
+    padding: 5px 11px !important;
+    position: relative;
+    top: -15px;
+}
+
+
+#hyperv_ds_tab3 #buttons {
+    width: 100%;
+    text-align: right;
+    position: relative;
+    right: 30px;
+}
+
+#hyperv_ds_tab3 .namegenButton {
+    position: relative;
+    left: 5px;
+    top: -1px;
+}
+
+#hyperv_ds_tab3 #comment {
+    position: relative;
+    left: -120px;
+    width: 300px !important;
+}
+
+.volgrrripo #comment {
+    width: 230px;
+}
+
+
+
+
+.volgrrripo #size_box input {
+    position: relative;
+    left: -120px;
+}
+
+.volgrrripo #pool_box .bootstrap-select {
+    position: relative;
+    left: -120px;
+}
+
+#hyperv_ds_tab2 td.action a {
+    background-color: #579ddb !important;
+    color: white;
+    cursor: pointer;
+    float: left;
+    margin: 10px 10px 10px 3px;
+    padding: 3px 11px;
+    
+  
+}
+
+#cloud_appliances tr.odd, #cloud_appliances tr.even {
+	min-height: 340px !important;
+}
+
+#cloud_appliances td.comment a:hover, #cloud_appliances td.action a:hover, .editvolumesmpopup:hover {
+	opacity: 0.9;
+}
+
+#cloud_appliances td.action a, .editvolumesmpopup {
+	position: relative;
+	left: 53px;
+  	background-color: #579ddb !important;
+    color: white;
+    cursor: pointer;
+    float: left;
+    height: 20px;
+    margin: 4px;
+    padding: 2px 9px 10px 5px;
+    width: 20px;
+    display: none !important;
+}
+
+#cloud_appliances {
+	width: 100%;
+}
+
+#cloud_appliances .pageturn_wrapper, #cloud_appliances .pageturn_head {
+	width: 100%;
+	display: block;
+}
+
+h1.app {
+	position: relative;
+	left: 10px;
+	display: block;
+}
+
+#cloud_appliances .sort_box .bootstrap-select {
+	width: 80px !important;
+	position: relative;
+	top: 8px;
+}
+
+#cloud_appliances .sort_box .submit {
+	position: relative;
+	top: -5px;
+}
+
+#cloud_appliances .sort_box input[type=text] {
+	position: relative;
+	top: 1px;
+}
+
+
+#addmoredisks {
+	color: white !important;
+	background-color: #6799bf !important;
+	border-color: #6799bf !important;
+}
+
+
+#popup {
+    width: 440px;
+    position: fixed;
+    top: 30%;
+    left: 35%;
+    display: none;
+    z-index: 999999999999 !important;
+}
+
+#popuptable {
+     width: 840px;
+    position: fixed;
+    top: 10%;
+    left: 18%;
+    display: none;
+    height: 500px;
+    z-index: 999999999999 !important;
+}
+
+#popuptableform {
+    overflow-y: scroll;
+    height: 450px;
+    position: relative;
+    left: -10px;
+}
+
+#popup input.submit {
+    float: right;
+    margin-right: 5px;
+}
+
+#popupclose, #popuptableclose {
+    float: right;
+    margin-right: 20px;
+    cursor: pointer;
+    margin-top: 15px;
+    color: gray;
+    font-size: 15px;
+}
+
+#popup {
+    display: none;
+}
+
+
+
+#popupclose:hover, #popuptableclose:hover  {
+    opacity: 0.9;
+}
+
+#popupform input[type=text] {
+    min-width: 220px;
+}
+
+
+#popupform h2 {
+    font-size: 16px !important;
+    color: #cc6165 !important;
+    position: relative;
+    top: -20px;
+}
+
+#detailreport {
+    color: #5fa2dd;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+#popupform #buttons {
+    width: 100%;
+    float: right;
+}
+
+#popupform label {
+     display: block;
+    float: left;
+    margin-right: 10px;
+    min-width: 20px !important;
+    margin-bottom: 10px;
+    color: #5fa2dd;
+    font-weight: bold;
+}
+
+#popupform .bootstrap-select {
+    
+    float: right;
+    margin-right: 10px;
+    width: 240px !important;
+    margin-bottom: 10px;
+}
+
+ #popupform .submit {
+     background-color: #5fa2dd !important;
+    border-radius: 0 !important;
+    font-family: "open sans";
+    font-size: 12px !important;
+}
+
+
+#orderreport {
+    margin-top: 5px;
+
+}
+
+#detailtable {
+    display: none;
+}
+
+#resulttotal {
+    line-height: 30px;
+}
+
+#detailreport {
+    float: right;
+    margin-right: 10px;
+}
+
+.total {
+    font-weight: bold;
+}
+
+#popupform label {
+     display: block;
+    float: left;
+    margin-right: 10px;
+    width: 120px !important;
+    margin-bottom: 10px;
+}
+
+#popupform select {
+    
+    float: right;
+    margin-right: 10px;
+    width: 240px !important;
+    margin-bottom: 10px;
+}
+
+#popupform .submit {
+     background-color: #5fa2dd !important;
+    border-radius: 0 !important;
+    font-family: "open sans";
+    font-size: 14px;
+}
+
+#popupform {
+     font-family: "open sans";
+    font-size: 13px;
+}
+
+
+.nfs-storage .pull-right a.add {
+	min-width: 200px;
+}
+
+#showlizardbtn {
+  display: none;
+}
+
+#collectd_tab {
+	display: none;
+}
+
+#popup, #popuptable {
+	display: none;
+}
+
+#order {
+	cursor: pointer;
+}
+
+#storageform #resource_tab1 h2 {
+	position: relative;
+	left: -20px;
+	color: #5fa2dd;
+	font-size: 16px;
+	font-weight: bold;
+}
+
+
+#storageform #kvm_tab3 h2 {
+	
+	color: #5fa2dd;
+	font-size: 16px;
+	font-weight: bold;
+}
+
+#vmware_esx_vs_tab2 div b {
+    margin-left: 20px;
+}
+
+#alignelo div {
+    width: 400px !important;
+}
+
+#vmware_esx_vs_tab2 a.add {
+    float: right;
+    margin-right: 30px;
+}
+
+#storageform #resource_tab1 .checkbox {
+	position: relative;
+	top: 5px;
+}
+
+#storageform #kvm_tab3 .checkbox {
+	position: relative;
+	top: 5px;
+	left: 80px;
+}
+
+#devicearea .litli {
+    position: relative;
+    left: -20px;
+}
+
+#lizardside iframe {
+	width: 98%;
+
+	height: 1400px;
+	margin-top: 20px;
+    
+	border: none;
+    overflow-y:scroll !important;
+    overflow-x:hidden !important;
+}
+
+#collectd_statistics input.interval_submit {
+	display: none;
+}
+
+#collectd_statistics .linkswrapper, #collectd_statistics #links {
+	display: none !important;
+}
+
+#erip {
+	 float: left;
+    width: 100%;
+}
+
+#erip a {
+	min-width: 130px;
+}
+
+#showstoragesbtn, #showlizardbtn {
+	cursor: pointer;
+	float: right;
+	margin-right: 40px;
+	width: 160px;
+}
+
+#dnstextarea, #dhcptextarea {
+	width: 100%;
+	height: 400px;
+}
+
+#lizardside, #storageside {
+	margin-left: 25px;
+}
+
+#dhcptextareasave, #dnstextareasave {
+	
+	float: right;
+}
+
+#hybrid_cloud_tab #region, #hybrid_cloud_tab .region {
+	display: none;
+}
+
+#keyfile {
+	margin-bottom: 5px;
+    width: 400px;
+}
+
+a.save {
+	color: white !important;
+	background-color: #6799bf !important;
+	border-color: #6799bf !important;
+	cursor: pointer;
+	padding: 10px;
+}
+
+a.save:hover {
+	opacity: 0.9;
+}
+
+#addschvol a {
+	cursor: pointer;
+    width: 184px;
+}
+
+.usercreate input {
+	width: 220px;
+}
+
+#aboutimglogo {
+	margin-left: 230px;
+}
+
+.userbuttons {
+	float: right;
+	margin-right: 30px;
+}
+
+.userbuttons input {
+	margin-right: 5px;
+}
+
+#calendarlink {
+	color: #4ebcda;
+	text-decoration: underline;
+	position: relative;
+	left: 5px;
+	top: 2px;
+}
+
+#typeeditvolumeselect, #typevolumeselect {
+	display: none;
+}
+#selecto {
+	display: none;
+}
+
+#hyperv_ds_tab1 b {
+	margin-left: 25px;
+}
+
+#kvm_vm_tab1 a.migrate {
+	 padding: 6px 10px !important;
+    position: relative;
+    top: 2px;
+}
+
+#lvm_tab1 div div div b {
+	margin-left: 30px;
+}
+
+.shedulerli a {
+	padding-top: 17px !important;
+}
+
+#shedulerstart .fa {
+	color: #9cc96b;
+}
+
+#shedulerstop .fa {
+	color: #ebaa4b;
+}
+
+#shedulerremove .fa {
+	color: #f76c51;
+}
+
+#shedulersnapclone .fa {
+    color: #5fa2dd;
+}
+
+.shedulerli .fa {
+	position: relative;
+	top: 3px;
+}
+
+#vmware_esx_ds_tab2 td.action a {
+	color: white !important;
+	background-color: #6799bf !important;
+	border-color: #6799bf !important;
+	padding: 0 20px 0 10px;
+}
+
+#kvm_tab2 a.clone span {
+	margin-left: 7px;
+}
+
+#kvm_tab2 a.snap span {
+	margin-left: 11px;
+}
+
+#vmware_esx_ds_tab1 #form a.add {
+	min-width: 200px;
+}
+
+#vmware_esx_ds_tab1 .action a {
+	 padding: 0 16px 1px 10px !important;
+    width: 120px;
+}
+
+#vmware_esx_ds_tab1 .action a.remove span {
+	margin-right: 20px;
+} 
+
+#vmware_esx_ds_tab1 td.action {
+	float: right;
+}
+
+.nfs-storage a.clone {
+	background-color: #579ddb !important;
+    border-color: #5fa2dd !important;
+    color: #ffffff !important;
+    padding: 0 12px;
+    text-decoration: none !important;
+}
+
+td.network_manager_identifier input.checkbox {
+	top: 0px !important;
+}
+
+#kvm_vm_tab1 td.action a {
+	background-color: #579ddb !important;
+	color: white;
+	padding: 0px 10px;
+}
+
+#kvm_vm_tab1 #addbuttons a.add {
+	min-width: 160px;
+}
+
+#storageidedit {
+	display: none;
+}
+
+.networkmanagerpopupform {
+	top: 2% !important;
+}
+
+.networkmanagerpopupform #form {
+	position: relative;
+	top: -30px;
+}
+
+.networkmanagerpopupform #form label {
+	min-width: 80px !important;
+}
+
+#cloud_resource_limit_table .appnamer {
+	position: relative;
+	top: -31px;
+}
+
+#cloud_private_image_table td.image_actions a.edit {
+	float: right;
+}
+
+#cloud_power_saver_table .appnamer {
+	top: -32px;
+}
+
+#cloud_power_saver_table td.appliance_id {
+	position: relative;
+	top: 50px;
+}
+
+
+#cloud_power_saver_table td.appliance_actions a.edit {
+	float: right;
+}
+
+
+
+#cloud_resource_pool_table .appnamer {
+	position: relative;
+	top: -40px;
+}
+
+.hprow, .pirow {
+	position: relative;
+	left: -30px;
+}
+
+.hprow button, .pirow button {
+	color: #4ebcda;
+}
+
+#cloud_resource_limit_table td.appliance_id, #cloud_resource_pool_table td.appliance_id {
+	position: relative;
+	top: 50px;
+}
+
+#cloud_resource_limit_table td.appliance_actions a.edit, #cloud_resource_pool_table td.appliance_actions a.edit {
+	float: right;
+}
+
+
+.storagerow a {
+	color: #6799bf !important;
+}
+
+#appidval {
+	display: none;
+}
+
+#appliance_edit .htmlobject_box textarea {
+	width: 220px !important;
+}
+
+#storageform #puppet_groups label, #storageformaddn #puppet_groups label {
+	min-width: 400px;
+}
+
+#storageform #puppet_groups, #storageformaddn #puppet_groups {
+	min-width: 500px;
+}
+
+
+
+#storageform #puppet_groups .right, #storageformaddn #puppet_groups .right{
+	 float: right;
+    position: relative;
+    top: 10px;
+    width: 0;
+}
+
+@media screen and (-webkit-min-device-pixel-ratio:0) {    
+	#storageform #puppet_groups .right, #storageformaddn #puppet_groups .right {
+		 float: right;
+	    position: relative;
+	    top: -20px;
+	    width: 0;
+	}
+ 
+}
+
+
+
+
+#storageform #puppet_groups .left, #storageformaddn #puppet_groups .left {
+	width: 400px;
+}
+
+#addvolumebtn {
+	background-color: #6799bf !important;
+	border-color: #6799bf !important;
+}
+
+#morediskdiv {
+	display: none;
+}
+
+#addmoredisks {
+	margin-bottom: 8px;
+}
+
+#moredisktbl a {
+	cursor: pointer;
+}
+
+#selecto {
+	width: 100%;
+	float: left;
+}
+
+#selecto .bootstrap-select {
+	margin-top: 5px;
+}
+
+#sizevolumeinput, #namevolumeinput, #nameeditvolumeinput, #sizeeditvolumeinput {
+	width: 220px;
+}
+
+#kvm_tab2 #Tabelle td.action {
+	vertical-align: center;
+	text-align: center;
+}
+
+#kvm_tab2 #Tabelle td.kvm_identifier {
+	width: 150px !important;
+}
+
+#kvm_tab2 #Tabelle td.kvm_identifier a {
+	background-color: #579ddb !important;
+    border-color: #5fa2dd !important;
+    color: #ffffff !important;
+    width: 98px !important;
+}
+
+#kvm_tab2 #Tabelle td.kvm_identifier a.snap, #kvm_tab2 #Tabelle td.kvm_identifier a.clone {
+	padding: 0px 20px 0px 3px !important;
+}
+
+#kvm_tab2 #Tabelle td.kvm_identifier a .halflings-icon {
+	width: 120px;
+}
+
+#managedisks {
+ 	background: #6799bf none repeat scroll 0 0;
+    border-color: #6799bf !important;
+    color: white !important;
+    float: right;
+    height: 29px;
+    left: -35px !important;
+    margin-bottom: 30px;
+    position: relative;
+    top: -35px !important;
+    cursor: pointer;
+}
+
+#Tabellerplug tr.odd, #Tabellerplug tr.even  {
+	display: block;
+    float: left;
+    margin-left: 5px;
+    margin-right: 10px;
+    width: 425px !important;
+    border: 1px solid #5fa2dd;
+    border-radius: 0;
+    box-shadow: 0 2px 0 rgba(0, 0, 0, 0.05);
+    margin-bottom: 24px;
+    background-color: #fff !important;
+
+}
+
+.storageinfomax {
+	min-height: 40px !important;
+}
+
+.gaugetable .headrow {
+	display: none;
+}
+
+.gaugerh3 {
+    text-transform: capitalize;
+}
+
+
+.gaugetable tr:hover {
+	background-color: white !important;
+}
+
+.gaugeedit a {
+     float: right !important;
+     position: relative;
+     top: -40px !important;
+}
+
+
+
+.gaugestorage {
+	width: 100%;
+	margin-bottom: -7px;
+}
+
+.gaugestorage .panel-title {
+    margin-bottom: -45px;
+    min-width: 300px !important;
+    position: relative;
+    top: -46px;
+    text-transform: capitalize;
+}
+
+.gaugestorage .panel-control {
+    left: 205px;
+    z-index: 99999;
+}
+
+@-moz-document url-prefix() { 
+ .gaugestorage {
+	width: 100%;
+	margin-bottom: -7px;
+	}
+}
+
+.ololocheck {
+      left: -10px !important;
+    margin-top: 52px !important;
+    position: relative !important;
+}
+
+.sizeof, .sizestor {
+	font-size: 12px;
+	color: gray;
+}
+
+.gaugetable tr.odd, .gaugetable tr.even {
+	float: left;
+    margin-right: 20px;
+}
+
+.gaugetable .htmlobject_td.name {
+	width: 420px !important;
+}
+
+.gaugetable a.edit {
+	position: relative;
+	top: 10px;
+}
+
+td.action {
+	text-align: right;
+}
+
+.volumepopup3 {
+	/*top: 5% !important;*/
+}
+
+.volumepopup3 textarea, .volumepopup4 textarea {
+	border: 1px solid #e9e9e9;
+    border-radius: 0;
+    box-shadow: none;
+    font-size: 12px;
+    padding: 6px;
+    position: relative;
+	/*margin-bottom: -15px;
+    top: -25px;
+	float: right;
+    width: 420px !important;*/
+} 
+
+.volumepopup3 .bootstrap-select, .volumepopup4 .bootstrap-select {
+  	left: -71px;
+    margin-bottom: 10px !important;
+    position: relative;
+    width: 420px;
+}
+
+.volumepopup3 #name, .volumepopup4 #name {
+	position: relative;
+	left: 59px;
+	width: 420px;
+}
+
+#tmpfs_tab0 .volumepopup3 #name, .volumepopup4 #name {
+    position: relative;
+    left: 19px;
+    width: 420px;
+}
+
+
+
+td.kvm_identifier {
+	text-align: right;
+}
+
+td.kvm_identifier a {
+	margin-right: 10px;
+}
+
+.volumepopup2 label {
+	min-width: 145px !important;
+}
+
+.volumepopup2 #name {
+	position: relative;
+	left: 65px;
+}
+
+#kvm_tab2 td.progress {
+	background-color: inherit !important;
+}
+
+
+.puppeto .checkbox {
+	float: right;
+	position: relative;
+	top: 10px;
+}
+
+.puppeto .left {
+	/*width: 400px !important;*/
+}
+
+#cloud_usergroup_table a.edit {
+	float: right;
+	margin-top: 0px;
+}
+
+.spanooo {
+	margin-right: 20px;
+}
+
+.spanooo input.text, .spanooo input.password {
+	width: 220px;
+}
+
+#cloud_usergroup_table .checkbox {
+	z-index: 99999;
+}
+
+#cloud_usergroup_table tr.odd, #cloud_usergroup_table tr.even {
+	border: 1px solid #5fa2dd;
+}
+
+#cloud_usergroup_table .cg_id, #cloud_usergroup_table .cg_name, #cloud_usergroup_table .cg_description {
+	top: 35px;
+	position: relative;
+}
+
+#volumepopupaddn #buttons {
+	float: right;
+	margin-right: 20px;
+}
+
+#cloud_usergroup_table .appnamer {
+	position: relative;
+	top: -100px;
+	background-color: #5fa2dd;
+}
+
+#kvm_tab2 th.progress {
+	background-color: inherit;
+}
+
+#step1 #comment_box textarea {
+	border: 1px solid #e9e9e9;
+    /*float: right;
+    margin-right: 69px;*/
+    width: 100% !important;
+}
+
+#integratepopupform h2 {
+	color: #4ebcda;
+    font-family: open sans !important;
+    font-size: 17px;
+    left: 37px;
+    position: relative;
+    top: -15px;
+}
+
+.tabusercloud input.text, .tabusercloud input.password {
+	width: 220px;
+}
+
+#buttonso input {
+	left: -10px;
+    margin-right: -10px !important;
+    position: relative;
+}
+
+.tabusercloud small {
+	position: relative;
+	left: 40px;
+}
+
+#cloud_users td.info, #cloud_users .cu_ccunits, #cloud_users .cu_actions {
+	width: 300px;
+	display: block;
+	margin-bottom: 15px;
+	margin-top: 5px;
+}
+
+#cloud_users .appnamer {
+	position: relative;
+    top: -10px;
+    width: 300px !important;
+}
+
+#cloud_users .pill {
+	left: 230px;
+    position: relative;
+    top: 65px;
+}
+
+#cloud_users tr.odd, #cloud_users tr.even {
+	min-height: 220px !important;
+}
+
+#cloud_users tr.headrow {
+	display: none;
+}
+
+#vmwaddvswitch {
+    float: right;
+    margin-right: 30px;
+}
+
+#storageformvmware .text {
+    min-width: 220px;
+}
+
+#storageformvmware #buttons {
+    float: right;
+}
+
+#storageformvmware label {
+    min-width: 70px !important;
+}
+
+.vmwarealignzzz .left {
+    float: left;
+    width: 80px;
+}
+
+.vmwarealignzzz .right {
+    float: left;
+    width: 300px;
+}
+
+#volumepopup, #volumepopupvmf, #volumepopupwmware, #volumepopupmigr, #storageformkvm, #storageformkvmrem, #serverpopup, #volumepopupz, #volumepopuprem, #volumepopupzmail, #volumepopupnagios, #schedulerpopup, #trasherzconfirm, #trasherzconfirmhost, #poolservpopup, #schedulerconfirmpopup, #configpopup, #integratepopup, #volschedulerpopup, #volumepopupaddn {
+	/*width: 600px;*/
+	width: 50%;
+	position: fixed;
+	top: 20%;
+	left: 25%;
+	display: none;
+	z-index: 999999999999 !important;
+}
+
+div#storageform div#form div.left,
+div#storageformaddn div#form div.left {
+	width: 30%;
+	float: left;
+	margin: 0;
+}
+
+div#storageform div#form div.left label,
+div#storageformaddn div#form div.left label {
+	width: 100%;
+}
+
+div#storageform div#form div.right,
+div#storageformaddn div#form div.right {
+	width: 69%;
+	float: left;
+	text-align: left;
+}
+
+div#storageformaddn div#form div#comment_box div.right {
+	width: 70%;
+	float: right;
+	text-align: left;
+}
+
+div#storageformaddn div#form div.right input[type="text"] {
+	width: 100%;
+	left: 0 !important;
+	margin-left: 0px;
+}
+
+div#storageform div#form div.right input[type="text"] {
+	width: 100%;
+	left: 0;
+}
+
+
+div#storageform div#form div.htmlobject_box,
+div#storageformaddn div#form div#name_box {
+	margin-bottom: 20px;
+}
+
+div#storageform div#form textarea {
+	margin: 0;
+	width: 100%;
+}
+
+div.puppeto div.left {
+	width: 50%;
+	float: left;
+	margin: 0;
+}
+
+div.puppeto div.right {
+	width: 49%;
+	float: left;
+	margin: 0;
+}
+
+div.puppeto div.htmlobject_box {
+	padding-bottom: 3px;
+	margin-bottom: 2px;
+	border-bottom: 1px dashed #ccc;
+}
+
+div#storageform div#form div.bootstrap-select{
+	left: 0;
+}
+
+#storageformz #buttons input {
+    margin-right: 5px;
+}
+
+#poollabel {
+    position: relative;
+    top: -20px;
+    left: 12px;
+}
+
+#poolnameinput {
+     left: 12px;
+     top: -20px;
+    position: relative;
+    width: 550px;
+}
+
+#crpoolbtn {
+    float: right;
+    position: relative;
+    left: -5px;
+}
+
+.clouddialog label {
+	position: relative;
+	top: 10px;
+}
+
+.clouddialog #buttons input.submit {
+	left: 19px;
+    margin-right: 5px !important;
+    position: relative;
+}
+
+.longdialog {
+	top: 10% !important;
+}
+
+.longdialog #storageform form:nth-child(1) {
+    display: none;
+}
+
+.longdialog #ip_mgmt_comment {
+	border: 1px solid #e9e9e9;
+	width: 220px;
+	margin-right: 40px;
+    /*top: -35px;
+	float: right;*/
+    position: relative;
+}
+
+#schedulerconfirmpopup label {
+	float: left;
+	min-width: 40px !important;
+}
+
+#removesid, #removesname {
+	display: block;
+    height: 3px !important;
+    position: relative;
+    top: 13px;
+}
+
+#schremove {
+	float: right;
+}
+
+#schedulerform button, #volschedulerform button, #poolservpopup button {
+	color: #4ebcda;
+}
+
+#storageform input[type=text], #storageformaddn input[type=text]{
+	min-width: 220px;
+}
+
+#serverform label {
+	min-width: 120px !important;
+}
+
+#servintbtn {
+	float: right;
+	margin-right: 10px;
+}
+
+#schedulertbtn, #volschedulertbtn {
+	float: right;
+	margin-right: 5px;
+}
+
+.serveraddinput {
+	margin-bottom: 13px;
+}
+
+
+#volumepopup input.submit {
+	float: right;
+	margin-right: 5px;
+}
+
+#volumepopupz input.submit, #volumepopupnagios input.submit {
+    float: right;
+    margin-right: 5px;
+}
+
+#appliance_tab1 #step1 textarea {
+	float: left !important;
+}
+
+#storageformvmf {
+    position: relative;
+    top: -40px;
+}
+
+#storageformvmf .submit {
+    float: right;
+    margin-right: 10px;
+    position: relative;
+    top: 40px;
+}
+
+#storageformvmf label {
+    min-width: 80px !important;
+}
+
+.alaction {
+    position: relative;
+    left: 16px;
+}
+
+.alcontent {
+    left: -104px;
+    position: relative;
+    top: 13px;
+}
+
+#storageformmigr #buttons {
+    float: right;
+}
+
+#storageformmigr label {
+    min-width: 100px !important;
+}
+
+#storageformmigr .bootstrap-select {
+    position: relative;
+    top: 5px;
+}
+
+.OCHoooz div {
+    min-width: 0px !important;
+}
+
+#volumepopupclose, #volumepopupclosevmf, #volumepopupclosewmware, #volumepopupmigrclose, #storageformkvmclose, #storageformkvmremclose, #volumepopupcloserem, #volumepopupzclose, #volumepopupzmailclose, #volumepopupremclose, #volumepopupnagiosclose, #serverpopupclose, #trasherzconfirmclose, #trasherzconfirmclosehost, #schedulerpopupclose, #poolserverpopupclose, #volschedulerpopupclose, .schremoveclose, .configpopupclose, .integratepopupclose, #volumepopupcloseaddn {
+	float: right;
+	margin-right: 20px;
+	cursor: pointer;
+	margin-top: 15px;
+	color: gray;
+	font-size: 15px;
+}
+
+#storageformkvmvolg #buttons, #storageformkvmremvolg #buttons {
+    float: right;
+}
+
+
+#storageformkvmvolg .form-horizontal, #storageformkvmremvolg .form-horisontal {
+    display: none !important;
+}
+
+.popupremdialog {
+    height: 250px !important;
+}
+
+.popupremdialog input.submit {
+    float: right;
+    margin-right: 8px;
+}
+
+.remremrem form:nth-child(1) {
+    display: none;
+}
+
+#volumepopupclose:hover, #serverpopupclose:hover, #volumepopupcloserem:hover, #volumepopupclosevmf:hover, #volumepopupzclose:hover, #volumepopupremclose:hover, #volumepopupnagiosclose:hover, #volumepopupzmailclose:hover, #trasherzconfirmclose:hover, #trasherzconfirmclosehost:hover, #schedulerpopupclose:hover, #poolserverpopupclose:hover, #volschedulerpopupclose:hover, #volumepopupcloseaddn:hover, .schremoveclose:hover, .integratepopupclose:hover, .configpopupclose:hover {
+	opacity: 0.9;
+}
+
+#storageformnagios {
+   
+    margin-top: -50px;
+}
+
+#storageformnagios input[type=text] {
+    width: 220px;
+}
+
+#volactionsch {
+	position: relative;
+	top: -20px;
+	left: 3px;
+}
+
+#volopt {
+	display: none;
+}
+
+#ip_mgmt_tab0 #volumepopuprem form:nth-child(1) {
+    display: none;
+}
+
+#volactionsch select {
+	width: 100%;
+}
+
+.rightadd {
+	float: right !important;
+	margin-right: 30px;
+	display: block;
+	margin-bottom: 10px; 
+	cursor: pointer;
+}
+
+#resourceservadd {
+	margin-top: 15px;
+}
+
+.resadd {
+	 float: left;
+    margin-right: 25px;
+    padding: 12px 10px !important;
+    width: 340px;
+    margin-top: 0px !important;
+    cursor: pointer;
+}
+
+.ochtabz {
+    width: 97%;
+    margin-left: 20px;
+}
+
+.ochaddhrdw .bootstrap-select {
+    left: 110px;
+    margin-bottom: -20px;
+    position: relative;
+    top: -35px;
+}
+
+.ochaddhrdw a.add {
+    position: relative;
+    top: -47px;
+    float: right;
+}
+
+.ochaddnetz a.add {
+    position: relative;
+    top: -35px;
+    float: right;
+}
+
+.ochaddnetz .bootstrap-select, .ochaddnetz input {
+    left: 110px;
+    margin-bottom: -20px;
+    position: relative;
+    top: -35px;
+}
+
+.ochaddboot input, .ochaddboot label {
+    min-width: 30px;
+}
+
+.ochaddboot #iso_path_box {
+    position: relative;
+    left: -125px;
+}
+
+.ochaddboot #browsebutton {
+     padding: 6px !important;
+    position: relative;
+    left: -171px;
+    top: 0px;
+}
+
+.ochaddboot .radio {
+    position: relative;
+    top: 12px;
+}
+
+.ochaddnetz .checkbox {
+     left: 112px;
+    min-width: 5px !important;
+    position: relative;
+    top: -25px;
+    width: 5px !important;
+}
+
+.ochaddnetz input {
+    min-width: 220px !important;
+}
+
+.ochaddnetz .right {
+    margin-bottom: -20px;
+}
+
+.ochaddnetz .netbox3, .ochaddnetz .netbox5 {
+    position: relative;
+    left: -220px;
+}
+
+
+#kvm_vm_tab2 .tab-content {
+	width: 98%;
+}
+
+#xen_vm_tab1 #form {
+	margin-left: 30px;
+}
+
+#xen_vm_tab2 #buttons {
+    float: right;
+}
+
+#configure_plugin .right {
+	float: right;
+	margin-right: 30px;
+}
+
+#nfs_tab2 #form {
+	margin-left: 25px;
+}
+
+#nfs_tab2 #form #buttons {
+	text-align: right;
+	padding-right: 30px;
+}
+
+
+.cloudtabs {
+	position: relative;
+	left: -20px;
+}
+
+.hosteralign tr.odd, .hosteralign tr.even {
+	margin-left: 35px !important;
+}
+
+.cloudtabs input[type=text] {
+	width: 220px !important;
+	margin-bottom: 15px !important;
+}
+
+.serverul li a {
+	width: 100%;
+	height: 70px;
+	cursor: pointer;
+}
+
+.serverul li a.xen {
+	padding-top: 20px;
+}
+
+.headimg {
+	max-width: 48px;
+	max-height: 48px;
+}
+
+.headspan {
+	 font-size: 14px;
+    margin-left: 16px;
+    text-align: left !important;
+}
+
+.storageboxx .panel-heading {
+	left: -11px;
+    margin-bottom: 23px;
+    position: relative;
+    top: -20px;
+    width: 300px;
+}
+
+.storageboxx tr.odd td, .storageboxx tr.even td {
+	margin-top: 10px;
+}
+
+.storageboxx tr.odd, .storageboxx tr.even {
+	min-height: 350px !important;
+}
+
+.storageboxx td.action {
+	position: relative;
+	top: 35px;
+}
+
+.storageboxx td.action a {
+	background-color: #579ddb !important;
+	border-color: #579ddb !important;
+	color: #fff;
+	display: block;
+    margin-top: 5px;
+}
+
+.iconlogo {
+	font-size: 40px !important;
+    padding-top: 8px;
+}
+
+#vmware_esx_discovery_tab0 a.add {
+	min-width: 220px;
+}
+
+.hosterr .widget-header {
+	  display: block;
+    left: -10px;
+    position: relative;
+    top: -10px;
+    width: 300px;
+    min-height: 20px !important;
+}
+
+.hosterr .widget-img {
+	margin-left: -40px;
+    margin-top: -12px;
+}
+
+.hosterr tr.even, .hosterr tr.odd {
+	min-height: 250px !important;
+}
+
+.hosterr .pad-ver a {
+	margin-right: 6px !important;
+	margin-top: 10px;
+}
+
+.hosterr .pad-ver {
+	position: relative;
+	left: -8px;
+}
+
+.hosterr .pill {
+	position: relative;
+	top: -5px;
+	color: white;
+	left: 235px;
+}
+
+#protocol_box .bootstrap-select {
+	width: 165px !important;
+}
+
+#aa_plugins_tab1 #configure_plugin #buttons {
+	text-align: right;
+	margin-right: 60px;
+	width: 100%;
+	position: relative;
+	right: 30px;
+}
+
+#configure_plugin .htmlobject_box .right input.text {
+    float: right;
+    left: 210px;
+    position: relative;
+    width: 280px !important;
+}
+
+#configure_plugin .submit {
+    float: right;
+    position: relative;
+    margin-right: 5px;
+    right: 17px;
+}
+
+#configpopup {
+    top: 10%;
+    width: 800px;
+    height: 280px;
+}
+
+#configpopupform {
+    overflow: scroll;
+    height: 460px;
+    overflow-x: none;
+}
+
+
+
+#aa_plugins_tab1 #configure_plugin {
+	margin-left: 30px;
+}
+
+.signserv {
+	font-size: 9px !important;
+}
+
+
+#Tabelle td.action {
+	width: 150px !important;
+}
+
+#kvm_tab3 #form input[type=text] {
+	min-width: 220px;
+}
+
+#Tabelle td.action a {
+	margin-bottom: 5px;
+}
+
+#Tabelle td.comment a {
+	padding: 4px 12px !important;
+	margin-right: 5px;
+}
+
+#cloud_images {
+	width: 100%;
+}
+
+#Tabelle td.state .pill, #cloud_images td.state .pill{
+	padding: 3px;
+	
+	 color: white;
+}
+
+
+#role_administration_tab1 #form {
+	margin-left: 30px;
+}
+
+#role_administration_tab1 #role_comment {
+	width: 400px;
+}
+
+#role_administration_tab1 #role_comment_box, #role_administration_tab1 #buttons {
+	position: relative;
+	top: -100px;
+}
+
+ #role_administration_tab1 #buttons {
+ 	margin-right: 30px !important;
+ }
+
+ #nagios3_tab1 .buttons, #ip_mgmt_tab2 #buttons {
+ 	text-align: right !important;
+ 	margin-right: 30px !important;
+ }
+
+ #template_tab1 .span4,  #template_tab1 .span3 {
+ 	margin-left: 30px;
+ 	padding-right: 30px;
+ }
+
+ #template_tab1 .span3 a {
+ 	background-color: #579ddb !important;
+    border-color: #5fa2dd !important;
+    color: #ffffff !important;
+    padding: 0 12px !important;
+    text-decoration: none !important;
+ }
+
+ #ip_mgmt_tab2 #appliance_id_box,  #ip_mgmt_tab2 #select_0_box {
+ 	margin-left: 30px;
+ }
+
+#linuxcoe_tab1 #form {
+	margin-left: 30px;
+}
+
+td.ha a.disable, td.ha a.enable {
+	padding: 0px 12px !important;
+}
+
+#highavailability_tab1 #form {
+	margin-left: 30px;
+}
+
+#highavailability_tab1 input.submit {
+	float: right;
+	margin-right: 65px;
+	margin-left: -55px;
+}
+
+
+
+#puppet_tab1 .checkbox {
+	position: relative;
+	top: 7px;
+}
+
+#puppet_tab1 #buttons {
+	text-align: right;
+	margin-right: 30px;
+}
+
+#linuxcoe_tab1 #form textarea {
+	width: 400px;
+}
+
+#linuxcoe_tab1 #form #buttons {
+	text-align: right;
+	margin-right: 30px;
+}
+
+#cloud_request_details {
+	margin-left: 30px;
+}
+
+#hybrid_cloud_volume_tab .custom_tab input.submit {
+	display: none;
+}
+
+#hybrid_cloud_volume_tab2 #formbox {
+	margin-left: 30px;
+}
+
+#hybrid_cloud_volume_tab2 #formbox div {
+	min-width: 250px;
+}
+
+#project_tab0 form input.submit {
+	float: right;
+    margin-right: -10px;
+}
+
+#hybrid_cloud_vm_tab2 #form div {
+ 	margin-right: 25px !important;
+    min-width: 450px;
+}
+
+#hybrid_cloud_vm_tab2 #buttons {
+	text-align: right;
+	margin-right: 30px;
+}
+
+#hybrid_cloud_vm_tab2 #form {
+	margin-left: 30px;
+}
+
+#cn_internal_net_box, #cn_external_net_box {
+	width: 500px;
+} 
+
+#cn_internal_net_box label, #cn_external_net_box label {
+	min-width: 250px;
+} 
+
+
+#hybrid_cloud_s3_tab1 a.add, #hybrid_cloud_s3_tab a.add, #hybrid_cloud_s3_tab2 a.add {
+	margin-top: -4px;
+}
+
+#hybrid_cloud_volume_tab .custom_tab input.submit {
+	display: none;
+}
+
+.cloud #project_tab1 #cloud_user_name_box {
+	position: relative;
+	left: -15px;
+}
+
+#hybrid_cloud_volume_tab2 #form {
+	margin-left: 30px;
+}
+
+#hybrid_cloud_volume_tab2 #form .checkbox {
+	position: relative;
+	top: 14px;
+}
+
+#hybrid_cloud_volume_tab2 #buttons {
+	text-align: right;
+	margin-right: 30px;
+}
+
+
+#hybrid_cloud_tab1 #form, #hybrid_cloud_tab1 .span4 {
+	margin-left: 30px;
+}
+
+#hybrid_cloud_tab .custom_tab input.submit {
+	display: none;
+}
+
+#resource_tab1 {
+	margin-left: 30px;
+}
+
+#resource_tab1 input.submit {
+	 float: right;
+    margin-left: -55px;
+    margin-right: 60px;
+}
+
+#permission_group_comment {
+	width: 400px;
+}
+
+#content-container h2 {
+	margin-left: 20px;
+}
+
+#role_administration_tab1 .span4 {
+	margin-left: 30px;
+	padding-right: 30px;
+}
+
+#role_administration_tab1 #buttons {
+	text-align: right;
+	margin-right: 30px;
+}
+
+.nicescroll-cursors {
+	border-radius: 0px !important;
+	background-color: #5fa2dd !important;
+	border-color: #5fa2dd !important;
+	width: 4px !important;
+}
+
+#mainnav {
+	overflow-y: scroll;
+}
+
+
+
+.upperspace {
+	margin-top: 20px;
+}
+
+#product_quantity_box .bootstrap-select {
+	 display: block;
+    float: right;
+    left: -27px;
+    margin-bottom: 3px;
+    position: relative;
+    top: 0;
+    width: 162px;
+}
+
+.pageturn_bottom {
+	position: relative;
+	top: 20px;
+}
+
+#event_tab0 td.actions {
+	height: 120px;
+}
+
+td.pageturn_bottom, .pageturn_table , .pageturn_table td {
+	border: none !important;
+}
+
+.resourceplan {
+	min-height: 220px;
+	margin-left: 20px;
+	margin-right: 20px;
+}
+
+#image_tab1 .resourceplan {
+	min-height: 370px;
+}
+
+#image_tab1 .resourceplan .plan-title {
+	min-height: 95px !important;
+}
+
+#image_tab1 #info {
+	width: 100%;
+	float: left;
+	margin-top: 20px;
+	margin-left: 30px;
+}
+
+.resourceplan button:hover {
+	opacity: 0.8;
+}
+
+.resourceplan .fa {
+	font-size: 50px;
+	position: relative;
+	top: -40px;
+}
+
+#desklbl {
+	width: 20%;
+	display:block;
+	float: left;
+	margin: 0;
+}
+
+.resourceplan .btn {
+	font-size: 14px;
+}
+
+.resourceplan .plan-icon {
+	height: 80px !important;
+}
+
+h3.inner {
+	font-size: 20px !important;
+}
+
+.resourceplan .plan-title {
+	display: block;
+    min-height: 30px !important;
+}
+
+.resourceplan .pad-btm {
+	min-height: 40px;
+	display: block;
+}
+
+#devicearea b, #devicearea strong {
+	color: white !important;
+}
+
+.kernel td.kernel_id {
+  	left: -11px;
+    position: relative;
+    text-align: left;
+    top: -10px;
+    width: 108%;
+}
+
+
+#applianceSelectTable {
+	position: relative;
+	top: 20px;
+	left: 17px;
+}
+
+input.namegenButton {
+	background-color: #579ddb !important;
+    border-color: #5fa2dd !important;
+    color: #ffffff !important;
+    border: none !important;
+}
+
+#project_tab0 {
+	margin: 20px 0 0 15px;
+}
+
+#hybrid_cloud_tab1 input.namegen {
+	position: relative;
+	left: 104px;
+	top: -2px;
+}
+
+#hybrid_cloud_tab1 input.namegenButton {
+	left: 115px;
+	position: relative;
+	top: -3px;
+}
+
+
+
+#kvm_tab3 #form label {
+	min-width: 20px;
+	width: 200px;
+}
+
+#hybrid_cloud_tab1 #buttons, #kvm_tab3 #form #buttons {
+	text-align: right;
+	margin-right: 30px;
+}
+
+#hybrid_cloud_tab1 #buttons a {
+	margin-right: 10px;
+}
+
+textarea#description {
+	width: 400px;
+}
+
+input.namegenButton:hover, input.submit:hover {
+	opacity: 0.9;
+}
+
+#cloud_user_name_box {
+	position: relative;
+	left: 15px;
+}
+
+#Tabelle, #cloud_users {
+	width: 100%;
+	margin: auto;
+}
+
+#cloud_usergroup_name_box, #cloud_usergroup_description_box {
+	position: relative;
+	left: 20px;
+}
+
+
+#project_tab {
+	position: relative;
+    right: 45px;
+    text-align: right;
+    width: 100%;
+}
+
+.cloud .span7 .span4, .cloud .span7 .span2 {
+	position: relative;
+	left: -35px;
+}
+
+.cloud .span7 input.submit {
+	 float: right;
+    left: -60px;
+    margin-left: 15px;
+    position: relative;
+    top: 10px;
+}
+
+#fortisnonono {
+    padding: 20px;
+    font-size: 14px;
+}
+
+.namegenButton {
+	position: relative;
+	left: 20px;
+}
+
+.cloud #project_tab0 form {
+	margin-left: 40px !important;
+}
+
+#cloud_mail_body {
+	width: 400px;
+}
+
+#cloud_mail_subject_box {
+	position: relative;
+	top: -5px;
+}
+
+.actiontable {
+	position: relative;
+	top: 20px;
+}
+
+.actiontable a {
+	text-decoration: underline;
+}
+
+.fabelle {
+	font-size: 24px !important;
+	color: #5fa2dd;
+}
+
+.appliance_state .fatab {
+	position: relative;
+	top: 21px;
+}
+
+#hybrid_cloud_ami_tab1 td.image {
+	width: 200px !important;
+}
+
+#hybrid_cloud_ami_tab1 #amifilter {
+	width: 600px !important;
+	margin-left: 20px;
+}
+
+#hybrid_cloud_ami_tab1 #amifilter label {
+	min-width: 20px;
+}
+
+#Tabelle a.remove, #cloud_images a.remove {
+	background-color: #579ddb !important;
+    border-color: #5fa2dd !important;
+    color: #ffffff !important;
+    padding: 0 12px;
+} 
+
+
+#event_mailer_tab1 #form {
+	width: 95%;
+	margin-left: 20px;
+
+}
+
+
+#event_mailer_tab1 #form div {
+	width: 100%;
+	float: left;
+	margin-top: 10px;
+
+}
+
+#event_mailer_tab1 #form div.left {
+	width: 170px;
+	float: left;
+}
+
+#event_mailer_tab1 #form div.right {
+	width: 500px;
+	float: left;
+	margin-left: 10px;
+}
+
+#event_mailer_tab1 #form div.right .checkbox {
+	position: relative;
+	top: 10px;
+}
+
+#event_mailer_tab1 #form #buttons {
+	width: 100%;
+	float: left;
+	text-align: right;
+	margin-right: 30px;
+}
+
+#nfs_tab0 #Tabelle {
+	margin-left: 40px;
+}
+#support_tab0 form {
+	margin-left: 30px;
+}
+
+#support_tab0 #password {
+	float: right;
+}
+
+#support_tab0 #password_box .left {
+	 float: left;
+    position: relative;
+    top: 25px;
+    width: 376px;
+}
+
+#support_tab0 #password_box .right {
+	position: relative;
+	top: -10px;
+}
+
+#support_tab0 .checkbox {
+	position: relative;
+	top: 10px;
+}
+
+#support_tab0 #passgenerate, #support_tab0 #passtogle {
+	display: block !important;
+}
+
+#Tabelle_2 a, #Tabelle_1 a {
+	text-decoration: underline;
+	font-size: 14px;
+	color: #5fa2dd;
+}
+
+h1.apih1 {
+  position: relative;
+  left: 30px;
+}
+
+#Tabelle_2, #Tabelle_1 {
+	width: 95%;
+}
+
+#development_tab0 #form {
+	margin-left: 30px;
+}
+
+#nagios3_tab1 form {
+	margin-left: 30px;
+}
+
+#nagios3_tab1 form div {
+	text-align: left !important;
+}
+
+#nagios3_tab1 form center {
+	display: block;
+	text-align: left !important;
+}
+
+#htmlobject_box_add_storage {
+	margin-left: 30px;
+}
+
+#vmware_esx_about_tab0 fieldset {
+	margin-left: 30px;
+	padding-right: 30px;
+}
+
+#vmware_esx_discovery_tab0 #form, #vmware_esx_discovery_tab1 #form, #hyperv_discovery_tab0 #form, #hyperv_discovery_tab1 #form {
+	margin-left: 30px;
+}
+
+#vmware_esx_discovery_tab1 #form #buttons, #hyperv_discovery_tab1 #form #buttons, #network_manager_tab1 #form #buttons, #kvm_vm_tab2 #form #buttons {
+	text-align: right;
+	margin-right: 30px;
+}
+
+#kvm_vm_tab0 td.comment a, #citrix_vm_tab0 td.comment a {
+	margin-right: 10px;
+    padding: 4px 12px !important;
+}
+
+#kvm_vm_tab2 #form .checkbox {
+	position: relative;
+	top: 7px;
+}
+
+#kvm_vm_tab2 #form .radio {
+	left: -60px;
+    position: relative;
+    top: 14px;
+}
+
+#kvm_vm_tab2 a.add {
+	 left: -95px;
+    position: relative;
+    top: -2px;
+}
+
+#vnc_box, #vnc_1_box {
+	width: 400px !important;
+}
+
+#vnc_box label, #vnc_1_box label {
+	width: 145px;
+}
+
+#cdrom_button, #browsebutton {
+
+     background-color: #579ddb !important;
+      border-color: #5fa2dd !important;
+    border-image: none;
+    border-style: solid;
+    border-width: 1px;
+    color: #ffffff !important;
+    left: -40px;
+    padding: 5px 12px;
+    position: relative;
+    top: -2px;
+}
+
+#cdrom_button:hover, #browsebutton:hover {
+	opacity: 0.8;
+}
+
+#localboot_image_box .right .bootstrap-select, #disk_interface_box .right .bootstrap-select {
+	float: left;
+    width: 200px;
+}
+
+#localboot_image_box .left, #disk_interface_box .left {
+	float: left;
+    
+}
+
+#localboot_image_box, #disk_interface_box, #netboot_image_box {
+	width: 400px;
+}
+
+#iso_path_box, #cdrom_box {
+	width: 300px !important;
+	float: left;
+}
+
+#hyperv_ds_tab2 #storageform #path_box label {
+    display: none;
+}
+
+#hyperv_tab2 #demo-lft-tab-3 a.add {
+    float: right;
+    position: relative;
+    right: 30px;
+    top: -133px;
+}
+
+#net1_box label, #net2_box label, #net3_box label, #net4_box label, #net5_box label {
+    min-width: 130px !important;
+}
+
+#hyperv_ds_tab2 #storageform #browsebutton {
+    height: 30px;
+    left: 280px;
+    position: relative;
+    top: -49px;
+}
+
+#kvm_vm_tab2 #form .span8 label {
+	min-width: 100px !important;
+}
+
+#kvm_vm_tab0 td.action, #citrix_vm_tab0 td.action {
+	width: 200px !important;
+}
+
+#kvm-sysinfo {
+	margin-left: 30px;
+	padding-right: 30px;
+}
+
+#network_manager_tab1 #form, #kvm_vm_tab2 #form {
+	margin-left: 30px;
+}
+
+#network_manager_tab1 #form #name {
+	position: relative;
+	left: 130px;
+	width: 220px;
+}
+
+
+#kvm_vm_tab2 #demo-lft-tab-6 #vnc_1, #kvm_vm_tab2 #demo-lft-tab-6 #vnc, #kvm_vm_tab2 #demo-lft-tab-6 .bootstrap-select {
+    left: 160px;
+    position: relative;
+    top: -30px;
+}
+
+#kvm_vm_tab2 #demo-lft-tab-3 #cdrom {
+    left: 141px;
+    position: relative;
+    top: -30px;
+}
+
+#kvm_vm_tab2 #demo-lft-tab-3 a.add {
+    left: -270px !important;
+    position: relative;
+}
+
+#kvm_vm_tab2 #demo-lft-tab-3 #managedisks {
+     left: -200px !important;
+    position: relative;
+}
+
+#kvm_vm_tab2 #demo-lft-tab-3 #cdrom_button {
+   left: 30px !important;
+    position: relative;
+    top: 3px;
+}
+
+#pluginsboxer div.panel {
+	width: 220px !important;
+	float: left;
+	margin-right: 10px;
+	margin-bottom: 10px;
+}
+#kvm_vm_tab0 td.action a, #citrix_vm_tab0 td.action a {
+	margin-bottom: 5px;
+	width: 110px !important;
+}
+
+#kvm_tab2 #form {
+	margin-left: 30px;
+}
+
+.bros #browsebutton {
+	left: 460px;
+    padding: 7px 8px !important;
+    position: relative;
+    top: -36px;
+}
+
+#hyperv_vs_tab2 b {
+	margin-left: 22px;
+}
+
+.newcloudnephos .bootstrap-select {
+	margin-bottom: 2px;
+}
+
+.newcloudnephos input.text {
+	width: 220px;
+}
+.modal-boxer {
+ left: 0 !important;
+    position: absolute !important;
+    top: 0 !important;
+    width: 100%;
+    z-index: 999;
+    display: none;
+}
+
+#hyperv_vs_tab1 b {
+	margin-left: 25px;
+}
+
+#project_tab ul li, #cloud_nephos_tab ul li, #kvm_tab ul li, #kvm_vm_tab ul li, #vmware_vsphere_tab ul li, #cloud_request_tab ul li, #vmware_vsphere_discovery_tab ul li a, #vmware_vsphere_about_tab ul li, #cloud_nephos_limits_tab ul li, #cloud_nephos_config_tab ul li, #cloud_nephos_user_tab ul li, #cloud_nephos_usergroup_tab ul li, #citrix_tab ul li, #cloud_nephos_about_tab ul li, #cloud_nephos_transaction_tab ul li, #hyperv_ds_tab ul li, #hyperv_vs_tab ul li, #citrix_about_tab ul li, #citrix_net_tab ul li, #citrix_discovery_tab ul li, #citrix_vm_tab ul li, #vmware_esx_vs_tab ul li, #user_tab ul li, #vmware_esx_ds_tab ul li, #configure_tab ul li, #upload_tab ul li, #template_about_tab ul li, #template_tab ul li, #local_server_nfsip_tab ul li, #kvm_vm_tab ul li, #kvm_tab ul li, #docker_about_tab ul li, #network_manager_tab ul li, #hyperv_discovery_tab ul li, #hyperv_about_tab ul li, #hyperv_tab ul li, #vmware_esx_discovery_tab ul li, #lxc_tab ul li, #vmware_esx_tab ul li, #kvm_about_tab ul li, #lxc_vm_tab ul li, #lxc_about_tab ul li, #vmware_esx_about_tab ul li, #xen_tab ul li, #xen_vm_tab ul li, #development_tab ul li, #development_about_tab ul li, #xen_about_tab ul li, #support_tab ul li, #local_server_about_tab ul li, #support_about_tab ul li, #aoe_storage_about_tab ul li, #aoe_tab ul li, #iscsi_tab ul li, #iscsi_storage_about_tab ul li, #lvm_storage_about_tab ul li, #lvm_tab ul li, #nfs_tab ul li, #nfs_storage_about_tab ul li, #sanboot_tab ul li, #sanboot_storage_about_tab ul li, #wol_tab ul li, #tmpfs_tab ul li, #tmpfs_storage_about_tab ul li, #wakeuponlan_about_tab ul li, #tftpd_about_tab ul li, #netbond_about_tab ul li, #network_manager_about_tab ul li, #ipmi_about_tab ul li, #ipmi_tab ul li, #ip_mgmt_tab ul li, #ip_mgmt_about_tab ul li, #dns_about_tab ul li, #idoit_tab ul li, #dhcpd_about_tab ul li, #nagios3_tab ul li, #zabbix_about_tab ul li, #nagios3_about_tab ul li, #collectd_about_tab ul li, #novnc_about_tab ul li, #event_mailer_about_tab ul li, #idoit_about_tab ul li, #role_administration_tab ul li, #hybrid_cloud_s3_tab ul li, #role_administration_about_tab ul li, #sshterm_about_tab ul li, #sshterm_tab ul li, #event_mailer_tab ul li, #tab_event_mailer_tab0 ul li, #device_manager_about_tab ul li, #hybrid_cloud_snapshot_tab ul li, #hybrid_cloud_volume_tab ul li, #hybrid_cloud_ami_tab ul li, #puppet_tab ul li, #highavailability_about_tab ul li, #hybrid_cloud_keypair_tab ul li, #hybrid_cloud_vm_tab ul li, #lcmc_about_tab ul li, #windows_about_tab ul li, #highavailability_tab ul li, #puppet_about_tab ul li, #image_shelf_about_tab ul li, #opsi_about_tab ul li, #opsi_tab ul li, #linuxcoe_about_tab ul li, #linuxcoe_tab ul li, #linuxcoe_tab ul li, #fai_tab ul li, #iframe_tab ul li, #cobbler_about_tab ul li, #image_shelf_tab ul li, #image_shelf_tab ul li, #fai_about_tab ul li, #cobbler_about_tab ul li, #cobbler_tab ul li, #clonezilla_tab ul li, #clonezilla_about_tab ul li, #local_tab ul li, #android_about_tab ul li, #cloud_selector_tab ul li, #cloud_shop_tab ul li, #cloud_shop_about_tab ul li, #hybrid_cloud_about_tab ul li, #hybrid_cloud_tab ul li {
+	display: inline;
+	margin-left: 10px;
+	position: relative;
+	top: 10px;
+}
+
+#vmware_vsphere_discovery_tab ul li {
+    list-style: none !important;
+}
+
+#vmware_vsphere_discovery_tab0 a.add {
+    margin-left: 20px;
+    min-width: 200px;
+}
+
+#vmware_vsphere_discovery_tab1 #buttons {
+    width: 100%;
+    text-align: right;
+    position: relative;
+    right: 30px;
+}
+
+.cloud_nephos_user_table .appnamer {
+	width: 300px !important;
+}
+
+.cloud_nephos_user_table .pill {
+	position: relative;
+	 left: 220px;
+    top: 65px;
+}
+
+.cloud_nephos_user_table .checkbox {
+	left: 267px;
+    position: relative;
+    top: -86px;
+    z-index: 999;
+}
+
+.cloud_nephos_user_table td.edit {
+	margin-top: 20px;
+}
+
+.cloud_nephos_user_table a.edit {
+	width: 93px;
+}
+
+.cloud_nephos_user_table tr.odd, .cloud_nephos_user_table tr.even {
+	min-height: 320px !important;
+}
+
+td.cloud_nephos_user_id, td.cloud_nephos_user_name, td.cloud_nephos_usergroup_id, td.cloud_nephos_user_informations, td.cloud_nephos_user_ccunits, td.cloud_nephos_user_lang {
+	margin-bottom: 5px;
+	position: relative;
+	top: -25px !important;
+}
+
+
+
+
+#cloud_private_image_table .headrow {
+	display: none;
+}
+
+#cloud_private_image_table tr.odd td, #cloud_private_image_table tr.even td {
+	width: 100%;
+	float: left;
+	text-align: left;
+}
+
+#cloud_private_image_table tr.odd, #cloud_private_image_table tr.even {
+	min-height: 300px !important;
+	margin-top: 30px !important;
+}
+
+#configure_tab1 .radio, #configure_tab0 .radio, #configure_tab2 .radio, 
+#configure_tab1 .checkbox, #configure_tab0 .checkbox, #configure_tab2 .checkbox {
+	position: relative;
+	top: 10px;
+}
+
+#setup_h1 {
+	color: silver;
+	font-size: 14px;
+	margin-top: 20px;
+	margin-left: 25px;
+}
+
+#cloud_private_image_table .image_comment {
+	margin-top: 20px !important;
+}
+
+#template_tab0 .span3, #template_about_tab0 .span3 {
+	margin-left: 30px;
+}
+
+.kvmtabz {
+    width: 97%;
+    margin-left: 20px;
+}
+
+.kvmaddhrdw .bootstrap-select {
+    left: 110px;
+    margin-bottom: -20px;
+    position: relative;
+    top: -35px;
+}
+
+.kvmaddhrdw a.add {
+    position: relative;
+    top: -47px;
+    float: right;
+}
+
+.kvmaddnetz a.add {
+    position: relative;
+    top: -35px;
+    float: right;
+}
+
+.kvmaddnetz .bootstrap-select, .kvmaddnetz input {
+    left: 110px;
+    margin-bottom: -20px;
+    position: relative;
+    top: -35px;
+}
+
+.kvmaddboot input, .kvmaddboot label {
+    min-width: 30px;
+}
+
+.kvmaddboot #iso_path_box {
+    position: relative;
+    left: -125px;
+}
+
+.kvmaddboot #browsebutton {
+     padding: 6px !important;
+    position: relative;
+    left: -171px;
+    top: 0px;
+}
+
+.kvmaddboot .radio {
+    position: relative;
+    top: 12px;
+}
+
+.kvmaddnetz .checkbox {
+     left: 112px;
+    min-width: 5px !important;
+    position: relative;
+    top: -25px;
+    width: 5px !important;
+}
+
+.kvmaddnetz input {
+    min-width: 220px !important;
+}
+
+.kvmaddnetz .right {
+    margin-bottom: -20px;
+}
+
+.kvmaddnetz .netbox3, .kvmaddnetz .netbox5 {
+    position: relative;
+    left: -220px;
+}
+
+#kvm_vm_tab2 #buttons {
+    float: right;
+}
+
+.btnmarge {
+    margin-left: 5px;
+}
+
+
+#project_tab ul li a, #cloud_request_tab ul li a, #kvm_tab ul li a, #kvm_vm_tab ul li a, #vmware_vsphere_tab ul li a, #vmware_vsphere_discovery_tab ul li a, #cloud_nephos_user_tab ul li a, #vmware_vsphere_about_tab ul li a, #hyperv_ds_tab ul li a, #cloud_nephos_limits_tab ul li a, #cloud_nephos_usergroup_tab ul li a, #cloud_nephos_about_tab ul li a, #cloud_nephos_config_tab ul li a, #citrix_vm_tab ul li a, #cloud_nephos_transaction_tab ul li a, #cloud_nephos_tab ul li a, #hyperv_vs_tab ul li a, #citrix_net_tab ul li a, #citrix_tab ul li a, #citrix_about_tab ul li a, #vmware_esx_ds_tab ul li a, #citrix_discovery_tab ul li a, #vmware_esx_vs_tab ul li a, #user_tab ul li a, #upload_tab ul li a, #hyperv_tab ul li a, #configure_tab ul li a, #template_about_tab ul li a, #template_tab ul li a, #local_server_nfsip_tab ul li a, #kvm_tab ul li a, #kvm_vm_tab ul li a, #network_manager_tab ul li a, #docker_about_tab ul li a, #hyperv_discovery_tab ul li a, #hyperv_about_tab ul li a, #nfs_tab ul li a, #vmware_esx_discovery_tab ul li a, #lxc_tab ul li a, #vmware_esx_tab ul li a, #kvm_about_tab ul li a, #lxc_vm_tab ul li a, #lxc_about_tab ul li a, #vmware_esx_about_tab ul li a, #xen_vm_tab ul li a, #xen_tab ul li a, #development_about_tab ul li a, #development_tab ul li a, #xen_about_tab ul li a, #support_tab ul li a, #local_server_about_tab ul li a, #support_about_tab ul li a, #aoe_tab ul li a, #aoe_storage_about_tab ul li a, #iscsi_tab ul li a, #iscsi_storage_about_tab ul li a, #lvm_storage_about_tab ul li a, #lvm_tab ul li a, #sanboot_tab ul li a, #nfs_storage_about_tab ul li a, #wol_tab ul li a, #sanboot_storage_about_tab ul li a, #tmpfs_tab ul li a, #tmpfs_storage_about_tab ul li a, #wakeuponlan_about_tab ul li a, #tftpd_about_tab ul li a, #ipmi_about_tab ul li a, #network_manager_about_tab ul li a, #netbond_about_tab ul li a, #ip_mgmt_about_tab ul li a, #ipmi_tab ul li a, #idoit_tab ul li a, #ip_mgmt_tab ul li a, #dns_about_tab ul li a, #dhcpd_about_tab ul li a, #nagios3_tab ul li a, #zabbix_about_tab ul li a, #nagios3_about_tab ul li a, #collectd_about_tab ul li a, #role_administration_tab ul li a, #event_mailer_about_tab ul li a, #idoit_about_tab ul li a, #novnc_about_tab ul li a, #hybrid_cloud_volume_tab ul li a, #role_administration_about_tab ul li a, #sshterm_about_tab ul li a, #sshterm_tab ul li a, #event_mailer_tab ul li a, #tab_event_mailer_tab0 ul li a, #device_manager_about_tab ul li a, #hybrid_cloud_s3_tab ul li a, #iframe_tab ul li a, #hybrid_cloud_snapshot_tab ul li a, #hybrid_cloud_ami_tab ul li a, #puppet_tab ul li a, #hybrid_cloud_keypair_tab ul li a, #hybrid_cloud_vm_tab ul li a, #highavailability_about_tab ul li a, #lcmc_about_tab ul li a, #windows_about_tab ul li a, #highavailability_tab ul li a, #puppet_about_tab ul li a, #cobbler_about_tab ul li a, #opsi_about_tab ul li a, #opsi_tab ul li a, #linuxcoe_about_tab ul li a, #linuxcoe_tab ul li a, #linuxcoe_tab ul li a, #image_shelf_about_tab ul li a, #fai_tab ul li a, #image_shelf_tab ul li a, #fai_about_tab ul li a, #image_shelf_tab ul li a, #clonezilla_tab ul li a, #cobbler_about_tab ul li a, #cobbler_tab ul li a, #local_tab ul li a, #clonezilla_about_tab ul li a, #android_about_tab ul li a, #cloud_selector_tab ul li a, #cloud_shop_tab ul li a, #hybrid_cloud_tab ul li a, #cloud_shop_about_tab ul li a, #hybrid_cloud_about_tab ul li a {
+	text-decoration: underline;
+	margin-right: 10px;
+}
+
+#cloud_request_tab ul li a, #cloud_selector_tab ul li a, #kvm_tab ul li a, #kvm_vm_tab ul li a, #vmware_vsphere_tab ul li a, #vmware_vsphere_discovery_tab ul li a, #cloud_nephos_user_tab ul li a, #vmware_vsphere_about_tab ul li a, #citrix_vm_tab ul li a, #cloud_nephos_limits_tab ul li a, #cloud_nephos_usergroup_tab ul li a, #cloud_nephos_about_tab ul li a, #cloud_nephos_config_tab ul li a, #hyperv_ds_tab ul li a, #cloud_nephos_transaction_tab ul li a, #cloud_nephos_tab ul li a, #hyperv_vs_tab ul li a, #citrix_net_tab ul li a, #citrix_tab ul li a, #citrix_about_tab ul li a, #vmware_esx_ds_tab ul li a, #citrix_discovery_tab ul li a, #vmware_esx_vs_tab ul li a, #user_tab ul li a, #upload_tab ul li a, #hyperv_tab ul li a, #configure_tab ul li a, #template_about_tab ul li a, #template_tab ul li a, #kvm_tab ul li a, #local_server_nfsip_tab ul li a, #kvm_vm_tab ul li a, #network_manager_tab ul li a, #docker_about_tab ul li a, #hyperv_discovery_tab ul li a, #hyperv_about_tab ul li a, #nfs_tab ul li a, #vmware_esx_discovery_tab ul li a, #lxc_tab ul li a,  #vmware_esx_tab ul li a, #kvm_about_tab ul li a, #lxc_vm_tab ul li a, #lxc_about_tab ul li a, #vmware_esx_about_tab ul li a, #xen_vm_tab ul li a, #xen_tab ul li a, #development_about_tab ul li a, #development_tab ul li a, #xen_about_tab ul li a, #support_tab ul li a, #local_server_about_tab ul li a, #support_about_tab ul li a, #aoe_tab ul li a, #aoe_storage_about_tab ul li a, #iscsi_tab ul li a, #iscsi_storage_about_tab ul li a, #sanboot_tab ul li a, #lvm_storage_about_tab ul li a, #lvm_tab ul li a, #wol_tab ul li a, #nfs_storage_about_tab ul li a, #sanboot_storage_about_tab ul li a, #tmpfs_tab ul li a, #tmpfs_storage_about_tab ul li a, #idoit_tab ul li a, #wakeuponlan_about_tab ul li a, #tftpd_about_tab ul li a, #network_manager_about_tab ul li a, #netbond_about_tab ul li a, #ipmi_about_tab ul li a, #ipmi_tab ul li a, #ip_mgmt_about_tab ul li a, #ip_mgmt_tab ul li a, #dns_about_tab ul li a, #dhcpd_about_tab ul li a, #nagios3_tab ul li a, #zabbix_about_tab ul li a, #nagios3_about_tab ul li a, #collectd_about_tab ul li a, #local_tab ul li a, #novnc_about_tab ul li a, #event_mailer_about_tab ul li a, #idoit_about_tab ul li a, #role_administration_tab ul li a, #role_administration_about_tab ul li a, #hybrid_cloud_s3_tab ul li a, #sshterm_about_tab ul li a, #sshterm_tab ul li a, #event_mailer_tab ul li a, #tab_event_mailer_tab0 ul li a, #device_manager_about_tab ul li a, #hybrid_cloud_volume_tab ul li a, #puppet_tab ul li a, #hybrid_cloud_snapshot_tab ul li a, #hybrid_cloud_ami_tab ul li a, #hybrid_cloud_keypair_tab ul li a, #iframe_tab ul li a, #hybrid_cloud_vm_tab ul li a, #lcmc_about_tab ul li a, #highavailability_about_tab ul li a, #windows_about_tab ul li a, #highavailability_tab ul li a, #puppet_about_tab ul li a, #fai_tab ul li a, #opsi_about_tab ul li a, #opsi_tab ul li a, #linuxcoe_about_tab ul li a, #linuxcoe_tab ul li a, #linuxcoe_tab ul li a, #image_shelf_about_tab ul li a, #fai_about_tab ul li a, #image_shelf_tab ul li a, #image_shelf_tab ul li a, #cobbler_about_tab ul li a, #cobbler_about_tab ul li a, #clonezilla_tab ul li a, #cobbler_tab ul li a, #clonezilla_about_tab ul li a, #android_about_tab ul li a, #cloud_shop_tab ul li a, #cloud_shop_about_tab ul li a, #hybrid_cloud_tab ul li a, #hybrid_cloud_about_tab ul li a {
+	float: right;
+	position: relative;
+	right: 30px;
+	top: 10px;
+}
+
+.kvminfo {
+    min-height: 140px;
+}
+
+#kvm_tab1 div b, #kvm_vm_tab1 div b, #kvm_tab2 div b {
+    margin-left: 25px;
+}
+
+#kvm_tab1 div, #kvm_vm_tab1 div, #kvm_tab2 div {
+    min-width: 320px;
+}
+
+.divbtn {
+    background-color: #579ddb;
+    color: white;
+    padding-left: 13px;
+    position: relative;
+    z-index: 3;
+    cursor: pointer;
+    min-width: 120px !important;
+    top: 8px;
+}
+
+.divtxt {
+    display: table-cell;
+    left: 78px;
+    position: relative;
+    text-align: left;
+    top: -36px;
+    width: 18%;
+}
+
+.totheright {
+    float: right;
+    margin-right: 20px;
+}
+
+.jstree-anchor {
+    width: 100% !important;
+}
+
+
+
+#treefiles .pill {
+    color: white;
+    padding: 3px 12px;
+    position: relative;
+} 
+
+.divtxt b {
+    margin-left: 0px !important;
+}
+
+
+
+#kvm_tab2 a.clone {
+    background-color: #579ddb !important;
+    border-color: #5fa2dd !important;
+    color: #ffffff !important;
+    padding: 0 12px;
+    text-decoration: none !important;
+    position: relative;
+    top: 1px;
+}
+
+#kvm_tab2 .voladdkvm a {
+    float: right;
+    left: -10%;
+    position: relative;
+}
+
+#hyperv_ad_version_box .bootstrap-select {
+     margin-bottom: -2px;
+    position: relative;
+    top: 1px;
+    width: 165px;
+}
+
+#hyperv_discovery_tab0 a.add {
+    min-width: 200px;
+}
+
+#hyperv_discovery_tab0 td.action a {
+    min-width: 95px;
+}
+
+#storageformaddn #name {
+    position: relative;
+    left: -30px;
+}
+
+
+
+#hyperv_discovery_tab0 td.action a.add span {
+    margin-left: 21px;
+
+}
+
+#hyperv_discovery_tab0 td.action a.add {
+    text-align: left;
+}
+
+div.resadd {
+	min-height: 90px;
+}
+
+#citrix_vm_tab1 a.add, #citrix_net_tab a.add, #citrix_net_tab1 a.add {
+	min-width: 220px;
+}
+
+ #citrix_tab1 a.add {
+ 	min-width: 220px;
+ }
+
+ #citrix_tab1 td.list a,  #citrix_tab1 td.action a {
+ 	min-width: 130px !important;
+ }
+
+#citrix_discovery_tab0 #form div div a {
+	margin-left: 20px;
+	min-width: 220px;
+}
+
+#citrix_discovery_tab1 #form div {
+	margin-left: 20px;
+}
+
+#citrix_discovery_tab1 #buttons {
+	text-align: right;
+	margin-right: 30px;
+}
+
+#user_tab0 #form {
+	margin-left: 30px;
+	padding-right: 30px;
+}
+
+#user_tab0 #form input.submit {
+	float: right;
+	
+	margin-right: 30px;
+}
+
+#user_tab0 #form fieldset:last {
+	position: relative;
+	left: -5px;
+}
+
+#user_tab0 #form textarea {
+	width: 420px !important;
+}
+
+#ip_mgmt_comment {
+	width: 400px;
+}
+
+#ip_mgmt_tab0 form {
+	margin-left: 30px;
+}
+
+#ip_mgmt_tab0 #buttons, #kvm_tab2 #form #buttons {
+	text-align: right;
+	margin-right: 30px;
+}
+
+#ip_mgmt_tab0 td.edit {
+	width: 150px !important;
+}
+
+.newcloudnephos {
+	margin-left: 30px;
+	margin-right: 30px;
+}
+
+.newcloudnephos .right {
+	position: relative;
+	float: left; 
+}
+
+td.cloud_nephos_userlimits_id {
+	position: relative;
+	top: 50px;
+}
+
+.cloud_nephos_userlimits_table tr.even, .cloud_nephos_userlimits_table tr.odd  {
+	min-height: 270px !important;
+}
+
+.userlimitzzz h2 {
+	position: relative;
+	left: -20px;
+}
+
+.cloud_nephos_userlimits_table .appnamer {
+	width: 300px !important;
+}
+
+#cloud_nephos_limits_tab0 h2 {
+	position: relative;
+	top: -20px;
+}
+
+.cloud_nephos_userlimits_table td.edit a.edit {
+	width: 95px;
+}
+
+.cloud_nephos_userlimits_table .checkbox {
+	
+	position: relative;
+	top: -45px;
+	left: 275px;
+	z-index: 9999;
+}
+
+.cloud_nephos_userlimits_table td.edit {
+	margin-top: 20px;
+}
+
+#buttonsorr input.submit {
+	float: right;
+    left: -30px;
+    margin-right: 5px;
+    position: relative;
+}
+
+.clouduzerrrr {
+	top: 5% !important;
+}
+
+legend {
+	font-weight: normal !important;
+}
+
+#cloud_nephos_usergroup_tab0 h2 {
+	position: relative;
+	top: -20px;
+}
+
+.cloud_nephos_usergroup_table tr.odd, .cloud_nephos_usergroup_table tr.even {
+	min-height: 220px !important;
+}
+
+.cloud_nephos_usergroup_table .checkbox {
+	position: relative;
+	height: 0px;
+	top: -45px;
+	z-index: 999;
+	left: 275px;
+}
+
+td.cloud_nephos_usergroup_id {
+	position: relative;
+	top: 55px;
+}
+
+.cloud_nephos_usergroup_table .appnamer {
+	width: 300px !important;
+}
+
+.cloud_nephos_usergroup_table td.edit a.edit {
+	width: 75px;
+}
+
+.clouduzerrrr input.text, .clouduzerrrr input.password {
+	width: 220px;
+}
+
+#event_mailer_tab0 a.add {
+	position: relative;
+	top: -20px;
+}
+
+.newbtncss, .newbtzcss {
+	left: 20px;
+    position: relative !important;
+    text-decoration: none !important;
+    top: 40px !important;
+    z-index: 9999;
+}
+
+#cloud_nephos_user_tab0 h2 {
+	position: relative;
+	top: -20px;
+}
+
+.newbtzcss {
+	margin-bottom: 20px !important;
+}
+
+.cloud_nephos_table td.edit a.edit {
+	padding: 0 24px 0 0;
+    width: 120px;
+}
+
+.event-mailer #Tabelle td.func {
+	width: 200px !important;
+}
+
+#hybrid_cloud_snapshot_tab1 a.edit {
+	min-width: 65px !important;
+	margin-left: 10px;
+}
+
+#hybrid_cloud_snapshot_tab1 a.edit:hover {
+	opacity: 0.8;
+}
+
+.fatab {
+	font-size: 24px !important;
+	color: #579ddb;
+}
+
+
+td.ha a {
+	padding: 5px 12px !important;
+}
+
+#puppet_tab1 form {
+	margin-left: 30px;
+}
+
+#opsi_tab0 div {
+	margin-left: 20px;
+}
+
+#iframe_tab0 {
+	width: 100%;
+	height: 100%;
+}
+
+#MainFrame {
+	width: 100%;
+	min-height: 1000px;
+}
+
+#image_shelf_tab1 #form {
+	margin-left: 30px;
+}
+
+#image_shelf_tab1 #buttons {
+	text-align: right;
+	margin-right: 30px;
+}
+
+#sshterm_tab0 .appliance_state {
+	text-align: center !important;
+}
+
+#clonezilla_about_tab0 .span7, #clonezilla_about_tab0 .span2, .span2, .span6, .span7, #collectd_about_tab0 .span2, #zabbix_about_tab0 .span7, #zabbix_about_tab0 .span2, #nagios3_about_tab0 .span2, #nagios3_about_tab0 .span7, #collectd_about_tab0 .span7, #collectd_about_tab0 .span6, #tab_event_mailer_about_tab0 .span2, #event_mailer_about_tab0 .span2, #event_mailer_about_tab0 .span7, #tab_event_mailer_about_tab0 .span7, #idoit_tab0 .span2, #idoit_tab0 .span7, #idoit_about_tab0 .span2, #idoit_about_tab0 .span7, #idoit_about_tab .span2, #idoit_about_tab .span7, #novnc_about_tab0 .span7, #novnc_about_tab0 .span2, #role_administration_about_tab0 .span7, #role_administration_about_tab0 .span2, #sshterm_tab0 .span2, #project_tab0 .span7, #project_tab0 .span2, #sshterm_about_tab0 .span7, #sshterm_about_tab0 .span2, #device_manager_about_tab0 .span7, #device_manager_about_tab0 .span2, #windows_about_tab0 .span7, #lcmc_about_tab0 .span2, #highavailability_about_tab0 .span2, #highavailability_about_tab0 .span7, #lcmc_about_tab0 .span7, #lcmc_about_tab .span2, #windows_about_tab0 .span2, #puppet_about_tab0 .span7, #puppet_about_tab0 .span2, #opsi_about_tab0 .span7, #opsi_about_tab0 .span2, #image_shelf_about_tab0 .span7, #linuxcoe_about_tab0 .span7, #linuxcoe_about_tab0 .span2, #linuxcoe_about_tab .span2, #linuxcoe_about_tab .span7, #image_shelf_about_tab0 .span2, #cobbler_about_tab0 .span2, #cobbler_about_tab0 .span7, #fai_about_tab0 .span2, #fai_about_tab0 .span7 {
+	margin-left: 30px;
+	padding-right: 30px;
+}
+
+#cobbler_tab0 div {
+	margin-left: 20px;
+}
+
+#storage_tab1 form {
+	margin-left: 20px;
+}
+
+#storage_tab1 #name_box #name, #image_shelf_tab1 #name_box #name {
+	position: relative;
+	left: 130px;
+}
+
+#storage_tab1 #buttons {
+	text-align: right;
+	margin-right: 40px;
+}
+
+#storage_tab1 #name_box .namegenButton, #image_shelf_tab1 #name_box .namegenButton {
+	position: relative;
+	left: 140px;
+	top: -1px;
+}
+
+#addtask {
+	padding: 8px 12px;
+}
+
+#newtaskinput {
+	height: 35px;
+}
+
+#storage_tab1 textarea {
+	width: 400px;
+	margin-bottom: 5px;
+}
+
+.botpanel {
+	margin: 3px auto !important;
+	width: 100% !important;
+}
+
+.withchart {
+	position: relative;
+	top: -30px;
+}
+
+#chartdiv-inventory-server-legend, #chartdiv-inventory-server-storage {
+	position: relative;
+	top: 100px;
+}
+
+
+.withlegend {
+	position: relative;
+	top: 30px;
+}
+
+.todolistcontent {
+	height: 217px;
+}
+
+#android_about_tab0 .span7, #android_about_tab0 .span2 {
+	position: relative;
+	left: 30px;
+}
+
+.eventwindow {
+	height: 333px !important;
+}
+
+.aa_server h2.dash {
+	font-size: 1.5vw !important;
+}
+
+.aa-server h3.dash {
+	font-size: 14px !important;
+	margin-bottom: 20px;
+	padding: 0 25px !important;
+}
+
+.serverpanel .litli {
+	color: white !important;
+    font-size: 1.25vw !important;
+    height: 50px;
+    margin-top: 19px !important;
+    position: relative;
+    text-align: left !important;
+    top: -10px;
+}
+
+
+#hybrid_cloud_tab .bootstrap-select {
+	position: relative;
+	top: 10px;
+	margin-right: 10px;
+}
+
+#cloud_resource_limit_table .headrow, #cloud_power_saver_table .headrow {
+	display: none;
+}
+
+#cloud_power_saver_table .appliance_actions {
+	position: relative;
+	top: 20px;
+}
+
+#hybrid_cloud_about_tab0 .span7, #hybrid_cloud_about_tab0 .span2, #hybrid_cloud_about_tab0 .span3 {
+	margin-left: 30px;
+}
+
+#cloud_shop_about_tab0 .span7, #cloud_shop_about_tab0 .span2 {
+	margin-left: 30px;
+}
+
+#cloud_shop_tab0 form {
+	position: relative;
+	left: 20px;
+}
+
+#cloud_shop_tab0 input.submit {
+	text-align: right;
+	margin-right: 20px;
+}
+
+#cloud_resource_limit_table tr.odd td, #cloud_resource_limit_table tr.even td, #cloud_power_saver_table tr.odd td, #cloud_power_saver_table tr.even td {
+	float: left;
+	width: 100%;
+	display: block;
+	text-align: left !important;
+	margin-top: 2px;
+}
+
+
+
+.appnamer .appliance_identifier .checkbox {
+    float: right;
+    left: 77px;
+    position: relative !important;
+    top: -40px !important;
+}
+
+#cloud_resource_limit_table tr.odd td.appliance_actions, #cloud_resource_limit_table tr.even td.appliance_actions, #cloud_power_saver_table tr.even td.appliance_edit {
+	margin-top: 25px;
+}
+
+#cloud_resource_limit_table tr.odd, #cloud_resource_limit_table tr.even, #cloud_power_saver_table tr.even, #cloud_power_saver_table tr.odd {
+	min-height: 180px !important;
+	margin-bottom: 20px !important;
+}
+
+.appliance_edit a {
+	margin-right: 15px !important;
+	left: 0px !important;
+}
+
+.cloud .project_tab0 form {
+	position: relative;
+	left: 120px;
+}
+
+
+#cloud_usergroup_table, #cloud_requests, #cloud_transaction_table, #cloud_transaction_failed_table {
+	width: 95%;
+	margin-left: 20px;
+}
+
+#requests_filter {
+	margin-left: 20px;
+}
+
+#cloud_resource_limit_table .sort_box, #cloud_power_saver_table .sort_box {
+	margin-right: 25px;
+}
+
+#Tabelle .sort_box, #Tabelle1 .sort_box, #cloud_images .sort_box, #cloud_users .sort_box, #cloud_usergroup_table .sort_box, #cloud_requests .sort_box, #cloud_ip_mgmt_table .sort_box,
+#cloud_transaction_table .sort_box, #cloud_transaction_failed_table .sort_box,
+#cloud_resource_limit_table .sort_box, #cloud_power_saver_table .sort_box, #cloud_selector_table .sort_box {
+	width: 400px;
+	float: right;
+}
+
+#cloud_selector_table .sort_box .bootstrap-select, #cloud_ip_mgmt_table .sort_box .bootstrap-select {
+	width: 65px !important;
+}
+
+td.ip_mgmt_actions {
+	width: 400px !important;
+}
+
+#cloud_selector_table .sort_box input.text {
+	top: -6px !important;
+}
+
+#cloud_usergroup_table tr.odd td, #cloud_usergroup_table tr.even td {
+	width: 100% !important;
+	float: left;
+	display: block;
+	text-align: left;
+}
+
+#cloud_usergroup_table tr.odd, #cloud_usergroup_table tr.even {
+	min-height: 200px !important;
+}
+
+#cloud_usergroup_table .identifier input {
+	float: right;
+}
+
+#cloud_usergroup_table tr.odd td.cg_actions, #cloud_usergroup_table tr.even td.cg_actions {
+	margin-top: 20px;
+}
+
+#cloud_selector_table .sort_box input.submit {
+	top: -12px !important;
+}
+
+#cloud_selector_table .badge {
+	background-color: #579ddb;
+	padding: 15px;
+}
+
+#cloud_selector_tab0 h3 {
+	margin-left: 20px;
+}
+
+#cloud_selector_tab0 h3 .bootstrap-select {
+	position: relative;
+	top: 6px;
+}
+
+
+#cloud_selector_table {
+	width: 95%;
+	margin-left: 20px;
+}
+
+#cloud_selector_table .badge img {
+	 position: relative;
+    right: 7px;
+    top: -8px;
+}
+
+#add_product .buttons {
+    left: 200%;
+    margin-right: 30px;
+    position: relative;
+}
+
+#add_product {
+	left: -30%;
+    position: relative;
+    text-align: left;
+}
+
+#Tabelle1 .sort_box, #cloud_images .sort_box{
+	margin-right: 30px;
+}
+
+#Tabelle1 .appliance_state .fabelle {
+	position: relative;
+	top: 4px;
+}
+
+#Tabelle1 {
+	width: 95%;
+	margin-right: 30px;
+
+}
+
+#Tabelle1 td.edit {
+	width: 150px !important;
+}
+
+#Tabelle1 a.edit {
+	width: 110px !important;
+}
+
+#Tabelle1 td.appliance_imageid {
+	width: 100px !important;
+}
+#Tabelle .sort_box .bootstrap-select, #cloud_images .sort_box .bootstrap-select, #project_tab0 .sort_box, #Tabelle1 .sort_box .bootstrap-select, #cloud_users .sort_box .bootstrap-select, 
+#cloud_usergroup_table .sort_box .bootstrap-select, #cloud_requests .sort_box .bootstrap-select, 
+#cloud_transaction_table .sort_box .bootstrap-select, #cloud_transaction_failed_table .sort_box .bootstrap-select, 
+#cloud_resource_limit_table .sort_box .bootstrap-select, #cloud_power_saver_table .sort_box .bootstrap-select, #cloud_selector_table .sort_box .bootstrap-select {
+	width: 90px;
+}
+
+#Tabelle .sort_box input.text, #Tabelle1 .sort_box input.text, #cloud_images .sort_box input.text, #project_tab0 .sort_box input.text, #cloud_users .sort_box input.text, #cloud_usergroup_table .sort_box input.text, #cloud_selector_table .sort_box input.text,
+#cloud_requests .sort_box input.text, #cloud_transaction_table .sort_box input.text, #cloud_power_saver_table .sort_box input.text,
+#cloud_transaction_failed_table .sort_box input.text, #cloud_resource_limit_table .sort_box input.text {
+	position: relative;
+	top: -7px;
+}
+
+#cloud_images td {
+	padding: 10px;
+}
+
+#cloud_images td.action a {
+	margin-right: 5px;
+}
+
+#cloud_images td.action a:hover {
+	opacity: 0.9;
+}
+
+#Tabelle .sort_box input.submit, #Tabelle1 .sort_box input.submit, #cloud_images .sort_box input.submit, #cloud_users .sort_box input.submit, #project_tab0 .sort_box input.submit, #cloud_power_saver_table .sort_box input.submit, #cloud_selector_table .sort_box input.submit,
+#cloud_usergroup_table .sort_box input.submit, #cloud_requests .sort_box input.submit,
+#cloud_transaction_table .sort_box input.submit, #cloud_transaction_failed_table .sort_box input.submit, #cloud_resource_limit_table .sort_box input.submit, #cloud_power_saver_table .sort_box input.submit {
+	position: relative;
+	top: -13px;
+}
+
+#Tabellerr .panel-body {
+	margin-left: -18px;
+    margin-top: -50px;
+}
+
+.cloud .panel-title {
+	color: #ffffff !important;
+	position: relative;
+	top: -10px;
+	left: 10px;
+	font-size: 1.416em;
+    font-weight: 300;
+    line-height: 50px;
+}
+
+#cloud_selector_tab0 #cloud_selector_table td.description {
+	display: block !important;
+}
+
+#cloud_private_image_table .pill {
+	position: relative;
+	left: 220px !important;
+	top: 65px;
+}
+
+#butoupdate input.submit {
+  	left: -11px;
+    margin-right: -10px;
+    position: relative;
+}
+
+.cloud_user_id {
+	display: none !important;
+}
+
+.updatoo #project_tab1 {
+	margin-left: -50px;
+    margin-top: -20px;
+    width: 600px;
+}
+
+.updatoo h2 {
+	font-size: 16px !important;
+	color: #2b866e !important;
+}
+
+.updatoo label {
+	position: relative;
+	left: -35px !important;
+}
+
+.updatoo #cloud_usergroup_description {
+	position: relative;
+	left: -120px !important;
+}
+
+.updatoo input.submit {
+	margin-right: 5px !important
+}
+
+.updatoo .bootstrap-select {
+	left: -230px;
+    margin-top: 20px;
+    position: relative;
+}
+
+
+#cloud_users .cloud_user_id {
+	display: block !important;
+}
+
+#cloud_users .cloud_user_id .checkbox {
+	 left: 269px;
+    position: relative;
+    top: -321px;
+    z-index: 9999;
+}
+
+#cloudbackgroundPopup {
+	z-index: 888888888 !important;
+}
+
+.fortiso .checkbox {
+	position: relative;
+	top: 10px;
+}
+
+#cloudpopupInfo {
+	z-index: 999999999 !important;
+	width: 600px !important;
+	height: 480px !important;
+}
+
+#cloud_users .pill {
+	position: relative;
+	left: 220px;
+}
+
+#cloud_requests .cr_details a {
+	float: right;
+	position: relative;
+	left: -10px;
+}
+
+.cloud .cr_details a.edit_nojs {
+	background-color: #579ddb !important;
+    border-color: #5fa2dd !important;
+    color: #ffffff !important;
+    padding: 0 12px;
+    text-decoration: none !important;
+    border-radius: 0px !important;
+    text-shadow: none !important;
+    text-transform: none !important;
+}
+
+.ipconfigbtn {
+	background-color: #579ddb !important;
+    border-color: #5fa2dd !important;
+    color: #ffffff !important;
+    padding: 4px 12px;
+    text-decoration: none !important;
+    border-radius: 0px !important;
+    margin-top: 20px;
+}
+
+#configiptextarea {
+	width: 600px;
+	height: 400px;
+}
+
+.ipconfigbtn:hover {
+	opacity: 0.9;
+}
+
+#htmlobject_box_add_storage a {
+	background-color: #579ddb !important;
+    border-color: #5fa2dd !important;
+    color: #ffffff !important;
+    padding: 0 12px;
+    text-decoration: none !important;
+    border-radius: 0px !important;
+}
+
+.cloud .appliance_id {
+	text-align: left !important;
+}
+
+.cloud .appliance_actions {
+	width: 100% !important;
+	margin-top: 10px;
+	text-align: left !important;
+}
+
+.tabeler-pool tr.odd, .tabeler-pool tr.even {
+	min-height: 200px !important;
+}
+
+.cloud .resource_state .pill {
+	max-width: 68px; 
+}
+
+.cloud .panel-body .pill {
+	display: none !important;
+}
+
+.cloud_request_id {
+	display: none !important;
+}
+
+.cloud .cr_details a {
+	float: left;
+	margin-right: 10px;
+}
+
+.cloud .resource_state .pill {
+	position: relative !important;
+	z-index: 999;
+	color: #ffffff;
+	left: 200px;
+	top: 10px;
+}
+
+#cloud_usergroup_table .headrow {
+	display: none;
+}
+
+.checkooo {
+    float: right;
+    position: relative;
+    right: 5px;
+    top: -65px;
+}
+
+.cloud .appnamer {
+	width: 108% !important;
+	top: -30px;
+}
+
+.cu_actions {
+	width: 100% !important;
+}
+
+.cu_actions a {
+	width: 130px;
+	margin-top: 5px;
+}
+
+.cloud #buttons {
+	text-align: right;
+	margin-right: 30px;
+}
+
+#Tabellerr .appliance_comment {
+	margin-left: 1px;
+}
+
+#appliance_tab0 .appliance_links a.edit {
+	position: relative;
+	left: -15px;
+	top: -10px;
+}
+
+#appliance_tab0 td.appliance_values {
+	min-height: 180px;
+}
+
+#Tabellerr .appliance_edit a {
+    background-color: #579ddb !important;
+    border-color: #5fa2dd !important;
+    color: #ffffff !important;
+    min-width: 75px;
+     padding: 0 12px;
+
+     float: left;
+}
+
+#Tabellerr .appliance_edit a.disable {
+	position: relative;
+	left: 7px;
+}
+
+#Tabellerr .appliance_edit a:hover {
+	opacity: 0.9;
+}
+
+#Tabellerr .appliance_links a {
+	margin-left: 12px;
+    padding: 0 12px;
+}
+
+.btn-new:hover {
+	opacity: 0.8;
+}
+
+a.edit {
+	padding: 0 12px;
+    background-color: #579ddb !important;
+    border-color: #5fa2dd !important;
+    color: #ffffff !important;
+    text-decoration: none !important;
+}
+
+.btn-new {
+	margin-left: 12px;
+    padding: 0 12px;
+    background-color: #579ddb !important;
+    border-color: #5fa2dd !important;
+    color: #ffffff !important;
+    text-decoration: none !important;
+    position: relative;
+    top: 10px;
+}
+
+#Tabellerr .appliance_links {
+	margin-bottom: 25px;
+}
+
+
+#Tabellerr .headrow {
+	display: none;
+}
+
+#Tabellerr tr.odd, #Tabellerr tr.even, table#cloud_requests tr.even, #cloud_power_saver_table tr.even, #cloud_power_saver_table tr.odd, #cloud_resource_limit_table tr.even, #cloud_resource_limit_table tr.odd, #cloud_resource_pool_table tr.odd, #cloud_resource_pool_table tr.even, table#cloud_requests tr.odd, #cloud_private_image_table tr.odd, #cloud_private_image_table tr.even, #cloud_usergroup_table tr.even, #cloud_usergroup_table tr.odd, #cloud_users tr.even, #cloud_users tr.odd, #Tabellerr-kernel tr.odd, #Tabellerr-kernel tr.even, #cloud_appliances tr.odd, #cloud_appliances tr.even {
+	display: block;
+	width: 300px;
+	float: left;
+	background-color: #fff;
+    margin: 13px;
+    padding: 10px;
+    min-height: 520px;
+    font-family: "Open Sans","Helvetica Neue",Helvetica,Arial,sans-serif;
+    margin-bottom: 50px;
+}
+
+#cloud_resource_pool_table tr.headrow {
+	display: none;
+}
+
+#cloud_resource_pool_table tr.odd td, #cloud_resource_pool_table tr.even td {
+	float: left;
+	width: 100%;
+	display: block;
+}
+
+#cloud_resource_pool_table tr.odd td.appliance_id, #cloud_resource_pool_table tr.even td.appliance_id {
+	margin-top: 10px;
+}
+
+#cloud_resource_pool_table tr.odd, #cloud_resource_pool_table tr.even {
+	min-height: 225px;
+}
+
+#cloud_resource_pool_table tr.odd td.appliance_action, #cloud_resource_pool_table tr.even td.appliance_action {
+    
+}
+
+.fa.mini {
+	margin-right: 5px;
+}
+
+#serverpanel .panel {
+	margin: 10px -6px 30px;
+    padding: 5px;
+    text-align: center;
+}
+
+#hyperv_ds_tab2 .volgrrripo #browsebutton {
+    position: relative;
+    left: 340px !important;
+}
+
+#hyperv_ds_tab2 .bros form:nth-child(2) {
+    position: relative;
+    top: -50px;
+    height: 250px !important;
+}
+
+#hyperv_ds_tab2 .bros form:nth-child(2) #buttons {
+    position: relative;
+    top: 40px;
+}
+
+#serverpanel .panel span {
+    text-align: center;
+    position: relative;
+    top: 16px;
+    margin-right: 10px;
+}
+
+#serverpanel .panel .text-thin {
+    position: relative;
+    top: -14px;
+}
+
+#serverpanel {
+	width: 70% !important;
+	margin-left: 13%;
+}
+
+#menu1_4 {
+	display: none;
+}
+
+#serverpanel .text-2x {
+	position: relative;
+	top: 10px;
+}
+
+#storage_tab, #kernel_tab, #image_tab {
+	display: none;
+}
+
+.appliance_state {
+	  float: right;
+    position: relative;
+    
+    top: 0;
+}
+
+.panel-body a.continue {
+	background-color: #ebaa4b !important;
+	color: white;
+	border-radius: 0px !important;
+}
+
+.storage_state {
+	/*width: 250px !important;*/
+}
+
+.storage_state .appnamer {
+	top: -10px;
+}
+
+.storage_state .pill {
+	 color: white;
+    float: right;
+    left: 15px;
+    position: relative !important;
+}
+
+.storage_identifier {
+	position: relative;
+    top: -55px;
+    z-index: 9999;
+    left: 70px;
+}
+
+#storage_type0 .data {
+	position: relative;
+	top: 10px;
+}
+
+.storage_edit {
+	margin-top: 20px;
+}
+
+#image_tab0 .appnamer {
+	width: 300px;
+}
+
+#image_tab0 .pill {
+	color: white;
+    float: right;
+    left: 235px;
+    position: relative !important;
+    top: -30px;
+}
+
+.storage .storage_identifier {
+	left: 0px !important;
+}
+
+#hybrid_cloud_s3_tab .custom_tab input.submit {
+	display: none;
+}
+
+#hybrid_cloud_s3_tab2 .span4, #hybrid_cloud_s3_tab2 #form {
+	margin-left: 30px;
+	padding-right: 30px;
+}
+
+#hybrid_cloud_s3_tab .custom_tab, #hybrid_cloud_s3_tab .custom_tab {
+	margin-right: 100px;
+    position: relative;
+    right: 60px;
+    text-align: right;
+    top: 15px;
+    float: right;
+    height: 0px;
+}
+
+#hybrid_cloud_s3_tab2 #buttons {
+	margin-right: 30px;
+	text-align: right;
+}
+
+#image_tab0 .data {
+	position: relative;
+	top: -30px;
+}
+
+#image_tab0 .pill {
+	z-index: 999;
+}
+
+.image_comment {
+	margin-top: -20px;
+	margin-bottom: 20px;
+}
+
+#image_filter_box {
+	margin-left: 20px;
+}
+
+#image_filter_box label {
+	min-width: 20px;
+	position: relative;
+	top: -6px;
+}
+
+.storage #storageSelectTable, #kernelSelectTable {
+	margin-left: 20px;
+}
+
+#storageSelectTable a, #resourceSelectTable a, #kernelSelectTable a {
+	text-decoration: underline;
+}
+
+#storages_filter {
+	margin-left: 20px;
+}
+
+#storages_filter label, #resource_filter label, #resource_type_filter label {
+	  min-width: 20px;
+    position: relative;
+    top: -6px;
+}
+
+#resource_filter label {
+	width: 138px;
+}
+
+.storage_edit a.edit, .image_edit a.edit {
+	 padding: 0 12px;
+     background-color: #579ddb !important;
+    border-color: #5fa2dd !important;
+    color: #ffffff !important;
+    margin-bottom: 10px;
+}
+
+.image_edit a.remove {
+	padding: 0 12px;
+     background-color: #579ddb !important;
+    border-color: #5fa2dd !important;
+    color: #ffffff !important;
+    margin-bottom: 10px;
+    position: relative;
+    left: 0px;
+    min-width: 10px;
+}
+.storage_edit a.manage {
+	padding: 0 12px;
+     background-color: #579ddb !important;
+    border-color: #5fa2dd !important;
+    color: #ffffff !important;
+    margin-bottom: 10px;
+    position: relative;
+    left: 0px;
+    min-width: 10px;
+}
+
+.storage_comment {
+	margin-top: 20px;
+	margin-bottom: 20px;
+}
+
+.appnamer .panel-title {
+	text-align: left !important;
+}
+
+.resource .resource_state {
+	
+    position: relative;
+    text-align: left;
+    
+    width: 300px !important;
+}
+
+.resource .appnamer {
+	width: 100% !important;
+}
+
+.resource .panel-title {
+	text-align: left !important;
+	width: 300px !important;
+}
+
+#resourceSelectTable {
+	margin-left: 20px;
+}
+
+.resource td .pill {
+	 float: right;
+    padding-right: 10px;
+    position: relative !important;
+    right: 40px;
+    top: -28px;
+    color: white;
+}
+
+.resource .data {
+	position: relative;
+	top: -20px;
+}
+
+.appnamer {
+	 left: -11px;
+    position: relative;
+    top: -41px;
+    width: 120%;
+    z-index: 3;
+}
+
+#Tabellerr strong, b {
+	color: #2b866e;
+}
+
+#kernel_tab1 #form {
+	margin-left: 10px;
+}
+
+#kernel_tab1 label {
+	min-width: 10px !important;
+}
+
+#kernel_tab1 textarea {
+	width: 600px !important;
+	margin-left: 30px;
+	position: relative;
+	top: 10px;
+	margin-bottom: 30px;
+}
+
+.appliance_identifierz {
+   float: right;
+    position: relative;
+    right: 3px;
+    top: -45px;
+    width: 20px;
+}
+
+#Tabellerr {
+	width: 100%;
+}
+
+.kernel_comment {
+	margin-top: 10px;
+	margin-bottom: 10px;
+}
+
+#Tabellerr .sort_box, #cloud_selector_table .sort_box, #cloud_ip_mgmt_table .sort_box, #project_tab0 .sort_box {
+	 display: block;
+    float: right;
+    padding-right: 30px;
+    text-align: right;
+    width: 400px;
+}
+
+#Tabellerr .pageturn_head {
+	display: block;
+    margin-bottom: 40px !important;
+    width: 100%;
+}
+
+#resource_filter, #resource_type_filter {
+	position: relative;
+	left: 20px;
+}
+
+#Tabellerr div.sort_box input.refresh {
+	margin: 0px 0px 0px 0px;
+	top: -12px;
+}
+
+.borderchoose {
+   border: 2px solid #579DDB !important;
+}
+
+#cloud_private_image_table .resource_state {
+	position: relative;
+	left: 19px;
+	top: 25px;
+}
+
+#Tabellerr .sort_box .selectpicker, #project_tab0 .sort_box .selectpicker, #cloud_selector_table .sort_box .selectpicker, #cloud_ip_mgmt_table .sort_box .selectpicker {
+	width: auto !important;
+}
+#project_tab0 .sort_box .bootstrap-select {
+	width: auto !important;
+}
+
+#project_tab0 .sort_box .refresh {
+	left: 3px;
+    top: -9px !important;
+}
+
+
+#Tabellerr .sort_box input, #cloud_selector_table .sort_box input, #cloud_ip_mgmt_table .sort_box input {
+	 position: relative;
+    top: -6px;
+}
+
+#Tabellerr .sort_box input.submit, #cloud_selector_table .sort_box input.submit, #cloud_ip_mgmt_table .sort_box input.submit {
+	top: -12px;
+}
+
+.appliance h2, h2.inner {
+	position: relative;
+	left: 13px;
+}
+
+.appliance #step1, .appliance #step2 {
+	margin-left: 20px;
+}
+
+#comment_box #comment {
+	width: 500px !important;
+}
+
+
+.volgrrripo #comment_box  #comment {
+    left: -120px;
+    min-width: 100px !important;
+    position: relative;
+    width: 220px !important;
+}
+
+.volgrrripo #browsebutton {
+    left: 117px;
+    position: relative;
+    top: -19px;
+
+}
+
+
+.greeeno {
+     background-color: #42cca5 !important;
+    width: 100%;
+    position: relative;
+    left: -20px;
+    top: -50px;
+    padding-left: 15px !important;
+    color: white !important;
+}
+
+
+.volgrrripo #path {
+    left: 121px;
+    position: relative;
+    top: -18px;
+}
+
+
+
+#pathspan {
+    left: 18px;
+    position: relative;
+    top: 13px;
+}
+
+#name_box label {
+	min-width: 80px !important;
+	position: relative;
+	top: -5px;
+}
+
+#appliance_tab1 #buttons {
+	float: right;
+	margin-right: 20px;
+}
+.appliance input.namegenButton {
+	left: 10px;
+	position: relative;
+	top: -1px;
+}
+
+.pull-right a.add {
+	 margin-left: 15px;
+    padding: 0 12px;
+     background-color: #579ddb !important;
+    border-color: #5fa2dd !important;
+    color: #ffffff !important;
+       position: relative;
+    right: 38px !important;
+    top: 10px;
+}
+
+#resource_tab {
+	display: none;
+}
+
+#resource_tab1 a {
+	color: #2285a0;
+	font-size: 12px;
+	font-family: "Open Sans","Helvetica Neue",Helvetica,Arial,sans-serif;
+}
+
+.errormsg {
+	color: #c92e70;
+	text-align: left;
+	margin-top: 10px;
+}
+
+#step2 #resource_box {
+	float: left;
+	width: 300px;
+}
+
+#step2 #or {
+	float: left;
+	position: relative;
+	top: 5px;
+}
+
+
+
+#step2 #resource_box label {
+	min-width: 10px !important;
+	position: relative;
+	top: -5px;
+}
+
+#step2 #buttons {
+	float: left;
+	width: 100%;
+}
+
+a.add {
+
+    padding: 0 12px;
+     background-color: #579ddb !important;
+    border-color: #5fa2dd !important;
+    color: #ffffff !important;
+}
+
+a.add:hover {
+	opacity: 0.9;
+}
+
+.appliance #form {
+	margin-left: 20px;
+}
+
+#Tabellerr .alinkleft {
+	float: left;
+	width: 120px;
+	margin-right: 15px;
+}
+
+#Tabellerr .appliance_edit {
+	float: left;
+	width: 100%;
+	margin-top: 10px;
+}
+
+#Tabellerr .appliance_edit a {
+	width: 130px;
+	margin-left: -2px;
+	margin-top: 3px;
+}
+
+.panel-yellow {
+	border: 1px solid #f7f86a;
+}
+
+.panel-yellow h3 {
+	color: #579ddb !important;
+}
+
+.appliance #form input[type=checkbox] {
+	position: relative;
+	top: 13px;
+	right: 8px;
+}
+
+#resource_filter input {
+	width: 220px !important;
+}
+
+#appliance_edit form a {
+	  left: 2px;
+    padding: 7px 12px !important;
+    position: relative;
+}
+
+.pageturn_table a.disabled {
+	background: transparent !important;
+	color: #999;
+}
+
+#appliance_edit a.manage {
+	padding: 0px 12px !important;
+}
+
+#appliance_edit .span6 {
+	float: left;
+	width: 500px;
+}
+#appliance_edit  #pluginsbox {
+	float: right;
+	width: 400px;
+}
+
+#appliance_edit #buttons {
+ 	float: left;
+    margin-top: 20px;
+    position: relative;
+    right: 30px;
+    text-align: right;
+    width: 100%;
+}
+
+#Tabellerr .sort_box .sort, #Tabellerr .sort_box .order, #Tabellerr .sort_box .limit {
+	width: auto !important;
+}
+
+#Tabellerr .pageturn_box, #cloud_selector_table .pageturn_box {
+	float: left;
+    left: 20px;
+    position: relative;
+    width: 120px;
+}
+
+#Tabellerr .actiontable input {
+	margin-right: 10px;
+	margin-left: 0px !important;
+}
+
+#kvm_tab3 #form {
+	margin-left: 30px;
+}
+
+#Tabellerr .actiontable {
+	padding-right: 30px;
+}
+
+#kvm_edit table .pill, #kvm_tab2 table .pill {
+	color: white;
+}
+
+#kvm_tab2 table td.state {
+	width: 120px !important;
+}
+
+#kvm_tab2 table td.action {
+	width: 120px !important;
+}
+
+#kvm_tab2 table td.action a {
+	margin-bottom: 5px;
+	    padding: 0 12px !important;
+      background-color: #579ddb !important;
+    border-color: #5fa2dd !important;
+    color: #ffffff !important;
+}
+
+.reshh {
+    position: relative;
+    left: -22px;
+}
+
+#Tabellerr .pill, #cloud_appliances .pill,  #cloud_users .pill, table#cloud_requests .pill, #kvm_tab2 table .pill, #cloud_private_image_table .pill, #kvm_edit table .pill {
+	 display: block;
+    font-size: 12px;
+    position: absolute;
+    background-color: #986291;
+    padding: 2px 3px;
+    margin-top: -50px;
+}
+
+#OCH_edit .pill {
+   position: relative;
+   left: 20px;
+}
+
+#OCH_edit td.data {
+    position: relative;
+    top: 0px;
+}
+
+#OCH_edit td.appliance {
+    position: relative;
+    top: -35px;
+}
+
+#OCH_edit tr.odd, #OCH_edit tr.even {
+    height: 220px;
+}
+
+#sshterm_tab0 .appliance_state .pill, #kvm_vm_tab0 td.state .pill, #citrix_vm_tab0 td.state .pill {
+ 	background-color: #986291;
+    color: white;
+    display: block;
+    font-size: 12px;
+    padding: 3px;
+    position: relative;
+    top: 22px;
+}
+
+#kvm_vm_tab0 td.state .pill, #citrix_vm_tab0 td.state .pill {
+	top: 5px !important;
+}
+
+#sshterm_tab0 .login a.badge, #kvm_edit table td a.badge {
+
+	border-radius: 0px;
+	background-color: #5fa2dd !important;
+	border-color: #5fa2dd !important;
+    color: white !important;
+    padding: 8px 12px;
+}
+
+#Tabellerplug .pill {
+	float: left;
+    height: 35px;
+    margin-left: -20px;
+    padding-top: 12px !important;
+    top: -20px;
+    background-color: #4E8AD9 !important;
+    color: white;
+    width: 115px;
+}
+
+#Tabellerr .pageturn_table td, #Tabellerr-kernel .pageturn_table td {
+	display: table-cell;
+}
+
+#Tabellerr .pageturn_table tr, #Tabellerr-kernel .pageturn_table tr {
+	display: table-row;
+}
+
+#Tabellerr .htmlobject_td.identifier, #Tabellerr-kernel .htmlobject_td.identifier {
+ border-top: medium none !important;
+    float: right;
+    margin-right: -3px;
+    margin-top: -1px;
+}
+
+#Tabellerr tr.odd td, #Tabellerr tr.even td, #Tabellerr-kernel tr.odd td, #Tabellerr-kernel tr.even td {
+	display: block;
+
+}
+
+#Tabellerr-kernel tr.odd td, #Tabellerr-kernel tr.even td {
+	width: 100%;
+	text-align: left;
+}
+
+#Tabellerr-kernel b {
+	color: #1fa67a;
+}
+
+
+#appliance_tab {
+	display: none;
+}
+
+#Tabellerr td, #Tabellerr th, #Tabellerr tbody, #Tabellerr {
+  border: none !important;
+}
+
+
+.head-tbl-data button.selectpicker {
+	width: 100px !important;
+}
+
+.head-tbl-data .bootstrap-select {
+	width: 100px !important;
+}
+
+
+#Tabelle .htmlobject_td.head, 
+#Tabelle .htmlobject_td.pageturn_head {
+	display: none;
+}
+
+.infofa {
+	cursor: pointer;
+}
+
+#Tabelle, #Tabelle td, #Tabelle tr, #Tabelle th {
+	border: none;
+}
+
+#Tabelle tr.head {
+	float: left;
+	display: block;
+	width: 200px;
+}
+
+div.head-tbl-data {
+	margin-bottom: 20px;
+}
+
+.head-tbl-data #events_filter .bootstrap-select {
+	position: relative;
+	top: 7px;
+	/*left: -115px;
+	width: 120px !important;*/
+	width: 60%;
+}
+
+.head-tbl-data #events_filter label {
+	width: 39%;
+}
+
+.head-tbl-data .pageturn_box {
+	float: left;
+	position: relative;
+	top: 16px;
+}
+
+div.lead {
+      background-color: #579ddb;
+    border-color: transparent;
+    color: #fff;
+    font-size: 19px !important;
+    left: 0 !important;
+    position: fixed;
+    top: 0 !important;
+    width: 100%;
+    z-index: 2147483647;
+    margin: 0 !important;
+    padding: 8px 3em 5px 15px;
+
+}
+
+
+
+.head-tbl-data .sort_box {
+	float: right;
+	position: relative;
+	top: 10px;
+}
+
+.head-tbl-data .sort_box input[type=text] {
+	padding: 6px !important;
+    position: relative;
+    top: -7px;
+}
+
+.head-tbl-data .sort_box input.submit {
+	position: relative;
+	top: -13px;
+}
+
+.head-tbl-data #events_filter {
+	float: left;
+	width: 40%;
+}
+
+.head-tbl-data .pageturn_wrapper{
+	float: right;
+	width: 59%;
+}
+#eventsSelectTable {
+	float: left;
+	position: relative;
+	top: 25px;
+}
+
+#Tabelle .actions:hover, #Tabelle .pageturn_head:hover, #Tabelle .head:hover {
+	background-color: #fff !important;
+}
+
+#Tabelle .pageturn_head, #Tabelle .head {
+	border: none !important;
+}
+
+#eventsSelectTable a {
+	text-decoration: underline;
+}
+
+.actiontable input {
+	  float: right;
+    margin-left: 10px;
+    position: relative;
+    top: 25px;
+}
+
+#appliance_edit  #pluginsbox a.edit {
+	min-width: 130px;
+    padding: 0 12px !important;
+      background-color: #579ddb !important;
+    border-color: #5fa2dd !important;
+    color: #ffffff !important;
+    
+}
+
+.kernel_name, .kernel_comment, .kernel_version, .kernel_edit {
+	display: block;
+}
+
+.kernel .panel-body {
+	text-align: left;
+    width: 300px;
+}
+
+.kernel a.edit {
+	min-width: 130px;
+	padding: 0 25px 0px 10px !important;
+      background-color: #579ddb !important;
+    border-color: #5fa2dd !important;
+    color: #ffffff !important;
+}
+
+#event_tab {
+	display: none;
+}
+
+a.start:hover, a.stop:hover, a.manage:hover, a.enable:hover, a.disable:hover {
+	opacity: 0.9;
+}
+
+a.start, a.stop, a.manage, a.enable, a.disable {
+	min-width: 130px;
+    padding: 0 12px !important;
+    position: relative;
+    left: -15px;
+}
+
+
+#ajaxbuf {
+	display: none;
+}
+
+input.submit {
+	border: none !important;
+	margin-top: 10px !important;
+}
+
+label {
+	 float: left;
+    font-size: 13px !important;
+    margin-right: 11px;
+    margin-top: 12px;
+    min-width: 200px;
+}
+
+a.disabled {
+	opacity: 0.5;
+}
+
+
+a.start {
+	color: white;
+}
+
+#aa_plugins_tab0 td.head, #aa_plugins_tab0 td.pageturn_head {
+	display: none;
+}
+
+#Tabellerplug td, #Tabellerplug tbody, #Tabellerplug tr, #Tabellerplug table, #Tabellerplug {
+	border: none;
+}
+
+#Tabellerplug td.enabled, #Tabellerplug td.configure, #Tabellerplug td.enable, #Tabellerplug td.started {
+	margin-left: 10px;
+	float: right;
+	display: block;
+	padding: 0px;
+	margin-bottom: 20px;
+	margin-top: 10px;
+	margin-right: 45px;
+}
+
+
+
+.aa_plugins {
+	padding: 0px 10px 0px 10px;
+}
+
+.infofa .label {
+	font-family: "Open Sans","Helvetica Neue",Helvetica,Arial,sans-serif !important;
+	margin-left: 10px;
+}
+
+#Tabellerplug .panel-title {
+	text-transform: uppercase;
+}
+
+#vmware_esx_discovery_tab0 #Tabellerr .panel-heading {
+	position: relative;
+    top: -15px;
+    width: 300px !important;
+}
+
+#vmware_esx_discovery_tab0 #Tabellerr td.action {
+	margin-top: 30px;
+}
+
+#vmware_esx_discovery_tab0 #Tabellerr tr.odd, #vmware_esx_discovery_tab0 #Tabellerr tr.even {
+	min-height: 300px !important;
+}
+
+#vmware_esx_discovery_tab0 #Tabellerr td.action a {
+	
+	float: left;
+	background-color: #579ddb !important;
+	padding: 0px 11px;
+	color: white;
+}
+
+#vmware_esx_discovery_tab0 #Tabellerr td.action a:hover {
+	opacity: 0.9;
+}
+
+#vmware_esx_discovery_tab0 #Tabellerr .pill {
+	    float: right;
+    margin-right: 15px;
+    position: relative;
+    top: 60px;
+}
+
+#Tabellerplug .panel-heading {
+	border-bottom: 1px solid #adb3b8;
+}
+
+#Tabellerplug .pill {
+    background-color: #4e8ad9 !important;
+    color: white;
+    float: left;
+    height: 35px;
+    margin-left: -20px;
+    padding-top: 12px !important;
+    top: -20px;
+    width: 115px;
+}
+
+#aa_plugins_tab0 a {
+	font-size: 16px;
+  	line-height: 1.33;
+  	padding: 10px 16px;
+}
+
+
+
+
+#aa_plugins_tab {
+	display: none;
+}
+
+
+#Tabellerplug tr.headrow {
+	display: none;
+}
+
+td.description {
+	display: none !important;
+}
+
+.eventside h3 {
+	font-size: 14px;
+    font-weight: 300;
+    line-height: 15px;
+    overflow: hidden;
+    padding: 0 20px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.eventside .time {
+	position: relative;
+    text-align: right;
+    top: -24px;
+    float: right;
+    font-size: 9px;
+    right: 20px;
+}
+
+.eventside p {
+	font-size: 12px;
+	margin-left: 35px;
+}
+
+#Tabellerplug tr.odd td, #Tabellerplug tr.even td {
+    border: medium none !important;
+    display: block;
+}
+
+.nodataevent {
+	padding: 20px;
+}
+
+.eventcontent {
+	margin-top: 10px;
+	margin-bottom: 5px;
+}
+
+.alleventswindow .eventcontent {
+	height: 673px;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.onestorage {
+	margin-bottom: 20px;
+}
+
+.onestorage .hoshead {
+	 font-size: 17px;
+    font-weight: 300;
+    line-height: 15px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.onestorage .progress {
+	float: left;
+    width: 96%;
+    margin-left: 5px;
+    margin-top: 10px;
+}
+
+.esxi .esxright {
+	position: relative;
+	top: 14px;
+}
+
+.onestorage .datastoredetail {
+	display: none;
+	 background-color: #4ebcda;
+    color: white;
+    display: block;
+    padding: 2px;
+    text-align: center;
+    top: -20px;
+    width: 120px;
+    float: right;
+    position: relative;
+}
+
+.pinko a {
+	color: #c92e70;
+}
+
+.warningo a {
+	color: #ebaa4b;
+}
+
+.criticaleventwindow, .warningeventwindow {
+	min-height: 350px;
+}
+
+.warningeventwindow .eventcontent, .criticaleventwindow .eventcontent {
+	height: 277px;
+	overflow-x: hidden;
+	overflow-y: auto; 
+}
+
+.ttt {
+	margin-top: -10px;
+    padding-left: 13px;
+    position: relative;
+    left: 13px;
+}
+
+#alltasks {
+	height: 200px;
+	overflow-x: hidden;
+	overflow-y: auto; 
+}
+
+.alleventswindow {
+	min-height: 765px;
+}
+
+#closenutanix {
+	font-size: 18px !important;
+    position: relative;
+    text-align: right;
+    top: -10px;
+    color: #2285a0 !important;
+    cursor: pointer;
+}
+
+
+.evento a {
+	color: #2285a0;
+}
+
+.linkeventside {
+  margin-bottom: 10px;
+    margin-left: 20px;
+   
+}
+
+.bbadger a {
+	color: white !important;
+	padding: 10px;
+}
+
+.bbadger {
+	  float: right;
+    position: relative;
+    top: -33px;
+    right: 10px;
+    border-radius: 0px;
+}
+
+#nutanix {
+	display: none;
+}
+
+.aa_server #datacenter_tab {
+	display: none;
+}
+
+#eventsboxes {
+	text-align: center;
+}
+
+.panel {
+	padding: 0px 0px 0px 0px;
+}
+
+#navbar-container {
+	z-index: 5 !important;
+}
+
+#navbar {
+	z-index: 4 !important;
+	height: 25px;
+}
+
+.msgBox {
+	position: absolute;
+    right: 20px;
+    top: 20px;
+    width: 300px;
+    z-index: 555;
+}
+
+.msgBox .close:hover {
+	color: white;
+	font-weight: bold;
+	z-index: 999;
+}
+
+#asideul a {
+	z-index: 999 !important;
+}
+
+
+#infopopup {
+	position: absolute;
+	left: 35%;
+	display: none;
+}
+
+
+.serverpanel {
+	height: 260px;
+	margin-bottom: 59px !important;
+}
+
+.networkpanel {
+	height: 170px;
+	margin-bottom: 35px;
+}
+
+#project_tab1 .span7 div.left {
+	margin-left: 40px;
+}
+
+#project_tab1 .span7 .span4 {
+	margin-left: 50px;
+}
+
+#project_tab1 .span7 .span2 {
+	margin-left: 90px;
+}
+
+.nobg {
+	background: none !important;
+}
+
+#fullhddlispace, #fullmemorylispace {
+	display: none;
+}
+
+#tabnetvm, #tabhardvm, #tabvirtvm {
+	top: 0px !important;
+	margin-top: 0px !important;
+	padding-top: 0px !important
+}
+
+#vmware_esx_tab2 #buttons {
+	float: right;
+	margin-right: 30px;
+}
+
+#vmware_esx_tab2 #name_box, #vmware_esx_tab2 #vnc_box, #vmware_esx_tab2 #cpu_box, #vmware_esx_tab2 #guestid_box, #vmware_esx_tab2 #memory_box {
+	margin-left: 20px;
+}
+
+#vmware_esx_tab2 #iso_path_box {
+ 	margin-top: 0;
+    width: 450px !important;
+}
+
+
+#vmware_esx_tab2 #iso_path {
+	   left: -140px;
+    position: relative;
+    top: 3px;
+    min-width: 290px;
+}
+
+#vmware_esx_tab2 input.checkbox {
+	position: relative;
+	top: 8px;
+}
+
+#vmware_esx_tab2 #disk_box, #vmware_esx_tab2 #existing_vmdk_box, #vmware_esx_tab2 #datastore_box {
+	width: 500px !important;
+	margin-left: 20px;
+}
+
+#vmware_esx_tab2 #disk_box {
+	position: relative;
+	top: -7px;
+}
+
+#vmware_esx_tab2 #disk {
+	min-width: 220px;
+}
+
+#vmware_esx_tab2 #mac {
+	min-width: 220px;
+}
+
+#vmware_esx_tab2 #browsebutton {
+	left: -210px;
+    padding: 5px 10px !important;
+    position: relative;
+    top: 4px;
+}
+
+#vmware_esx_tab2 input.radio {
+	left: -120px;
+    position: relative;
+    top: 13px;
+}
+
+#vmware_esx_tab2 #boot_iso {
+    left: 121px !important;
+    top: -23px;
+}
+
+
+
+
+
+#hyperv_tab1 b {
+	margin-left: 30px;
+}
+
+
+#kvm_vm_tab2 #buttons {
+	float: right;
+	margin-right: 30px;
+}
+
+#kvm_vm_tab2 #name_box, #kvm_vm_tab2 #vnc_box, #kvm_vm_tab2 #vnc1_box, #kvm_vm_tab2 #cpu_box, #kvm_vm_tab2 #guestid_box, #kvm_vm_tab2 #memory_box {
+	margin-left: 20px;
+}
+
+#kvm_vm_tab2 .span8 .htmlobject_box {
+	margin-left: 20px;
+}
+
+#hyperv_tab2 #buttons {
+	float: right;
+	margin-right: 30px;
+}
+
+#hyperv_tab2 #disk {
+	margin-bottom: 10px;
+    min-width: 220px !important;;
+}
+
+#hyperv_tab2 .tab-content .checkbox {
+	position: relative;
+	top: 8px;
+}
+
+#hyperv_tab2 #net0_box, #hyperv_tab2 #net1_box, #hyperv_tab2 #net2_box, #hyperv_tab2 #net3_box, #hyperv_tab2 #net4_box {
+	margin-bottom: 10px;
+}
+
+#hyperv_tab2 #mac, #hyperv_tab2 #mac1, #hyperv_tab2 #mac2, #hyperv_tab2 #mac3, #hyperv_tab2 #mac4 {
+	width: 220px;
+}
+
+#hyperv_tab2 #demo-lft-tab-4, #hyperv_tab2 #demo-lft-tab-5 {
+	padding-bottom: 40px !important;
+}
+
+#kvm_vm_tab2 #iso_path_box {
+ 	margin-top: 0;
+    width: 450px !important;
+    position: relative;
+    left: -120px;
+
+}
+
+#kvm_vm_tab2 #boot_iso {
+    left: 121px;
+    position: relative;
+    top: -21px;
+}
+
+#kvm_vm_tab2 #boot_iso_box {
+    margin-bottom: -20px;
+}
+
+.resource #storageform h3 {
+    font-size: 18px;
+    color: #42cca5 !important;
+}
+
+
+
+#appliance_tab1 #step3 #info {
+    margin-left: 30px;
+}
+
+.editoooo {
+    position: relative;
+    top: -62px;
+    left: -70px;
+}
+
+.editoooo {
+    z-index: 0 !important;
+}
+
+.addinoor {
+    left: -24px;
+    position: relative;
+    top: 22px;
+}
+
+#appliance_tab1 #step3 #image_edit {
+    position: relative;
+    top: 7px;
+    left: 8px;
+}
+
+.addino {
+    float: left;
+    left: 400px;
+    position: relative;
+    top: -58px;
+    z-index: 99 !important;
+}
+
+.lowtable td {
+    padding-left: 5px;
+     padding-right: 5px;
+     padding-top: 1px;
+     padding-bottom: 1px;
+}
+
+#appliance_tab1 #step3 .selectpicker {
+    left: -20px;
+    position: relative;
+    top: 4px;
+    z-index: 99 !important;
+}
+
+#hyperv_tab2 #demo-lft-tab-5 #iso_path {
+	left: -39px !important;
+    position: relative;
+    top: 5px !important;
+}
+
+#hyperv_tab2 #demo-lft-tab-5 label {
+	width: 120px !important;
+}
+
+#hyperv_tab2 #demo-lft-tab-5 .radio {
+	position: relative;
+	left: -160px;
+	top: 12px;
+}
+
+#hyperv_tab2 #demo-lft-tab-5 #browsebutton {
+	 left: -207px;
+    padding: 6px 10px !important;
+    position: relative;
+    top: 5px;
+}
+
+#hyperv_tab2 #demo-lft-tab-5 #iso_path_box {
+	position: relative;
+	left: -120px;
+}
+
+
+
+#kvm_vm_tab2 #disk_interface_box {
+	width: 600px !important;
+}
+
+#kvm_vm_tab2 #cdrom_button {
+	position: relative;
+	left: 40px;
+}
+
+
+
+#kvm_vm_tab2 #iso_path {
+	float: right;
+    left: -80px;
+    position: relative;
+    top: 6px;
+}
+
+#kvm_vm_tab2 #disk_interface_box .bootstrap-select {
+    position: relative;
+}
+
+.addleftvm .bootstrap-select {
+     position: relative;
+     left: -100px;
+}
+
+.fixeeeer #cdrom_button {
+	 left: 5px !important;
+    position: relative;
+}
+
+.fixeeeer #managedisks {
+	 left: -220px !important
+}
+
+.fixm .namegenButton {
+	position: relative;
+	left: 6px !important;
+}
+
+.fixeeeer a.add {
+	 left: -295px !important;
+    position: relative;
+}
+
+.boooter #iso_path {
+	top: 6px !important;
+}
+
+#kvm_vm_tab2 input.checkbox {
+	position: relative;
+	top: 8px;
+}
+
+#kvm_vm_tab2 #disk_box, #kvm_vm_tab2 #existing_vmdk_box, #kvm_vm_tab2 #datastore_box {
+	width: 500px !important;
+	margin-left: 20px;
+}
+
+#kvm_vm_tab2 #disk_box {
+	position: relative;
+	top: -7px;
+}
+
+#kvm_vm_tab2 #disk {
+	min-width: 220px;
+}
+
+#kvm_vm_tab2 #mac {
+	min-width: 220px;
+}
+
+#kvm_vm_tab2 #browsebutton {
+	left: -210px;
+    padding: 5px 10px !important;
+    position: relative;
+    top: 4px;
+}
+
+#kvm_vm_tab2 input.radio {
+	left: -120px;
+    position: relative;
+    top: 13px;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#vmware_esx_vs_tab1 td.edit a {
+	float: right;
+	margin-right: 25px;
+}
+
+#vmware_esx_vs_tab1 div div b, #vmware_esx_tab1 div div b, #vmware_esx_ds_tab1 #form div div b, #citrix_tab1 #form div div b, #citrix_net_tab1 #form div div b  {
+	margin-left: 30px;
+}
+
+#citrix_tab1 #form div div, #citrix_net_tab1 #form div div {
+	min-width: 550px;
+} 
+
+#vmware_esx_tab1 a.add {
+	min-width: 180px;
+}
+
+#hostinfo {
+	position: relative;
+	left: 30px;
+}
+
+.langselecto {
+	display: none;
+}
+
+.brand-icon {
+	width: auto !important;
+	/*margin-top: 8px !important;
+	margin-left: 50px !important;*/
+	margin: 8px auto 0 auto;
+}
+
+.smallogoview {
+	margin-left: 5px !important;
+	height: 30px !important;
+}
+
+#infoshow {
+	cursor: pointer;
+}
+.navbar-brand {
+	height: 100px !important;
+	background-color: #32404e !important;
+}
+
+h2.litli {
+	border-bottom: medium none !important;
+    font-size: 15px;
+    font-weight: bold;
+    padding: 0;
+}
+
+h2.dash {
+	font-size: 20px;
+}
+
+.element-chart {
+	
+	padding-left: 25px;
+	padding-right: 25px;
+}
+
+.hrc {
+	width: 90%;
+}
+
+
+.esxnutanixlink {
+	cursor: pointer;
+	text-decoration: underline;
+}
+
+.sizeroside b {
+	font-size: .8vw !important;
+}
+
+.eventbox {
+   cursor: pointer;
+    margin-left: 3.3%;
+    margin-top: 10px;
+    text-align: center;
+    width: 29%;
+}
+
+#image_tab1 #form {
+	margin-left: 30px;
+}
+
+#image_tab1 #passgenerate {
+	position: relative;
+	left: -120px;
+}
+
+#image_tab1 #passtoggle {
+	position: relative;
+	left: -230px;
+}
+
+#image_tab1 #passgenerate {
+	position: relative;
+	left: -230px;
+}
+
+
+#passgenerate, #passtoggle {
+    background-color: #579ddb !important;
+    border: 1px solid #5fa2dd !important;
+    color: #ffffff !important;
+    margin-bottom: 7px;
+    padding: 5px 12px;
+}
+
+#kernel_tab1 h3 {
+	font-size: 18px !important;
+}
+
+#pass_1_box, #pass_2_box {
+	width: 600px;
+}
+
+#kernel_tab1 {
+	margin-left: 30px;
+}
+
+#passgenerate:hover, #passtoggle:hover {
+	opacity: 0.9;
+}
+
+#image_tab1 #buttons {
+	margin-right: 30px;
+	text-align: right;
+}
+
+#resource_tab0 .checko {
+	position: relative;
+	top: -80px;
+	z-index: 9999;
+}
+
+#appliance_tab0 .ololkvmeck {
+    position: relative;
+    top: 10px !important;
+    left: -10px !important;
+}
+
+
+
+.eventico {
+	position: relative;
+	top: 8px;
+	color: white !important;
+}
+
+.dropdown-toggle .badge-dangero {
+	display: none;
+}
+
+.eventword {
+	color: white;
+    position: relative;
+    text-align: center;
+    top: 12px;
+}
+
+.eventtime {
+	color: #ebaa4b;
+}
+
+.eventsource {
+	color: #5cb85c;
+}
+.tab-pane .fa {
+	margin-right: 5px;
+	position: relative;
+	top: -2px;
+}
+.eventcount {
+	color: white;
+	font-size: 50px !important;
+	position: relative;
+	top: 12px;
+}
+
+.sidebarallink button {
+	margin-left: 10%;
+    width: 80%;
+}
+
+#warningeventbox, .orangero {
+	background-color: #ebaa4b !important;
+}
+
+#messageeventbox {
+	background-color: #5fa2dd !important;
+}
+
+.eventdescr {
+	margin-left: 20px;
+    margin-top: 8px;
+}
+
+#erroreventbox {
+	background-color: #f76c51 !important;
+}
+
+.redero {
+	background-color: #f76c51 !important;
+}
+
+.leftstorageblock {
+	font-size: 16px;
+    position: relative;
+    top: 12px;
+    left: -5px;
+}
+
+.leftstorageblock span {
+	font-size: 12px;
+}
+
+.esxileft b {
+	font-size: 22px;
+}
+
+.sizeroside {
+	 background-color: #f5f5f5;
+    float: right;
+    margin-right: 8px;
+    min-height: 50px !important;
+    text-align: left;
+    width: 120px;
+    margin-bottom: 11px;
+    padding-top: 7px;
+    position: relative;
+    top: -8px;
+}
+
+#prenutanix, #nutanix {
+	padding: 20px 25px 0;
+}
+
+.newstoragepop {
+	display: none;
+}
+
+.storagespanel h2 {
+	 background: #986291 none repeat scroll 0 0 !important;
+    color: white!important;
+    display: block;
+    height: 65px;
+    margin-bottom: 20px !important;
+    margin-left: 0px !important;
+    padding-left: 20px !important;
+}
+
+
+
+#networkarea {
+   background-color: #42cca5 !important;
+    color: white !important;
+    height: 120px;
+    padding: 10px 20px; 20px;
+    position: relative;
+    text-align: left !important;
+    top: -10px;
+    
+}
+
+.networkpie {
+	padding-left: 10%;
+}
+
+.jqstooltip {
+	z-index: 9999;
+	height: 0px !important;
+	position: relative;
+	left: 40px;
+	top: -40px;
+}
+
+#stvolumesbtn {
+	float: right;
+    margin-right: 40px;
+    margin-top: -20px;
+    width: 160px;
+}
+
+
+#sparklineinfo {
+	width: 100%;
+    position: relative;
+    top: 58px;
+    left: -30px;
+}
+
+#sparklineinfo .legend-tile {
+	position: relative;
+	top: -2px;
+}
+
+
+
+#lizzard {
+	display: none;
+}
+
+.storagespanel {
+	margin-bottom: 0px !important;
+	padding-bottom: 0px !important;
+	height: 181px;
+}
+
+.devicenetwork {
+	height: 455px;
+    margin-bottom: 0 !important;
+    padding-bottom: 0 !important;
+}
+
+#storagearea {
+	background-color: #50c7a7 !important;
+    color: white !important;
+    height: 120px;
+    padding: 15px 20px;
+    position: relative;
+    top: -10px;
+}
+
+#devicearea {
+  background-color: #986291 !important;
+    color: white !important;
+    padding: 0 20px 10px;
+    position: relative;
+    top: -31px;
+    text-align: left !important;
+	font-size: 1vw;
+}
+
+.storage-list li {
+	list-style: none;
+	text-align: left !important;
+}
+
+.storage-list {
+	  margin-left: 0 !important;
+    padding: 0 !important;
+}
+
+.functionbox-capation-box {
+    background: #494949 none repeat scroll 0 0;
+    border-bottom: 5px solid #39aacb;
+    padding: 5px;
+    text-align: right;
+}
+.functionbox-capation {
+    color: white;
+    cursor: crosshair;
+    font-size: inherit;
+    line-height: 15px;
+    padding: 5px !important;
+    text-align: left;
+}
+
+
+#filepicker {
+    -moz-border-bottom-colors: none;
+    -moz-border-left-colors: none;
+    -moz-border-right-colors: none;
+    -moz-border-top-colors: none;
+    background: white none repeat scroll 0 0;
+    border-color: -moz-use-text-color -moz-use-text-color #ddd #ddd;
+    border-image: none;
+    border-style: none none solid solid;
+    border-width: 0 0 1px 1px;
+    box-shadow: 3px 3px 8px rgba(0, 0, 0, 0.3);
+    left: 0;
+    position: absolute;
+    top: 0;
+    width: 280px;
+    z-index: 10;
+    margin-top: 80px;
+}
+
+
+#filepicker .functionbox-capation input {
+    background: #fff none repeat scroll 0 0;
+    border: 1px solid;
+    color: black;
+    font-size: 10px;
+    height: 18px;
+    line-height: 18px;
+    padding: 0;
+    position: absolute;
+    right: 5px;
+    text-align: center;
+    top: 7px;
+    width: 18px;
+}
+#filepicker #canvas {
+    height: 340px;
+    overflow-x: auto;
+    overflow-y: scroll;
+    text-align: center;
+    vertical-align: middle;
+}
+#filepicker table {
+    border: 0 none;
+    margin: 0;
+    width: 100%;
+}
+#filepicker table td {
+    border-bottom: 1px solid #ccc;
+}
+#filepicker table a {
+    display: block;
+    font-size: 11px;
+    line-height: 20px;
+    padding: 0 0 0 35px;
+    text-align: left;
+    text-decoration: none;
+}
+#filepicker table a.folder {
+    background: transparent url("../img/filepicker_icons.gif") no-repeat scroll 0 -20px;
+}
+#filepicker table a.file {
+    background: transparent url("../img/filepicker_icons.gif") no-repeat scroll 0 0;
+    color: black;
+}
+
+#kvm_vm_tab2 .tab-base input[type=text] {
+	width: 220px;
+}
+
+#kvm_vm_tab2 .tab-base #cdrom_box .left {
+	width: 290px;
+}
+
+#kvm_vm_tab2 .tab-base #cdrom_box .right {
+	width: 490px;
+}
+
+
+
+#kvm_vm_tab2 .tab-base #iso_path_box {
+	width:345px !important;
+}
+
+#kvm_vm_tab2 .tab-base #cdrom_button {
+	position: relative;
+	left: 100px;
+}
+
+#kvm_vm_tab2 .tab-base input#cdrom {
+	width: 200px !important;
+}
+
+#kvm_vm_tab2 #demo-lft-tab-6 .span8 label {
+	min-width: 145px !important;
+}
+
+#kvm_vm_tab2 #demo-lft-tab-6 .span8 input[type=password] {
+	width: 220px !important;
+}
+
+.inalign {
+	margin: 0px !important;
+	padding: 0px !important;
+}
+
+tr.last .inalign {
+	left: -13px !important;
+    position: relative !important;
+    margin-top: 50px !important;
+}
+
+
+
+#appliance_tab1 #name_box label {
+	min-width: 80px !important;
+}
+
+#appliance_tab1 #step2 #buttons {
+	width: 100%;
+	display: block;
+}
+
+#appliance_tab1 #step2 #buttons input {
+	float: right;
+	margin-right: 5px;
+	position: relative;
+	right: 30px;
+}
+
+.pad-ver .btn-icon {
+	min-width: 40px !important;
+}
+
+.grayicon {
+	color: #515151 !important;
+}
+
+#nutanix .onestorage .datastoredetail {
+	display: none;
+}
+
+.allvmmain {
+	left: 50px;
+    position: relative;
+    top: 50px;
+    /* width: 420px; */
+	width: 98%; /* Set the with in % */
+    left: 20px;
+}
+
+.allvmmain .esxileft {
+	position: relative;
+	left: 40px;
+}
+
+.allvmmain .vmsside {
+	background-color: #f5f5f5 !important;
+    padding: 15px;
+    font-size: 15px;
+}
+
+.roundbullet {
+	 border-radius: 10px;
+    height: 10px;
+    width: 10px;
+    display: block;
+    float: left;
+    position: relative;
+    left: -5px;
+    top: 7px;
+    margin-right: 5px;
+}
+
+.greenbullet {
+	background-color: #a6c600;
+}
+
+.yellowbullet {
+	background-color: #ffd055;
+}
+
+.allvmmain .esxileft b {
+	font-size: 36px;
+}
+
+span.error {
+	color: white !important;
+}
+
+.resource_state .pill {
+	z-index: 999 !important;
+}
+
+/*
+.checkfix {
+    position: relative !important;
+    margin-top: 50px !important;
+    left: -12px !important;
+}*/
+
+#resource_type_filter label, #resource_filter label {
+	min-width: 170px !important;
+}
+
+#storageareas .leftstorageblock {
+	font-size: 1.25vw;
+    left: 25px;
+    position: relative;
+    top: -3px;
+    line-height: 20px;
+ }
+
+#storageareas .sizeroside {
+	background-color: #f5f5f5;
+    float: right;
+    margin-bottom: 11px;
+    margin-right: 8px;
+    min-height: 50px !important;
+    padding-top: 7px;
+    position: relative;
+    text-align: left;
+    top: -8px;
+    /* width: 120px; */
+	width: 42%;
+    left: -15px;
+	font-size: 1vw;
+}
+
+#storageareas .esxileft b {
+	font-size: 1.5vw;
+}
+
+
+.thetableee #requests_filter .selectpicker {
+	position: relative;
+	top: 5px;
+}
+
+.clreqtbl .pageturn_head {
+	width: 100% !important;
+}
+
+.clreqtbl .pageturn_table {
+	width: 400px;
+	float: left;
+}
+
+.thetableee td.actions {
+	width: 100% !important;
+}
+.thetableee .actiontable {
+	width: 100% !important;
+}
+
+.thetablee .cloud_request_id {
+	z-index: 999;
+}
+
+.clreqtbl td.cr_status .pill {
+  	color: white;
+    display: block !important;
+    font-size: 12px !important;
+    left: 220px !important;
+    margin-top: -50px !important;
+    padding: 2px 3px !important;
+    position: relative !important;
+    top: 50px;
+    width: 60px;
+    z-index: 999;
+}
+
+
+
+
+.clreqtbl tr.even .checkbox, .clreqtbl tr.odd .xheckbox {
+	position: relative;
+	top: -50px;
+	z-index: 999;
+}
+
+#cloud_request_tab0 .actiontable input.submit {
+	float: right;
+}
+
+#cloud_requests td {
+	float: left;
+	width: 300px;
+}
+
+.clreqtbl .appnamer {
+	width: 300px !important;
+}
+
+#cloud_requests tr.even, #cloud_requests tr.odd {
+	min-height: 230px !important;
+}
+
+#cloud_requests td.cr_details {
+	margin-top: 20px;
+}
+
+#freemb {
+	display: none;
+}
+
+#storageareas .hddprogress {
+	width: 83%;
+    margin-left: 9%;
+    top: -7px;
+    position: relative;
+}
+
+#configure_plugin .htmlobject_box .left {
+	float: left !important;
+    width: 220px !important;
+}
+
+#configure_plugin .right {
+	float: left !important;
+}
+
+#demo-sparkline-pie {
+	text-align: center !important;
+	float: left;
+}
+
+
+#cloud_power_saver_table tr.odd, #cloud_power_saver_table tr.even {
+	min-height: 255px !important;
+	height: 230px !important;
+}
+
+.thetableee .actiontable input.submit {
+   
+}
+
+.thetableee .actiontable td.action {
+   display: block;
+   width: 1200px;
+}
+
+.clreqtbl .cloud_request_id  {
+	display: block !important;
+}
+
+.clreqtbl tr.even .checkbox {
+ 	left: 267px;
+    position: relative;
+    top: -198px;
+}
+
+.clreqtbl tr.odd .checkbox {
+	  left: 267px;
+    position: relative;
+    top: -197px;
+    z-index: 999;
+}
+
+#cloud_request_tableSelectTable {
+	position: relative;
+	top: 20px;
+}
+
+.mainuserdash .shortselect {
+    width: 140px !important;
+    float: right;
+}
+
+#filepicker {
+   z-index: 2147483647 !important
+}
+
+.volgrrripo {
+    z-index: 888888 !important;
+}
+
+
+
+
+.cloud #product_quantity_box label {
+    min-width: 90px !important;
+}
+
+
+.cloud #product_quantity_box .bootstrap-select {
+    left: -72px !important;
+    width: 168px !important;
+}
+
+#demo-set-btn {
+    display: none;
+}
+
+@-moz-document url-prefix() { 
+  .cloud #product_quantity_box .bootstrap-select {
+    left: -75px !important;
+    width: 165px !important;
+    }
+}
+
+#cloud_selector_table td.description {
+    padding: 14px 10px 10px;
+}
+
+#cloud_selector_tab0 .sort_box input.offset {
+    position: relative;
+    top: -7px !important;
+}
+
+.cloud #project_tab0 td.cu_actions {
+    left: 145px;
+    position: relative;
+    top: 5px;
+}
+
+#volumepopupzmail {
+    z-index: 999999999999 !important;
+}
+
+.volgrrripozz .wz-classic {
+    z-index: 999999 !important;
+}
+
+.lolbros form:nth-child(1) {
+    display: none;
+}
+
+.hidefirstform form:nth-child(1) {
+    display: none;
+}
+
+.fixformhyperv {
+    position: relative;
+    top: -247px !important;
+    z-index: 888888;
+}
+
+.remach .checkbox {
+    position: relative;
+    top: 7px;
+}
+
+#themailform {
+    position: relative;
+    top: -30px;
+}
+
+#themailform h3 {
+      color: #2b866e;
+    font-size: 16px;
+    left: 11px !important;
+    position: relative;
+}
+
+#themailform .submit {
+    
+    float: right;
+}
+
+
+
+#themailform #cloud_mail_subject {
+     left: -105px;
+    margin-bottom: 10px;
+    position: relative;
+    top: 5px;
+    width: 300px;
+}
+
+#themailform .bootstrap-select {
+     left: -105px;
+    margin-bottom: 10px;
+    position: relative;
+    top: 5px;
+    width: 300px;
+}
+
+
+
+#themailform textarea {
+   border: 1px solid #e9e9e9;
+    border-radius: 0;
+    box-shadow: none;
+    font-size: 12px;
+    left: -105px;
+    padding: 6px;
+    position: relative;
+    top: -4px;
+    transition-duration: 0.5s;
+    width: 300px;
+}
+
+#cloud_selector_table th, #cloud_selector_table td {
+    width: 25% !important;
+    text-align: center !important;
+    display: table-cell !important;
+}
+
+#cloud_selector_table td.description {
+    width: 100% !important;
+}
+
+.volgrrripozz .wz-classic {
+    z-index: 999999 !important;
+}
+
+#resource_tab0 #Tabellerr tr.odd, #resource_tab0 #Tabellerr tr.even {
+    min-height: 250px !important;
+}
+
+
+#cloud_resource_limit_table tr.odd, #cloud_resource_limit_table tr.even {
+    min-height: 245px !important;
+}
+
+#cloud_resource_limit_table tr.odd, #cloud_resource_limit_table tr.even {
+    min-height: 260px !important;
+}
+
+#cloud_resource_limit_table td.appliance_comment, #cloud_power_saver_table td.appliance_comment, #cloud_resource_pool_table td.appliance_comment {
+    min-height: 50px;
+}
+
+.cloud #cloud_resource_limit_table tr.pageturn_head, .cloud #cloud_resource_limit_table td.pageturn_head {
+    width: 10% !important;
+}
+
+.cloud #cloud_power_saver_table tr.pageturn_head, .cloud #cloud_power_saver_table td.pageturn_head {
+    width: 10% !important;
+}
+
+.cloud #cloud_resource_pool_table tr.pageturn_head, .cloud #cloud_resource_pool_table td.pageturn_head {
+    width: 10% !important;
+}
+
+.cloud #cloud_private_image_table tr.pageturn_head, .cloud #cloud_private_image_table td.pageturn_head {
+    width: 10% !important;
+}
+
+
+
+
+
+.alalalaleft {
+    margin-left: -30px;
+}
+
+.ololorighttt .bootstrap-select {
+    position: relative;
+    top: -45px;
+}
+
+#blackalert {
+    display: none;
+    position: fixed;
+}
+
+
+
+
+
+
+
+#storageformkvm, #storageformkvmrem {
+    display: none;
+}
+
+#storageformkvm div, #storageformkvmrem div {
+    min-width: 0px !important;
+}
+
+#storageformkvm label, #storageformkvmrem label {
+    min-width: 130px !important;
+}
+
+#kvmaddvmbtn a {
+    float: right;
+    position: relative;
+    left: -10%;
+}
+
+
+#actiontable {
+    position: relative;
+    top: 20px;
+}
+
+
+/*  CSS Added to fix responsive behaviour */

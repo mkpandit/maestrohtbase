@@ -1,0 +1,76 @@
+#register_tab li a {
+    font-family: "Open Sans","Helvetica Neue",Helvetica,Arial,sans-serif !important;
+    font-size: 12px !important;
+    font-weight: bold;
+    color: #adb3b8 !important;
+   text-shadow: 4px 0 0 0 #2986b8 inset;
+}
+
+#register_tab li .fa {
+	font-size: 16px !important;
+    left: 8px;
+    position: relative;
+    top: 0;
+    color: #adb3b8 !important;
+}
+
+#register_tab li a:hover, #register_tab li .fa:hover, #register_tab li:hover {
+	color: white !important;
+	opacity: 1 !important;
+}
+
+#register_tab li {
+	margin-top: 13px;
+	padding: 10px 10px !important;
+}
+
+#register_tab li.current a, #register_tab li.current .fa {
+	color: white !important;
+	opacity: 1 !important;
+}
+
+
+
+#project_tab_ui li a {
+    font-family: "Open Sans","Helvetica Neue",Helvetica,Arial,sans-serif !important;
+    font-size: 12px !important;
+    font-weight: bold;
+    color: #adb3b8 !important;
+    position: relative;
+    left: 5px;
+    text-shadow: 4px 0 0 0 #2986b8 inset;
+}
+
+#project_tab_ui li .fa {
+	font-size: 16px !important;
+    left: 4px;
+    position: relative;
+    top: 0;
+    color: #adb3b8 !important;
+}
+
+#project_tab_ui li a:hover, #project_tab_ui li .fa:hover, #project_tab_ui li:hover {
+	color: white !important;
+	opacity: 1 !important;
+
+}
+
+#project_tab_ui li {
+	margin-top: 13px;
+	padding: 10px 10px !important;
+}
+
+#project_tab_ui li.current a, #project_tab_ui li.current .fa {
+	color: white !important;
+	opacity: 1 !important;
+}
+
+#project_tab_ui, #register_tab {
+	border-color: rgba(0, 0, 0, 0.1) !important;
+	border-top: 1px solid;
+	border-bottom: 1px solid;
+	z-index: 9999 !important;
+	padding-top: 0px !important;
+	margin-top: 0px !important;
+}
+

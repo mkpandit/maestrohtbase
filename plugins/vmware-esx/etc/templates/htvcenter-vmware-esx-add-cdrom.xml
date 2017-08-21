@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+ <Reconfigure-Virtual-Machine>
+   <Name>@@htvcenter_VMWARE_ESX_VM_NAME@@</Name>
+   <Host>@@htvcenter_VMWARE_ESX_HOST@@</Host>
+   <Add-Device>
+	  <CD-DVD-Drive>
+	     <Name>/dev/cdrom</Name>
+	  </CD-DVD-Drive>
+   </Add-Device>
+ </Reconfigure-Virtual-Machine>

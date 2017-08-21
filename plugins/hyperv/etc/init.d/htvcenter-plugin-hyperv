@@ -1,0 +1,132 @@
+#!/bin/bash
+# init script for the htvcenter hyperv-plugin
+#
+# htvcenter Enterprise developed by htvcenter Enterprise GmbH.
+#
+# All source code and content (c) Copyright 2014, htvcenter Enterprise GmbH unless specifically noted otherwise.
+#
+# This source code is released under the htvcenter Enterprise Server and Client License, unless otherwise agreed with htvcenter Enterprise GmbH.
+# The latest version of this license can be found here: http://htvcenter-enterprise.com/license
+#
+# By using this software, you acknowledge having read this license and agree to be bound thereby.
+#
+#           http://htvcenter-enterprise.com
+#
+# Copyright 2014, htvcenter Enterprise GmbH <info@htvcenter-enterprise.com>
+#
+
+htvcenter_SERVER_BASE_DIR=$(pushd $(dirname $0)/../../../../.. > /dev/null; echo $PWD; popd > /dev/null)
+. $htvcenter_SERVER_BASE_DIR/htvcenter/etc/htvcenter-server.conf
+. $htvcenter_SERVER_BASE_DIR/htvcenter/include/htvcenter-functions
+. $htvcenter_SERVER_BASE_DIR/htvcenter/include/htvcenter-server-functions
+. $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/hyperv/include/htvcenter-plugin-hyperv-functions
+. $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/hyperv/etc/htvcenter-plugin-hyperv.conf
+# get the ip config
+htvcenter_server_get_config
+export resource_htvcenterserver=$htvcenter_SERVER_IP_ADDRESS
+export LANG=C
+# define wget to use with https
+if [ "$htvcenter_WEB_PROTOCOL" == "https" ]; then
+	WGET_NO_CERT_CHECK="--no-check-certificate"
+fi
+
+function htvcenter_plugin_hyperv_start() {
+	echo "Starting the htvcenter hyperv-plugin"
+	touch $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/hyperv/.running
+}
+
+
+function htvcenter_plugin_hyperv_stop() {
+	echo "Stopping the htvcenter hyperv-plugin"
+	rm -f $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/hyperv/.running
+}
+
+function htvcenter_plugin_hyperv_uninstall() {
+	local USERNAME=$1
+	local PASSWORD=$2
+	if [ "$USERNAME" == "" ] && [ "$PASSWORD" == "" ]; then
+		echo -n "hyperv: Please give a username to uninstall the plugin : "
+		read USERNAME
+		echo
+		echo -n "hyperv: Please give the password for user $USERNAME : "
+		read PASSWORD
+		echo
+	fi
+	echo "Uninstalling the htvcenter hyperv-plugin"
+	htvcenter_plugin_hyperv_stop
+	# removing the table
+	if ! wget -q $WGET_NO_CERT_CHECK -O /dev/null --http-user=$USERNAME --http-password=$PASSWORD "$htvcenter_WEB_PROTOCOL://$resource_htvcenterserver/htvcenter/base/plugins/hyperv/hyperv-action.php?hyperv_command=uninstall"; then
+		hyperv_log init "ERROR: Could not drop the hyperv plugin tables in the database!"
+		return 1
+	fi
+	htvcenter_server_remove_deployment_type $USERNAME $PASSWORD hyperv-deployment
+	htvcenter_server_remove_virtualization_type $USERNAME $PASSWORD hyperv
+	htvcenter_server_remove_virtualization_type $USERNAME $PASSWORD hyperv-vm-local
+	htvcenter_server_remove_virtualization_type $USERNAME $PASSWORD hyperv-vm-net
+	rm -f $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/boot-service/image.hyperv-deployment.php
+	rm -f $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/hyperv
+	rm -f $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/action/hyperv-integrate.php
+}
+
+function htvcenter_plugin_hyperv_init() {
+	local USERNAME=$1
+	local PASSWORD=$2
+	if [ "$USERNAME" == "" ] && [ "$PASSWORD" == "" ]; then
+		echo -n "hyperv: Please give a username to init the plugin : "
+		read USERNAME
+		echo
+		echo -n "hyperv: Please give the password for user $USERNAME : "
+		read PASSWORD
+		echo
+	fi
+	echo "Initializing the htvcenter hyperv-plugin"
+	# linking the web dir
+	ln -sf $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/hyperv/web $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/hyperv
+	# creating the table
+	if ! wget -q $WGET_NO_CERT_CHECK -O /dev/null --http-user=$USERNAME --http-password=$PASSWORD "$htvcenter_WEB_PROTOCOL://$resource_htvcenterserver/htvcenter/base/plugins/hyperv/hyperv-action.php?hyperv_command=init"; then
+		hyperv_log init "ERROR: Could not create the hyperv plugin tables in the database!"
+		return 1
+	fi
+	# linking the image deployment parameters menu
+	ln -sf $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/hyperv/web/image.hyperv-deployment.php $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/boot-service/image.hyperv-deployment.php
+
+	# add deployment type
+	htvcenter_server_add_deployment_type $USERNAME $PASSWORD hyperv-deployment hyperv-deployment "Local Deployment Hyper-V" hyperv "Hyper-V"
+	# adding virtualization type
+	htvcenter_server_add_virtualization_type $USERNAME $PASSWORD hyperv "Hyper-V Host"
+	htvcenter_server_add_virtualization_type $USERNAME $PASSWORD hyperv-vm-local "Hyper-V VM (localboot)"
+	htvcenter_server_add_virtualization_type $USERNAME $PASSWORD hyperv-vm-net "Hyper-V VM (networkboot)"
+
+}
+
+USER=$2
+PASS=$3
+
+case "$1" in
+	start)
+		htvcenter_plugin_hyperv_start
+		;;
+	stop)
+		htvcenter_plugin_hyperv_stop
+		;;
+	restart)
+		htvcenter_plugin_hyperv_stop
+		sleep 1
+		htvcenter_plugin_hyperv_start
+		;;
+	init)
+		htvcenter_plugin_hyperv_init $USER $PASS
+		;;
+	uninstall)
+		htvcenter_plugin_hyperv_uninstall $USER $PASS
+		;;
+	*)
+		echo "Usage: $0 {start|stop|restart|init|uninstall}"
+		exit 1
+
+esac
+exit $?
+
+
+
+

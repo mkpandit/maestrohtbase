@@ -1,0 +1,255 @@
+htvcenter Enterprise Server and Client Licenses Agreement
+
+(1) This htvcenter Enterprise Server and Client License Agreement
+(“Agreement”) is by and between HTBase Corp,
+140 Yonge St, Toronto - ON, Canada, and the Customer
+as identified on the Order Form on the use of HTBase's Software.
+(2) htvcenter Software is a client-server-based platform to manage and
+automate complete Datacenter Workflows.
+(3) This Agreement and its annexes shall form the entire Agreement.
+Conflicting or deviating Customer conditions do not apply, even if
+htvcenter Enterprise GmbH grants licenses in full knowledge of Customer's
+general terms and conditions.
+
+1.
+Definitions
+For the purpose of this Agreement, the following terms shall have the
+respective meanings below:
+„Client“ means a physical Computer System which is integrated into and
+managed by an htvcenter “Server”.
+“Order Form“ means the applicable HTBase Corp paper
+based or electronic order form document.
+“Server” means each a physical Computer System or a Virtual Machine
+which actively or passively (in case of a High-availability Setup with two or
+more Servers) runs the htvcenter Base Software providing the htvcenter
+Management User Interface. The htvcenter “Server” manages “Clients”.
+“Software“ means the program code of htvcenter Enterprise Software that
+consists of Server Software and Client Software in any form as described in
+the Order Form and the Software Description, all updates, as well as all
+documentation linked to the program in question, which are licensed
+under this Agreement. It is immaterial whether the relevant program code
+is independently executable or is only a subroutine, a non-standalone
+program module or a comparable utility program.
+“Updates” means patches or releases for maintenance purposes and may
+include non-significant improvements or functional supplements (e.g.
+additional drivers).
+
+2.
+Offers and Contract
+(1) Customer may order the Server and/or Client Licenses via an Order
+Form that is provided for download and electronically on the relevant
+website of HTBase. The submittance of an Order Form by the
+Customer to HTBase Corp shall be considered a binding
+offer on the part of the Customer.
+-1(2) The contract is concluded upon the receipt of an electronic order
+confirmation of HTBase Corp (e.g. via eMail) by the
+Costumer that contains a link to the download area of the relevant website
+of HTBase Corp.
+
+3.
+Scope and Parts of the Agreement
+This Agreement governs the licensing of htvcenter Enterprise Software
+and is subject to the terms and conditions of this Agreement.
+Integral parts of this Agreement by reference thereto are in the following
+order
+
+4.
+- Order Form
+- this Agreement
+- Software Description and
+- Price List, as amended.
+
+Grant of Rights
+(1) Server License – HTBase Corp hereby grants to
+Customer the worldwide, non-exclusive, non-transferable right, without
+limitation in time, to use – especially to copy, install and run the Server
+Software – on the number of Servers licensed described in the Software Description,
+subject to the payment of the agreed one-time Server License fee and to
+the terms and conditions of this Agreement.
+(2) Client License – If the Customer wants to install and run the Client
+Software on a Client, Client Licenses must be acquired. Customer may
+simultaneously install and run the Client Software on the number of
+Clients corresponding to the number of paid and valid Client Licenses.
+(3) It is explicitly prohibited to revise, modify or edit the Software in order
+to circumvent or in any other form manipulate a license check.
+(4) Unless specified in this Agreement no other rights to use or exploit the
+Software are granted to the Customer. Customer has, in particular, no
+right to sell, lease, let, sublicense or to distribute the Software or modify,
+edit or revise the Software in any way.
+(5) Insofar as HTBase Corp provides the Customer with third party
+software, specific terms and conditions of the respective licensors may
+apply to the use of such software.
+
+5.
+DeliverySoftware is made available for download at the download area of the
+relevant website of HTBase Corp.
+
+6.
+Audit Rights
+Customer undertakes to allow HTBase Corp or an agent of
+HTBase Corp to audit whether Customer’s use of the
+Software is consistent with the rights to Customer herein upon request by
+HTBase Corp and provided there is a legitimate interest
+therein. Customer will give full co-operation to HTBase Corp
+or its agent carrying out such audit. Customer shall bear the costs of the
+audit, provided that the audit determines that Customer has underpaid
+fees for the period audited in the excess of five percent (5%) of the proper
+amount owed to HTBase Corp.
+
+7.
+License Fees
+(1) Customer has to pay a one-time license fee for each Server License
+and the fees for the Client Licenses as set forth in the relevant Price List.
+Unless otherwise stated, all prices are net prices and subject to value
+added tax at the statutory rate.
+(2) If an Audit as set forth in Section 6 determines that Customer has at
+any time of the audited period run the Software on Servers or Clients that
+exceed the maximum number of Server or Client licenses granted to
+Customer under this Agreement, HTBase Corp may charge
+the applicable additional license fees covering so arising at the rates in the
+relevant Price List as from the first date of the respective exceeding use.
+Additional Server and Client Licenses shall be deemed to be granted on
+full payment by the Customer of the applicable additional license fees.
+(3) License fees and other charges from HTBase Corp are
+due when invoiced and payable within 14 calendar days of the receipt of
+invoice by the Customer without deduction on the account stated in the
+invoice. In case of a delay in payment, HTBase Corp is
+entitled to charge interest on arrears at 8 %-points (eight percentage
+points) above the base interest rate.
+
+8.
+Term and Termination of Client Licenses
+(1) The term of a Client License starts with the activation of the respective
+Client License by htvcenter Enterprise and expires automatically at the
+end of the relevant paid license period, without notice.
+(2) The right to terminate a Client License for cause remains unaffected. A
+reason, which entitles HTBase Corp to a termination for
+cause, is given in particular if Customer (a) fails to perform any of its
+-3material contractual obligations, in particular makes use of the Software in
+breach of this Agreement, and, provided that where such breach is
+capable of remedy, fails to remedy such breach within 30 days of being
+notified of such breach by HTBase Corp; or (b) files a
+petition in insolvency or has such a petition filed against the Customer
+(which petition is not discharged within 30 days after filing) or is subject to
+an insolvency proceeding or a proceeding giving protection against
+creditors.
+
+9.
+Warranty
+(1) HTBase Corp warrants that the Software is substantially
+in accordance with the specifications as set forth in the Software
+Description and free from third party rights, which prevent the use of the
+Software in accordance with this Agreement.
+(2) Precondition for any warranty claim of the Customer is Customer's full
+compliance with all requirements regarding inspection and objection of the
+Software provided for in the Commercial Code.
+(3) Rights in case of defects shall be excluded in the case of minor or
+immaterial deviations from the specifications or in the case of just slight
+impairment of use. Material defects and defects of title shall be remedied
+by HTBase Corp in reasonable time after being reported to
+HTBase Corp. Defects shall be remedied by making free
+subsequent repairs or a free substitute delivery, at HTBase Corp’s sole option, 
+in particular by supplying, transmitting or providing
+an Update or by notification of a work-around.
+(4) Defects must be notified in writing or electronically (e.g. via email) with
+a comprehensible description of the error symptoms, as far as possible
+evidenced by written recordings, hard copies or other documents
+demonstrating the defects. The notification of the defect should enable
+the reproduction of the defect. This shall not affect the statutory obligation
+of HTBase Corp to inspect and notify defects.
+(5) Updates are provided at HTBse Corp’s sole discretion to
+the Customers for downloading from the relevant website. HTBase Corp will inform 
+Customer in written form or electronically
+(e.g. via E-Mail) about new updates that are ready for downloading and
+will provide Customer with relevant access data required for logging onto
+the website, if necessary. Instead of an opportunity to download Updates,
+HTBase Corp may provide Updates to the Licensee on a
+suitable data carrier.
+(6) HTBase Corp does not accept any warranty claims for
+any defects caused by revision, modification or editing of the Software or
+improper, incorrect or unauthorized use of the Software, especially in the
+case of improper, incorrect or unauthorized combination with other
+software or hardware.
+(7) HTBase Corp does also not accept warranty claims, if the
+defect is caused by hardware or software that has not been supplied by
+HTBase Corp or if Customer does not make use or does
+make improper or incorrect use of Updates provided by HTBase Corp.
+(8) Any warranty shall be valid for a period of (12) twelve months as of the
+date the Customer was granted the right to use the Software according to
+Section 4.1 of this Agreement.
+(9) Any claims for damages are subject to the limitations set forth under
+Section 10 of this Agreement.
+
+10.
+Liability
+(1) HTBase Corp shall be liable under the statutory
+provisions if Customer raises claims for damages based on a wilful act or
+gross negligence.
+(2) In the case HTBase Corp is blamed for a minor negligent
+breach of a principal contractual duty, the fulfilment of which alone makes
+proper implementation of the contract possible, and the breach of which
+jeopardises the achievement of the contractual object, and on observance
+of which the Customer may duly rely, liability of HTBase Corp in damages will 
+be limited to the predictable, typically occurring damage.
+(3) Liability for loss of data is limited to the typical recovery expense that
+would have been incurred in case of a regular and risk-adequate storage
+of data on backup copies by the customer.
+(4) Liability for culpable loss of life, bodily injury or impaired health and
+liability under the Product Liability Act remains unaffected.
+(5) Insofar as the liability of HTBase Corp is limited, this also
+applies to the personal liability of HTBase Corp’s employees,
+staff members, representatives and servants.
+(6) Unless stipulated otherwise above, any liability of HTBase Corp is excluded.
+
+11.
+Confidentiality
+Each Party will treat as confidential beyond the license term with respect
+to third parties all items of information, business transactions, and
+documents that become known to the party in connection with the
+execution of this Agreement and that have been classified as confidential
+or by its nature are considered to be confidential (“Confidential
+Information”). The use of such information shall be limited solely to the
+scope of this Agreement. A Party will not disclose Confidential Information
+-5to any third person except, (a) with the written consent of the other Party,
+(b) if and to the extent required to do so by Law, (c) to its financial or legal
+advisers in confidence for the purpose of obtaining advice. The Parties will
+also impose this obligation on their employees and any third parties that
+have been involved. The obligation to maintain confidentiality shall not
+apply to information that the Party has proven to have received or to
+receive lawfully from third parties or that was generally known before the
+offer was awarded, or has subsequently become known without violating
+the obligations contained in this Agreement, developed independently of
+the other Party without using the knowledge gained from this contractual
+relationship.
+
+12.
+Final Provisions
+(1) All agreements adding to or changing this Agreement will be recorded
+in writing.
+(2) Details or specifications of the Software on websites, in prospectuses,
+in the Software Description or in other documents only serve as a
+description and do not constitute a guarantee, in particular they constitute
+no guarantee of condition. Guarantees require express confirmation by
+HTBase Corp in writing.
+(3) Where this Agreement stipulates the written form, this exclusively
+means the written form pursuant.
+(4) HTBase Corp shall have the right, to make use of
+subcontractors as long as such use is not contrary to the legitimate
+interests of the Customer.
+(5) Customer has no right to retention or to set off, unless the
+counterclaim is legally established or undisputed.
+(6) The contractual relationship of the Parties is governed by Canadian law.
+Exclusive venue is Toronto, Canada. However, HTBase Corp is entitled to sue the 
+Customer at Customer’s place of business.
+The latter does not apply if a deviant, compulsive statutory exclusive
+venue exists.
+(7) Should provisions of this Agreement be or become invalid or should a
+loophole emerge in them, the validity of the other provisions will not be
+affected thereby. The invalid provisions or loophole in this Agreement will
+be replaced by an appropriate arrangement that comes as close as
+possible to what the Parties appear to have intended according to the
+spirit and purpose of the contract.
+
+Toronto, 1 February, 2015
+Copyright 2015 by HTBase Corp
+

@@ -1,0 +1,8 @@
+"Cloud Spend Summary:"," "," "
+Detail,CCus,Total
+Storage,350,$0.35
+CPU,28,$0.03
+Memory,84,$0.08
+Networking,7,$0.01
+Virtualisation,77,$0.08
+Total,546,$0.55
