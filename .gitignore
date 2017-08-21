@@ -5,4 +5,5 @@ plugins/dhcpd/*
 plugins/dns/*
 plugins/local-server/*
 *.rrd
+*.tgz
 wc.db
