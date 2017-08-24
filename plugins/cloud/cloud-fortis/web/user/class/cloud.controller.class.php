@@ -28,7 +28,6 @@ class cloud_controller
 	function __construct() {
 
 		
-
 		// handle timezone needed since php 5.3
 		if(function_exists('ini_get')) {
 			if(ini_get('date.timezone') === '') {
@@ -586,8 +585,6 @@ class cloud_controller
 							}
 							
 
-				//var_dump($jsonarr);
-
 						$detailtable .= '</table>';
 
 					}
@@ -723,13 +720,17 @@ class cloud_controller
 		$this->file    = $file;
 		$this->baseurl = '/cloud-fortis/';
 
-		// templating default or custom
-		$tpl = $this->portaldir."/user/tpl/index.default.tpl.php";
+		$ar = $this->response->html->request()->get('register_action');
+		// templating default if logged in; otherwise templating login
+		if (isset($_SERVER['PHP_AUTH_USER'])) {
+			$tpl = $this->portaldir."/user/tpl/index.default.tpl.php";
+		} else {
+			$tpl = $this->portaldir."/user/tpl/index.login.tpl.php";
+		}
+
 		if($this->file->exists($this->portaldir."/user/tpl/index.tpl.php")) {
 			$tpl = $this->portaldir."/user/tpl/index.tpl.php";
 		}
-
-		
 
 		$this->tpl = $tpl;
 	}
@@ -743,6 +744,7 @@ class cloud_controller
 	 */
 	//--------------------------------------------
 	function register() {
+
 		// add langselect to remember lang in register forms
 		$this->response->add('langselect', $this->response->html->request()->get('langselect'));
 		require_once($this->portaldir.'/user/class/cloud-register.controller.class.php');
@@ -757,8 +759,6 @@ class cloud_controller
 		$t->add($this->baseurl, 'baseurl');
 		$t->add($controller->action(), 'content');
 		$t->add($this->__lang($controller->actions_name, $controller->action, $controller->lang['account']['user_lang']), 'langbox');
-
-		
 
 		return $t;
 	}
@@ -805,6 +805,7 @@ class cloud_controller
 		$hidenuser = $this->htvcenter->user()->name;
 		$hide = '<input type="hidden" id="hiddenname" value="'.$hidenuser.'" />';
 		$t->add($yearz, 'reportyear');
+		$t->add($year, 'currentyear');
 		$t->add($hide, 'hidenuser');
 
 		$query = "SELECT `cc_value` FROM `cloud_config` WHERE `cc_key` = 'cloud_billing_enabled'";

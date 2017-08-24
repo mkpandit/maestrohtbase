@@ -1,0 +1,41 @@
+/* CARDS */
+.card, .card-header, .list-group-item, .card-footer {
+    border-color: #e4e9f0;
+}
+
+.card-header, .card-footer {
+    background: #ffffff;
+}
+
+.card {
+    margin-bottom: 1.35rem;
+}
+
+.card-block.half {
+	min-height: 8.0rem;
+	height: auto;
+}
+
+.card-block.half p {
+	margin-top: 0.2rem;
+	margin-bottom: 0.0rem;
+	font-size: 0.90rem;
+}
+
+.card-block.half p b {
+	font-size: 1rem;
+}
+
+.card-block.full {
+	height: 21.3rem;
+}
+
+.card-block {
+	padding-top: 0.6rem;
+	padding-bottom: 0.6rem;
+}
+
+.card-block p {
+	margin-top: 0.3rem;
+	margin-bottom: 0.3rem;
+}
