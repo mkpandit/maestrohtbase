@@ -72,46 +72,24 @@ $(document).ready(function(){
 			cloudScoreLogin();
 		}
 	});
-	function changedashboard() {
-		var monthd = $('#reportmonthdash').val();
-		var yeard = $('#reportyeardash').val();
-		givedashboard(monthd, yeard);
-	}
 	// --- end authorisation works ---
 
-	$("#tab_currenttab1 a").attr("href","#");
-	$("#tab_currenttab2 a").attr("href","#");
-	$("#tab_currenttab3 a").attr("href","#");
+	$("#tab_register_tab1 a").attr("href","#");
+	$("#tab_register_tab2 a").attr("href","#");
+	$("#tab_register_tab3 a").attr("href","#");
 
-	$("#tab_currenttab1 a").click(function () {
+	$("#tab_register_tab1 a").click(function () {
 		$("#accountModal").modal("show");
 		return false;
 	});
 
-	$("#tab_currenttab2 a").click(function () {
+	$("#tab_register_tab2 a").click(function () {
 		$("#activateModal").modal("show");
 		return false;
 	});
 
-	$("#tab_currenttab3 a").click(function () {
+	$("#tab_register_tab3 a").click(function () {
 		$("#recoverModal").modal("show");
 		return false;
 	});
-		// console.log("77");
-		// $("#accountModal").modal("show");
-		// return false;
-	/* fix bootstrap modal background jump issue	
-	$('.modal').on('show.bs.modal', function () {
-        if ($(document).height() > $(window).height()) {
-            // no-scroll
-            $('body').addClass("modal-open-noscroll");
-        }
-        else {
-            $('body').removeClass("modal-open-noscroll");
-        }
-    });
-    $('.modal').on('hide.bs.modal', function () {
-        $('body').removeClass("modal-open-noscroll");
-    });
-	end fix bootstrap modal background jump issue */	
-});	
+});

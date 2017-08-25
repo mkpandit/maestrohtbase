@@ -81,6 +81,33 @@ div.login-content > div {
 	-webkit-transform: scaleY(-1);
 	transform: scaleY(-1);
 }
+.btn.btn-primary {
+
+	/* font-size: 1.2em;
+	padding-top: 0.3em; */
+}
+.modal-content .modal-footer {
+	height:70px;
+}
+
+.modal-content .modal-footer .btn {
+	height: 100%;
+}
+
+.modal-content .modal-footer .btn.btn-primary {
+	display: block;
+	float: right;
+	margin-right: 0px !important;
+	width: 100px;
+	background: #2c3e50;
+	border: 1px solid #2c3e50;
+	color: rgb(255,255,255) !important;
+	border-radius: 0.3rem;
+	box-sizing: border-box; /* add this */
+	-moz-box-sizing: border-box; /* Firefox */
+	-webkit-box-sizing: border-box; /* Older Webkit browsers */
+}
+
 
 /*fix modal jump issue 
 body.modal-open-noscroll

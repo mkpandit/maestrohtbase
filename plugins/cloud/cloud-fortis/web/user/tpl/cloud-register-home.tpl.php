@@ -39,24 +39,6 @@
 				border-radius: 0.3rem;
 				font-weight: 400;
 			}
-			.btn.btn-primary {
-				display: block;
-				float: right;
-				margin-right: 0px !important;
-				width: 100px;
-				background: transparent;
-				border: 1px solid rgb(255,255,255);
-				color: rgb(255,255,255) !important;
-				border-radius: 0.3rem;
-				box-sizing: border-box; /* add this */
-				-moz-box-sizing: border-box; /* Firefox */
-				-webkit-box-sizing: border-box; /* Older Webkit browsers */
-				/* font-size: 1.2em;
-				padding-top: 0.3em; */
-			}
-			.btn.btn-primary:hover {
-				background-color: #2c3e50;
-			}
 			.form-group a {
 				color: rgb(255,255,255);
 				font-family: sans-serif;
