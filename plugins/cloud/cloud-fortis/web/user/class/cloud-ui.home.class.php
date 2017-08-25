@@ -48,7 +48,9 @@ var $cloud_id;
 	 */
 	//--------------------------------------------
 	function __construct($htvcenter, $response) {
+		$this->rootdir   = $_SERVER["DOCUMENT_ROOT"].'/htvcenter/base/';
 		$this->htvcenter = $htvcenter;
+		$this->clouduser = $this->htvcenter->user();
 		$this->response = $response;
 		require_once $this->htvcenter->get('basedir')."/plugins/cloud/web/class/clouduserslimits.class.php";
 		$this->clouduserlimits = new clouduserlimits();
@@ -120,7 +122,40 @@ var $cloud_id;
 			$t = $this->home($t);
 			$t->add($this->response->html->thisfile, "thisfile");
 		}
+			
+		/* user cloudconfig ip-mgmt to get the first ip range */
+		// check ip-mgmt
+		$show_ip_mgmt = $this->cloudconfig->get_value_by_key('ip-management'); // ip-mgmt enabled ?
+		$ip_mgmt_name = '';
+		$ip_mgmt_list_per_user_arr = array();
 		
+		if (!strcmp($show_ip_mgmt, "true")) {
+
+			require_once $this->rootdir."/plugins/ip-mgmt/class/ip-mgmt.class.php";
+			$ip_mgmt = new ip_mgmt();
+			$ip_mgmt_list_per_user = $ip_mgmt->get_list_by_user($this->clouduser->cg_id);
+			array_pop($ip_mgmt_list_per_user);
+
+			foreach($ip_mgmt_list_per_user as $list) {
+				$ip_mgmt_id = $list['ip_mgmt_id'];
+				$ip_mgmt_name = trim($list['ip_mgmt_name']);
+				$ip_mgmt_address = trim($list['ip_mgmt_address']);
+				$ip_mgmt_list_per_user_arr[] = array("value" => $ip_mgmt_id, "label" => $ip_mgmt_address.' ('.$ip_mgmt_name.')', "address" => $ip_mgmt_address);
+			}
+		
+			if (!empty($ip_mgmt_list_per_user_arr) && is_array($ip_mgmt_list_per_user_arr)) {
+				$t->add($ip_mgmt_id, 'ip_mgmt_id');
+				$t->add($ip_mgmt_name, 'ip_mgmt_name');
+				$t->add($ip_mgmt_list_per_user_arr[0]['address'], 'ip_mgmt_range_start');
+				$t->add(end($ip_mgmt_list_per_user_arr)['address'], 'ip_mgmt_range_end');
+				$t->add(date('F Y'), 'current_month');
+			}
+
+		}
+
+		/* end user cloudconfig ip-mgmt to get the first ip range  */
+	
+
 		return $t;
 	}
 

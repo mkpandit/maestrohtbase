@@ -23,123 +23,247 @@ var lang_cpu = "{lang_cpu}";
 var lang_network = "{lang_network}";
 //]]>
 </script>
-
+<style>
+	#project_tab_ui { display: none; }  /* hack for tabmenu issue */
+	/* #chart-area { background-color: #fff; } */
+   .c3-chart-arcs .c3-chart-arcs-title { font-size: 20px; }
+   .c3-chart { height: 14rem; }
+   .chartjs-chart { height: 172px; }
+   .chartjs-chart .chart-legend li span{
+	    display: inline-block;
+	    width: 10px;
+	    height: 10px;
+	    margin-right: 3px;
+	}
+   .c3-axis-y-label{ font-size: 0.9em; }
+   .current-month { min-height: 250px; padding-top: 15px;}
+   .current-month .form-label { width : 30%; min-width: auto; color: #515151; font-size: 16px; }
+   .current-month .form-control { width: 70%; }
+   .current-month .form-group { margin-bottom: 0.5rem; }
+</style>
+<!--
 <script src="/cloud-fortis/js/jqplot.jquery.min.js" type="text/javascript"></script>
 <script src="/cloud-fortis/js/excanvas.min.js" type="text/javascript"></script>
 <script src="/cloud-fortis/js/jquery.jqplot.min.js" type="text/javascript"></script>
 <script src="/cloud-fortis/js/jqplot.donutRenderer.min.js" type="text/javascript"></script>
 <script src="/cloud-fortis/js/jqplot.canvasTextRenderer.min.js" type="text/javascript"></script>
 <script src="/cloud-fortis/js/jqplot.categoryAxisRenderer.min.js" type="text/javascript"></script>
+-->
+<script src="/cloud-fortis/js/c3/d3.v3.min.js" type="text/javascript"></script>
+<script src="/cloud-fortis/js/c3/c3.min.js" type="text/javascript"></script>
+<script src="/cloud-fortis/js/chartjs/Chart.bundle.min.js" type="text/javascript"></script>
+<script src="/cloud-fortis/js/chartjs/utils.js" type="text/javascript"></script>
+<script src="/cloud-fortis/js/fetch-report.js" type="text/javascript"></script>
 <script src="/cloud-fortis/js/cloud.ui.home.js" type="text/javascript"></script>
 
-</div></div>
 
+<!-- </div></div> -->
 
-
-<div class="col-xs-12 col-sm-9 col-md-10 col-lg-10 windows_plane">
-<div id="home_container">
-
-
-<div class="row">
-
-		<div class="col-xs-12 col-sm-6 col-md-4 col-lg-4 heightspan panel dashboard">
-			<div class="panel-heading">
+<!-- <div class="col-sm-12 col-sm-9 col-md-10 col-lg-10 windows_plane"> -->
+<div class="cat__content">
+	<cat-page>
+	<!--
+	<section class="card">	
+	<div class="card-header">
+        <span class="cat__core__title">
+            <strong>Dashboard</strong>
+        </span>
+    </div>
+	-->
+	<div class="row">
+		<!-- left column -->
+		<div class="col-sm-12 col-lg-3">
+			<div class="row">
+				<div class="col-sm-12 dashboard">
+					<section class="card">	
+						<div class="card-header">
+					        <span class="cat__core__title">
+					            <strong>Score Overview</strong>
+					        </span>
+					    </div>
+					    <div class="card-block half">
+					    	<div class="panel-heading">
+								<div class="panel-control">
+								</div>
+								<h3 class="panel-title">IP Management</h3>
+							</div>
+							<div>
+								<p><b>VLAN Name: </b>{ip_mgmt_name}</p>
+								<p><b>VLAN ID: </b>{ip_mgmt_name}</p>
+								<p><b>IP Range: </b>{ip_mgmt_range_start} ~ {ip_mgmt_range_end}</p>
+							</div>
+						</div>
+					</section>
+				</div>
+			</div>
+			<div class="row">
+				<div class="col-sm-12 dashboard">
+					<section class="card">	
+						<div class="card-header">
+					        <span class="cat__core__title">
+					            <strong>Events</strong>
+					        </span>
+					    </div>
+					    <div class="card-block half">
+					    	<div class="panel-heading">
+								<div class="panel-control">
+								</div>
+								<h3 class="panel-title">&nbsp;</h3>
+							</div>
+							<div>
+								<p><b>Error: </b>0</p>
+								<p><b>Info: </b>0</p>
+							</div>
+						</div>
+					</section>
+				</div>
+			</div>
+			<div class="row">
+				<div class="col-sm-12 dashboard">
+					<section class="card">	
+						<div class="card-header">
+					        <span class="cat__core__title">
+					            <strong>VM Summary</strong>
+					        </span>
+					    </div>
+					    <div class="card-block full">
+					    	<div class="panel-heading">
+								<div class="panel-control">
+								</div>
+								<h3 class="panel-title">Services</h3>
+							</div>
+							<div id="chartdiv-inventory-systems-legend" class="donut-chart-legend"></div>
+							<div id="chartdiv-inventory-systems" class="c3-chart"></div>
+						</div>
+					</section>
+				</div>
+			</div>		
+		</div>
+		<!-- end left column -->	
+		<!-- right column -->
+		<div class="col-sm-12 col-lg-9">
+			<div class="row">
+				<div class="col-sm-12">
+					<section class="card">	
+						<div class="card-header">
+					        <span class="cat__core__title">
+					            <strong>Resource Consumption</strong>
+					        </span>
+					    </div>
+					    <div class="card-block full">
+							<div class="col-sm-12 col-md-6 col-lg-3 dashboard pull-left">
+								<div class="panel-heading">
 									<div class="panel-control">
-										
 									</div>
 									<h3 class="panel-title">Services</h3>
 								</div>
-			<div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">					
-			<div id="chartdiv-inventory-systems" class="charto"></div>
-			</div>
-			<div id="chartdiv-inventory-systems-legend" class="donut-chart-legend col-xs-6 col-sm-6 col-md-6 col-lg-6"></div>
-		</div>
+								<div id="chartdiv-inventory-memory-legend" class="donut-chart-legend"></div>
+								<div id="chartdiv-inventory-memory" class="c3-chart"></div>
+							</div>
 
-		<div class="col-xs-12 col-sm-6 col-md-4 col-lg-4 heightspan panel dashboard">
-			<div class="panel-heading">
-									<div class="panel-control">
-										
+							<div class="col-sm-12 col-md-6 col-lg-3 dashboard pull-left">
+								<div class="panel-heading">
+									<div class="panel-control">	
 									</div>
 									<h3 class="panel-title">Services</h3>
 								</div>
-			<div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">					
-			<div id="chartdiv-inventory-disk" class="charto"></div>
-			</div>
-			<div id="chartdiv-inventory-disk-legend" class="donut-chart-legend col-xs-6 col-sm-6 col-md-6 col-lg-6"></div>
-		</div>
+								<div id="chartdiv-inventory-cpu-legend" class="donut-chart-legend"></div>
+								<div id="chartdiv-inventory-cpu" class="c3-chart"></div>
+							</div>
 
-		<div class="col-xs-12 col-sm-6 col-md-4 col-lg-4 texto heightspan panel dashboard">
-			<div class="panel-heading">
-									<div class="panel-control">
-										
-									</div>
-									<h3 class="panel-title">{label_limits}</h3>
-								</div>
-			<div id="limitscontent">
-			<p><b>{limit_resource}:</b> {resource_limit_value}</p>
-			<p><b>{limit_disk}:</b> {disk_limit_value}</p>
-			<p><b>{limit_memory}:</b> {memory_limit_value}</p>
-			<p><b>{limit_cpu}:</b> {cpu_limit_value}</p>
-			<p><b>{limit_network}:</b> {network_limit_value}</p>
-			</div>
-		</div>
-
-<!--
-		<div id="quicklinks">
-			<h3>{label_quicklinks}</h3>
-			<p>{quicklinks}</p>
-		</div>
-//-->
-</div>
-		<div class="floatbreaker" style="line-height:0px;clear:both;">&#160;</div>
-
-<div class="row">
-	
-		<div class="col-xs-12 col-sm-6 col-md-4 col-lg-4 heightspan panel dashboard">
-			<div class="panel-heading">
-									<div class="panel-control">
-										
+							<div class="col-sm-12 col-md-6 col-lg-3 dashboard pull-left">
+								<div class="panel-heading">
+									<div class="panel-control">	
 									</div>
 									<h3 class="panel-title">Services</h3>
 								</div>
-			<div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">					
-			<div id="chartdiv-inventory-memory" class="charto"></div>
-			</div>
-			<div id="chartdiv-inventory-memory-legend" class="donut-chart-legend col-xs-6 col-sm-6 col-md-6 col-lg-6"></div>
-		</div>
+								<div id="chartdiv-inventory-disk-legend" class="donut-chart-legend"></div>
+								<div id="chartdiv-inventory-disk" class="c3-chart"></div>
+							</div>
 
-		<div class="col-xs-12 col-sm-6 col-md-4 col-lg-4 heightspan panel dashboard">
-			<div class="panel-heading">
-									<div class="panel-control">
-										
+							<div class="col-sm-12 col-md-6 col-lg-3 dashboard pull-left">
+								<div class="panel-heading">
+									<div class="panel-control">	
 									</div>
 									<h3 class="panel-title">Services</h3>
 								</div>
-			<div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">					
-			<div id="chartdiv-inventory-cpu" class="charto"></div>
+								<div id="chartdiv-inventory-network-legend" class="donut-chart-legend"></div>
+								<div id="chartdiv-inventory-network" class="c3-chart"></div>
+							</div>
+						</div>
+					</section>
+				</div>
 			</div>
-			<div id="chartdiv-inventory-cpu-legend" class="donut-chart-legend col-xs-6 col-sm-6 col-md-6 col-lg-6"></div>
-		</div>
-
-		<div class="col-xs-12 col-sm-6 col-md-4 col-lg-4 heightspan panel dashboard">
-		<div class="panel-heading">
-									<div class="panel-control">
-										
-									</div>
-									<h3 class="panel-title">Services</h3>
+			<div class="row">
+				<div class="col-sm-12 col-lg-4 dashboard">
+					<section class="card">	
+						<div class="card-header">
+					        <span class="cat__core__title">
+					            <strong>Current Billing</strong>
+					        </span>
+					    </div>
+					    <div class="card-block full">
+					    	<div class="panel-heading">
+								<div class="panel-control">
 								</div>
-			<div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
-			<div id="chartdiv-inventory-network" class="charto"></div>
+								<h3 class="panel-title">{current_month}</h3>
+							</div>
+							<div id="chartdiv-inventory-monthlybilling-legend" class="donut-chart-legend"></div>
+							<div class="chartjs-chart">	
+								<canvas id="chartdiv-inventory-monthlybilling" ></canvas>
+							</div>
+							<p style="text-align: center"><b>Monthly Total: </b><span id="monthlybilling-total"> --- </span></p>	
+							
+							<!--
+							<div class="current-month">
+								<div class="form-group row">
+                                	<label class="form-label" for="cpu">CPU</label>
+                               		<input class="form-control" id="cpu" type="text" disabled>
+                            	</div>
+								<div class="form-group row">
+                                	<label class="form-label" for="storage">Storage</label>
+                               		<input class="form-control" id="storage" type="text" disabled>
+                            	</div>
+                            	<div class="form-group row">
+                                	<label class="form-label" for="memory">Memory</label>
+                               		<input class="form-control" id="memory" type="text" disabled>
+                            	</div>
+								<div class="form-group row">
+                                	<label class="form-label" for="virtualization">Virtualization</label>
+                               		<input class="form-control" id="virtualization" type="text" disabled>
+                            	</div>
+                            	<div class="form-group row">
+                                	<label class="form-label" for="networking">Networking</label>
+                               		<input class="form-control" id="networking" type="text" disabled>
+                            	</div>
+							</div>
+							-->
+						</div>
+					</section>
+				</div>
+				<div class="col-sm-12 col-lg-8 dashboard">
+					<section class="card">	
+						<div class="card-header">
+					        <span class="cat__core__title">
+					            <strong>Spend Summary</strong>
+					        </span>
+					    </div>
+					    <div class="card-block full">
+					    	<div class="panel-heading">
+								<h3 class="panel-title">Monthly Projection</h3>
+							</div>
+							<div>
+								<div id="chartdiv-inventory-monthlychart-legend" class="donut-chart-legend"></div>
+								<div id="chartdiv-inventory-monthlychart" class="c3-chart"></div>
+							</div>
+						</div>
+					</section>
+				</div>
 			</div>
-			<div id="chartdiv-inventory-network-legend" class="donut-chart-legend col-xs-6 col-sm-6 col-md-6 col-lg-6"></div>
 		</div>
-		<div class="floatbreaker" style="line-height:0px;clear:both;">&#160;</div>
-	
+		<!-- end right column -->	
+	</div>		
 
-</div>
-
-
-<form action="{thisfile}"></form>
-
-</div>
+	<form action="{thisfile}"></form>
+	</cat-page>
 </div>

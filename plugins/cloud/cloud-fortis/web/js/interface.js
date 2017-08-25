@@ -400,8 +400,10 @@ if ( ( typeof(budgetpage) != 'undefined' ) && ( budgetpage == true) ) {
 
 	$('#namespaces').html(servers);
 	$('.carbudget').show();
-	$('.jcarousel').jcarousel();
-	
+
+	// if ($('.jcarousel').length > 0) {
+	//		$('.jcarousel').jcarousel();
+	// }
 }
 
 
@@ -1807,8 +1809,9 @@ $("#userlogin").keypress(function(e){
 
 		var startSlider = document.getElementById('sliderrr');
 
+		if ($("#sliderrr").length > 0) {
 
-		$("#sliderrr").noUiSlider({
+			$("#sliderrr").noUiSlider({
 				start: [ 20 ],
 				connect : 'lower',
 				snap: true,
@@ -1816,24 +1819,22 @@ $("#userlogin").keypress(function(e){
 				direction: 'rtl',
 				range: ranger
 			}).Link('lower').to($("#valll"));
-		/*$(".demo-pips").noUiSlider_pips({
-			mode: 'range',
-			density: 5000
-		});*/
+			/*$(".demo-pips").noUiSlider_pips({
+				mode: 'range',
+				density: 5000
+			});*/
 
-		$("#sliderrr").on('slide', function(){
-			var texto = $("#valll").text();
-		    texto = parseInt(texto);
-		    var labelo = diskvalues[texto];
-		    $("#valllgb").text(labelo);
-		    $('#cloud_disk_select_box').val(texto);
-		    $('#cloud_disk_select').val(texto);
-		    cloud_cost_calculator();
-		});
-
+			$("#sliderrr").on('slide', function(){
+				var texto = $("#valll").text();
+			    texto = parseInt(texto);
+			    var labelo = diskvalues[texto];
+			    $("#valllgb").text(labelo);
+			    $('#cloud_disk_select_box').val(texto);
+			    $('#cloud_disk_select').val(texto);
+			    cloud_cost_calculator();
+			});
+		}
 		// --- end disk ---
-
-
 
 		// memory:
 		    
@@ -1878,33 +1879,33 @@ $("#userlogin").keypress(function(e){
 		
 		var startSlider1 = document.getElementById('sliderrr1');
 
+		if ($("#sliderrr1").length > 0) {
 
-		$("#sliderrr1").noUiSlider({
-				start: [ 0 ],
-				connect : 'lower',
-				snap: true,
-				orientation: 'vertical',
-				direction: 'rtl',
-				range: ranger1
-			}).Link('lower').to($("#valll1"));
-		/*$(".demo-pips1").noUiSlider_pips({
-			mode: 'range',
-			density: 1000
-		});*/
+			$("#sliderrr1").noUiSlider({
+					start: [ 0 ],
+					connect : 'lower',
+					snap: true,
+					orientation: 'vertical',
+					direction: 'rtl',
+					range: ranger1
+				}).Link('lower').to($("#valll1"));
+			/*$(".demo-pips1").noUiSlider_pips({
+				mode: 'range',
+				density: 1000
+			});*/
 
-		$("#sliderrr1").on('slide', function(){
-			var texto = $("#valll1").text();
-		    texto = parseInt(texto);
-		    var labelo = diskvalues1[texto];
-		    $("#valllgb1").text(labelo);
-		    $('#cloud_memory_select_box').val(texto);
-		     $('#cloud_memory_select').val(texto);
-		    cloud_cost_calculator();
-		});
-
+			$("#sliderrr1").on('slide', function(){
+				var texto = $("#valll1").text();
+			    texto = parseInt(texto);
+			    var labelo = diskvalues1[texto];
+			    $("#valllgb1").text(labelo);
+			    $('#cloud_memory_select_box').val(texto);
+			     $('#cloud_memory_select').val(texto);
+			    cloud_cost_calculator();
+			});
+		}
 		// --- end memory ---
 
-		
 		// cpu:
 		    
 		var diskvalues2 = [];
@@ -1945,33 +1946,34 @@ $("#userlogin").keypress(function(e){
 
 		var startSlider2 = document.getElementById('sliderrr2');
 
+		if ($("#sliderrr2").length > 0) {
 
-		$("#sliderrr2").noUiSlider({
-				start: [ 1 ],
-				connect : 'lower',
-				orientation: 'vertical',
-				direction: 'rtl',
-				snap: true,
-				range: ranger2,
-			}).Link('lower').to($("#valll2"));
-		/*$(".demo-pips2").noUiSlider_pips({
-			mode: 'range',
-			density: 1000
-		});*/
+			$("#sliderrr2").noUiSlider({
+					start: [ 1 ],
+					connect : 'lower',
+					orientation: 'vertical',
+					direction: 'rtl',
+					snap: true,
+					range: ranger2,
+				}).Link('lower').to($("#valll2"));
+			/*$(".demo-pips2").noUiSlider_pips({
+				mode: 'range',
+				density: 1000
+			});*/
 
-		$("#sliderrr2").on('slide', function(){
-			var texto = $("#valll2").text();
-		    texto = parseInt(texto);
-		    var labelo = diskvalues2[texto];
-		    $("#valllgb2").text(labelo);
-		    $('#cloud_cpu_select_box').val(texto);
-		    $('#cloud_cpu_select').val(texto);
-		    cloud_cost_calculator();
-		});
+			$("#sliderrr2").on('slide', function(){
+				var texto = $("#valll2").text();
+			    texto = parseInt(texto);
+			    var labelo = diskvalues2[texto];
+			    $("#valllgb2").text(labelo);
+			    $('#cloud_cpu_select_box').val(texto);
+			    $('#cloud_cpu_select').val(texto);
+			    cloud_cost_calculator();
+			});
+		}	
+
 
 		// --- end cpu ---
-
-
 
 // --- end range sliders ---
 	 

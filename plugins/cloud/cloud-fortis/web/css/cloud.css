@@ -173,13 +173,20 @@ option {
 #transaction_link ul li a.last {
 	border-bottom:1px solid #cecece;
 }
+/*
 .donut-chart-legend {
 	margin-top:-25px;
 }
+*/
 .donut-chart-legend ul {
 	list-style: none outside none;
 	margin: 0;
-	padding-left: 60px;
+	padding: 0;
+	width: 90%;
+	/* padding-left: 60px; */
+}
+.donut-chart-legend ul.center {
+	margin: 0 auto;
 }
 .donut-chart-legend ul li {
 	font-size: 11px;
