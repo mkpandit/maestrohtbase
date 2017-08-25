@@ -18,6 +18,10 @@
 
 
 -->
+<style>
+#cloud-content { display: none;  }
+body { color: #f2f4f8; }
+</style>
 </div></div>
 <div class="col-xs-12 col-sm-8 col-md-9 col-lg-9 windows_plane">
 <div id="register_container">

@@ -14,42 +14,42 @@
     Copyright 2014, htvcenter Enterprise GmbH <info@htvcenter-enterprise.com>
 */
 -->
+<style>
+	#project_tab_ui { display: none; }  /* hack for tabmenu issue */
+</style>
 
-</div></div>
-
-
-
-<div class="col-xs-12 col-sm-8 col-md-9 col-lg-9 windows_plane">
-<div id="content_container">
-<h1>{label}</h1>
-<form action="{thisfile}" method="POST">
-{form}
-
-		<div id="cloud_account_left_column">
-			{cu_email}
-			{cu_forename}
-			{cu_lastname}
-			{cu_street}
-			{cu_city}
-			{cu_country}
-			{cu_phone}
-			<br/>
-			<h3>Password:</h3>
-			{cu_password}
-			{cu_password_repeat}
-			<div id="buttons" class="leftsidebtn">{submit}</div>
-		</div>
-		<div id="cloud_account_right_column">
-			<h3>{details}:</h3>
-			<p><b>{user_name}:</b> {user_name_value}</p>
-			<p><b>{user_group}:</b> {user_group_value}</p>
-			<p><b>{cloud_user_ccus}:</b> {cloud_user_ccus_value}</p>
-			<p><b>{cloud_user_lang}:</b> {cloud_user_lang_value}</p>
-			<br/>
-			{transactions}
-		</div>
-		<div class="floatbreaker" style="line-height:0px;clear:both;">&#160;</div>
-
-</form>
-</div>
+<div class="cat__content">
+	<cat-page>
+	<section class="card">	
+	<div class="card-header">
+        <span class="cat__core__title">
+            <strong>{label}</strong>
+        </span>
+    </div>
+    <div class="card-block">
+    	<form action="{thisfile}" method="POST">
+		{form}
+		{cu_email}
+		{cu_forename}
+		{cu_lastname}
+		{cu_street}
+		{cu_city}
+		{cu_country}
+		{cu_phone}
+		{cu_password}
+		{cu_password_repeat}
+		<div id="buttons" class="leftsidebtn">{submit}</div>
+		</form>
+	</div>
+	<div class="card-block">
+		<h3>{details}:</h3>
+		<p><b>{user_name}:</b> {user_name_value}</p>
+		<p><b>{user_group}:</b> {user_group_value}</p>
+		<p><b>{cloud_user_ccus}:</b> {cloud_user_ccus_value}</p>
+		<p><b>{cloud_user_lang}:</b> {cloud_user_lang_value}</p>
+		<br/>
+		{transactions}	
+	</div>
+	</section>
+	</cat-page>
 </div>

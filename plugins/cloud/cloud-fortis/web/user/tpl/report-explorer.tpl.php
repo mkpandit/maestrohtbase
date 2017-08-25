@@ -1,3 +1,6 @@
+<style>
+    #project_tab_ui { display: none; }  /* hack for tabmenu issue */
+</style>
 <script>
 var nocontent = true;
 var explorer = true;

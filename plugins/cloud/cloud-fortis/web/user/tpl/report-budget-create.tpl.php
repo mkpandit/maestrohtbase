@@ -1,7 +1,13 @@
-    <script>
-    var nocontent = true;
-    var datepickeryep = true;
-    </script>                         
+<style>
+    #project_tab_ui { display : none; }  /* hack for tabmenu issue */
+    #cloud-content { display : none; }
+</style>
+<link type="text/css" href="../css/nifty.css" rel="stylesheet">
+<link type="text/css" href="../css/htmlobject.css" rel="stylesheet">
+<script>
+var nocontent = true;
+var datepickeryep = true;
+</script>                         
                                                </div></div>
 
 

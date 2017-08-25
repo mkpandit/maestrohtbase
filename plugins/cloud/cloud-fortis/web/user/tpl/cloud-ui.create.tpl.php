@@ -14,6 +14,9 @@
     Copyright 2014, htvcenter Enterprise GmbH <info@htvcenter-enterprise.com>
 */
 -->
+<style>
+	#project_tab_ui { display: none; }  /* hack for tabmenu issue */
+</style>
 <script type="text/javascript">
 
 
@@ -362,7 +365,7 @@ $(document).ready(function(){
 
 
 </div></div>
-<div class="col-xs-12 col-sm-8 col-md-9 col-lg-9 windows_plane">
+<div class="windows_plane">
 <div id="content_container">
 <span id="storageidedit"></span>
 	<h1>{label}</h1>
@@ -371,7 +374,7 @@ $(document).ready(function(){
 
 
 
-	<div class="col-xs-12 col-sm-8 col-md-8 col-lg-8">
+	<div class="col-xs-12 col-sm-9 col-md-9 col-lg-9">
 		<div id="error_list" style="display:{display_error};">
 			{error}
 		</diV>
@@ -521,10 +524,10 @@ $(document).ready(function(){
 											</span>
 											{cloud_ip_select_3}
 											</select>
-						</div>																		
+						</div>
 						
 				
-			
+
 				</div>
 				</div>
 
@@ -548,12 +551,6 @@ $(document).ready(function(){
                 <p class="jcarousel-pagination"></p>
             	</div>
 				</div>
-
-
-
-				
-                        
-                   
 
 
 				</div>
@@ -582,7 +579,7 @@ $(document).ready(function(){
 			</div>
 			<br/>
 
-	<div id="modal-volumeadd" class="modal fade">
+<div id="modal-volumeadd" class="modal fade">
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
@@ -672,7 +669,7 @@ $(document).ready(function(){
 	
 </div>
 
-<div class="col-xs-12 col-sm-4 col-md-4 col-lg-4">
+<div class="col-xs-12 col-sm-3 col-md-3 col-lg-3">
 			
 		
 		<div id="price_list" style="display:{display_price_list};">

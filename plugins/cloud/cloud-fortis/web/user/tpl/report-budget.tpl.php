@@ -1,8 +1,11 @@
-    <script>
+<style>
+    #project_tab_ui { display: none; }  /* hack for tabmenu issue */
+</style>
+<script>
     var nocontent = true;
     var budgetpage = true;
     var datepickeryep = true;
-    </script>                         
+</script>                         
                                                </div></div>
 
 
