@@ -789,6 +789,63 @@ var $cloud_id;
 			}
 		}
 
+		// some fake data for page styling purpose:
+		$ta[] = array(
+			'id' => 1,
+			'state' => '<span class="pill active">active</span>',
+			'name' => 'cloud request',
+			'type' => 'a type',
+			'cpu' => 1,
+			'ram' => 2048,
+			'disk' => '100 GB',
+			'kernel' => 'kernal name',
+			'image' => 'ubuntu',
+			'config' => 'config column',
+			'comment' => 'not real',
+			'action' => '',
+		);
+
+		$row_headers = array(
+			'ID',
+			'VM Name',
+			'VM IP',
+			'Image',
+			'Total Memory',
+			'Memory Used',
+			'CPU',
+			'CPU Used',
+			'Status',
+			'Details'
+		);
+
+		$row_data = array(
+			array('HyperTask','192.168.0.153','HyperTask',13061,1872,2,0.58,'active'),
+			array('HTHost','192.168.0.22','resource1234',257849,18769,48,0.93,'active'),
+			array('HTHost','192.168.0.23','resource4324',257849,18769,48,0.93,'active'),
+			array('HyperTask','192.168.0.154','HyperTask',13061,1872,2,0.58,'active'),
+			array('HTHost','192.168.0.24','resource1235',257849,18769,48,0.93,'active'),
+			array('HTHost','192.168.0.25','resource4325',257849,18769,48,0.93,'inactive'),
+			array('HyperTask','192.168.0.156','HyperTask',13061,1872,2,0.58,'active'),
+			array('HTHost','192.168.0.26','resource1236',257849,18769,48,0.93,'active'),
+			array('HTHost','192.168.0.27','resource4326',257849,18769,48,0.93,'inactive'),
+			array('HyperTask','192.168.0.157','HyperTask',13061,1872,2,0.58,'active'),
+			array('HTHost','192.168.0.28','resource1237',257849,18769,48,0.93,'active'),
+			array('HyperTask','192.168.0.158','HyperTask',13061,1872,2,0.58,'active'),
+			array('HTHost','192.168.0.29','resource1234',257849,18769,48,0.93,'active'),
+			array('HTHost','192.168.0.30','resource4324',257849,18769,48,0.93,'active'),
+			array('HyperTask','192.168.0.159','HyperTask',13061,1872,2,0.58,'active'),
+			array('HTHost','192.168.0.31','resource1235',257849,18769,48,0.93,'active'),
+			array('HTHost','192.168.0.32','resource4325',257849,18769,48,0.93,'inactive'),
+			array('HyperTask','192.168.0.160','HyperTask',13061,1872,2,0.58,'active'),
+			array('HTHost','192.168.0.33','resource1236',257849,18769,48,0.93,'active'),
+			array('HTHost','192.168.0.34','resource4326',257849,18769,48,0.93,'inactive'),
+			array('HyperTask','192.168.0.161','HyperTask',13061,1872,2,0.58,'active'),
+			array('HTHost','192.168.0.35','resource1237',257849,18769,48,0.93,'active'),
+			array('HTHost','192.168.0.36','resource4327',257849,18769,48,0.93,'active')
+		);
+
+
+
 		// redirect if $ta is empty
 		if(count($ta) > 0) {
 			$table = $this->response->html->tablebuilder( 'cloud_table', $this->response->get_array($this->actions_name, 'appliances'));
@@ -804,6 +861,41 @@ var $cloud_id;
 			$table->form_method  = 'GET';
 			$table->max          = $app_count;
 			$table->body         = $ta;
+
+
+			/* NEW CODE for the table */
+
+			$table = '<table class="table table-hover nowrap dataTable dtr-inline" id="cloud_appliances" role="grid" style="width: 100%;"><thead><tr>';
+
+			foreach ($row_headers as $head) {
+				$table .= '<th>'.$head.'</th>';
+			}
+			$table .= '</tr></thead><tbody>';
+
+			for ($i = 0; $i < count($row_data); $i++) {
+				// echo ($i % 2 == 1 ? 'even ' : '');
+				$table .= '<tr id="' . $i . '">';
+				$table .= '<td>' . $i . '</td>';
+
+				for ($j = 0; $j < count($row_data[$i]); $j++) {
+					if ($j == 7) { // the 8th column is for the active or inactive status
+						$table .=	'<td class="status ' . $row_data[$i][$j] .'">' . $row_data[$i][$j] . '</td>';
+					} else {
+						$table .=	'<td>' .  $row_data[$i][$j] . '</td>';
+					}
+					
+				}
+				$table .=	'<td class="toggle-graph" row-id="' . $i . '">
+								<a href="#">
+									<i class="fa fa-ellipsis-h" aria-hidden="true"></i>
+								</a>
+							</td>';
+				$table .= '</tr>'; 
+			}
+			$table .=	'</tbody></table>';
+
+			/* END NEW CODE for the table */
+
 
 			return $table;
 		} else {

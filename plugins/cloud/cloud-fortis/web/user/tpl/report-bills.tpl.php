@@ -1,7 +1,11 @@
+<style>
+    #project_tab_ui { display: none; }  /* hack for tabmenu issue */
+</style>
 <script>
 var nocontent = true;
 var repflag = true;
 </script>        
+
                                                </div></div>
 
 
@@ -77,3 +81,6 @@ var repflag = true;
     <a class="gobackprint">Go back</a>
 </div>
 </div>
+
+
+
