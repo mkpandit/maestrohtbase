@@ -1,4 +1,14 @@
-    <script>
+    <style>
+        #project_tab_ui { display: none; }  /* hack for tabmenu issue */
+    </style>
+<script src="/cloud-fortis/js/c3/d3.v3.min.js" type="text/javascript"></script>
+<script src="/cloud-fortis/js/c3/c3.min.js" type="text/javascript"></script>
+<script src="/cloud-fortis/js/chartjs/Chart.bundle.min.js" type="text/javascript"></script>
+<script src="/cloud-fortis/js/chartjs/utils.js" type="text/javascript"></script>
+<script src="/cloud-fortis/js/fetch-report.js" type="text/javascript"></script>
+<script>
+
+/*
     var dashflag = true;
     var diagramshow = true;
     var d = new Date();
@@ -121,22 +131,22 @@ function givedashboard(month, year) {
 
     renderdash();
 
- }
+}
 
- function renderdash() {
+function renderdash() {
 
     $('#donutrender').html('');
     $('#barcharts').html('');
     
-    $('#cloud-content').css('min-height', '400px');
+    // $('#cloud-content').css('min-height', '400px');
     //var legendo = ''; 
 
     
     
     //var legendo = [{'label':'testone', 'value':60}, {'label':'testsecond', 'value':40}];
 
-    console.log(yearcurrent);
-    console.log(monthcurrentnameajax);
+    // console.log(yearcurrent);
+    // console.log(monthcurrentnameajax);
     var url = '/cloud-fortis/user/index.php?report=yes';
     var dataval = 'year='+yearcurrent+'&month='+monthcurrentnameajax+'&priceonly=0&detailcategory=1';
     var category = '';
@@ -211,61 +221,410 @@ function givedashboard(month, year) {
         prognoseprice = (pricethis + priceold) / 2;  
     }
 
- if (category.network != 0 || category.virtualisation !=0 || category.memory !=0 || category.storage != 0 || category.cpu != 0) {
-    Morris.Donut({
-                    element: 'donutrender',
-                    data: legendonut,
-                    colors: [
-                        '#a6c600',
-                        '#177bbb',
-                        '#afd2f0',
-                        "#1fa67a", "#ffd055", "#39aacb", "#cc6165", "#c2d5a0", "#579575", "#839557", "#958c12", "#953579", "#4b5de4", "#d8b83f", "#ff5800", "#0085cc"
-                    ],
-                    resize:true
-                });
-} else {
-    $('#donutrender').html('<p class="nodatadonut">No information available for these dates</p>');
+    if (category.network != 0 || category.virtualisation !=0 || category.memory !=0 || category.storage != 0 || category.cpu != 0) {
+        Morris.Donut({
+                        element: 'donutrender',
+                        data: legendonut,
+                        colors: [
+                            '#a6c600',
+                            '#177bbb',
+                            '#afd2f0',
+                            "#1fa67a", "#ffd055", "#39aacb", "#cc6165", "#c2d5a0", "#579575", "#839557", "#958c12", "#953579", "#4b5de4", "#d8b83f", "#ff5800", "#0085cc"
+                        ],
+                        resize:true
+                    });
+    } else {
+        $('#donutrender').html('<p class="nodatadonut">No information available for these dates</p>');
+    }
+
+
+    console.log(priceold);
+    console.log(pricethis);
+    if (priceold !=0 || pricethis != 0) {
+        Morris.Bar({
+          barSizeRatio:0.3,
+          element: 'barcharts',
+          data: [
+            { y: monthlastname, a: priceold },
+            { y: monthcurrentname, a: pricethis },
+            { y: 'Forecast', a: prognoseprice },
+          ],
+          barColors: ['#afd2f0', '#177bbb', '#a6c600'],
+          xkey: 'y',
+          ykeys: ['a'],
+          labels: ['Price in $']
+        });
+
+    } else {
+
+        $('#barcharts').html('<p class="nodatabars">No information available for these dates</p>');
+    }
+
+    $('td.storage').text(category.storage);
+    $('td.cpu').text(category.cpu);
+    $('td.memory').text(category.memory);
+    $('td.networking').text(category.network);
+    $('td.virtualisationb').text(category.virtualisation);
 }
 
-console.log(priceold);
-console.log(pricethis);
-if (priceold !=0 || pricethis != 0) {
-    Morris.Bar({
-      barSizeRatio:0.3,
-      element: 'barcharts',
-      data: [
-        { y: monthlastname, a: priceold },
-        { y: monthcurrentname, a: pricethis },
-        { y: 'Forecast', a: prognoseprice },
-      ],
-      barColors: ['#afd2f0', '#177bbb', '#a6c600'],
-      xkey: 'y',
-      ykeys: ['a'],
-      labels: ['Price in $']
+*/
+
+var seriesColors = [
+    '#dfdfdf',
+    '#41bee9',
+    chartColors.red,
+    chartColors.yellow,
+    chartColors.green,
+    chartColors.teal,
+    chartColors.orange,
+    chartColors.moss,
+    chartColors.blue,
+    '#afd2f0',
+    "#ffd055",
+    chartColors.purple
+];
+
+function current_year_monthly_spent(bindto, data) {
+
+    console.log(data);
+    /* data = [
+        ['x', '2017-01-01', '2017-02-01', '2017-03-01', '2017-04-01', '2017-05-01', '2017-06-01', '2017-07-01', '2017-08-01'],
+        ['total',             2300, 2100, 2250, 2140, 2260, 2150, 2000, 2400],
+    ]; */
+
+    var chart = c3.generate({
+        bindto: bindto,
+        data: {
+            x: 'x',
+            columns: data,
+            type: 'bar',
+            color: function (color, d) {
+                return seriesColors[d.index];
+            },
+        },
+        axis: {
+            x:  {
+                type: 'timeseries',
+                tick: {
+                    format: '%m/%Y'
+                }
+            },
+            y:  {
+                label: {
+                    text: 'total cost ($)'
+                }
+            }
+        },
+        grid: {
+            y: {
+                show: true
+            }
+        },
+        legend: {
+            show: false
+        }  
     });
-
-} else {
-
-    $('#barcharts').html('<p class="nodatabars">No information available for these dates</p>');
 }
 
+function current_year_monthly_spent_by_resource(bindto, data) {
 
+    console.log(data);
+    /* data = [
+        ['x', '2017-01-01', '2017-02-01', '2017-03-01', '2017-04-01', '2017-05-01', '2017-06-01', '2017-07-01', '2017-08-01'],
+        ['cpu',             300, 200, 250, 240, 260, 250, 200, 240],
+        ['storage',         200, 130, 190, 240, 140, 220, 130, 230],
+        ['memory',          300, 200, 210, 320, 250, 220, 200, 320],
+        ['virtualization',  200, 130, 150, 240, 130, 210, 130, 250],
+        ['networking',      130, 120, 150, 160, 170, 150, 120, 160],
+    ]; */
 
-                        $('td.storage').text(category.storage);
-                        $('td.cpu').text(category.cpu);
-                        $('td.memory').text(category.memory);
-                        $('td.networking').text(category.network);
-                        $('td.virtualisationb').text(category.virtualisation);
-                     
-
-
+    var chart2 = c3.generate({
+        bindto: bindto,
+        data: {
+            x: 'x',
+            columns: data,
+            type: 'bar',
+            colors: {
+                cpu:            seriesColors[0],
+                storage:        seriesColors[1],
+                memory:         seriesColors[2],
+                virtualization: seriesColors[3],
+                networking:     seriesColors[4]
+            },
+            groups: [
+                ['cpu','storage','memory','virtualization','networking']
+            ]
+        },
+        axis: {
+            x:  {
+                type: 'timeseries',
+                tick: {
+                    format: '%Y-%b'
+                }
+            },
+            y:  {
+                label: {
+                    text: 'total cost ($)'
+                }
+            }
+        },
+        grid: {
+            y:  {
+                show: true
+            }
+        }
+    });
 }
-    </script>                         
+
+function current_year_three_months_spent(bindto, data) {
+
+    console.log(data);
+    var x_column = ['x', '2017-07-01', '2017-08-01', '2017-09-01'];
+    var y_column = ['total', 750, 1200, 1080];
+    // data = [x_column, y_column];
+
+    var chart3 = c3.generate({
+        bindto: bindto,
+        data: {
+            x: 'x',
+            columns: data,
+            type: 'bar',
+            color: function (color, d) {
+                return seriesColors[d.index];
+            }
+        },
+        axis: {
+            x: {
+                type: 'timeseries',
+                tick: {
+                    format: '%Y-%b'
+                }
+            },
+            y: {
+                label: 'total cost ($)'
+            }
+        },
+        bar: {
+            width: {
+                ratio: 0.5 // this makes bar width 50% of length between ticks
+            }
+      
+        },
+        grid: {
+            y:  {
+                show: true
+            }
+        },
+        tooltip: {
+            show: true,
+            format: {
+                value: function (value, ratio, id) {
+                    var formatDecimalComma = d3.format(",.2f")
+                    return "$" + formatDecimalComma(value); 
+                }
+            }
+        },
+        legend: {
+            show: false
+        } 
+    });
+}
+
+function current_month_spent_by_resource(bindto, data) {
+
+    console.log(data);
+    var numbers = [240,230,320,250,160];
+    var labels = ["cpu","storage","memory","virtualization","networking"];
+    //data = [labels,numbers];
+
+    var color = Chart.helpers.color;
+    var config = {
+        data: {
+            datasets: [{
+                data: data[1],
+                backgroundColor: [
+                    color(seriesColors[0]).rgbString(),
+                    color(seriesColors[1]).rgbString(),
+                    color(seriesColors[2]).rgbString(),
+                    color(seriesColors[3]).rgbString(),
+                    color(seriesColors[4]).rgbString()
+                ],
+                label: 'dollars ($)' // for legend
+            }],
+            labels: data[0]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            legend: {
+                display: true,
+                position: 'bottom'
+            },
+            title: {
+                display: false,
+                // text: 'Mon'
+            },
+            scale: {
+                display: true,
+                reverse: false,
+                ticks: {
+                    callback: function(value, index, values) {
+                        return '$ '+value;
+                    }
+                }
+            },
+            animation: {
+                animateRotate: true,
+                animateScale: true
+            },
+            layout: {
+                padding: {
+                    left: 5,
+                    right: 5,
+                    top: 5,
+                    bottom: 5
+                }
+                
+            },
+            tooltips: {
+                callbacks: {
+                    label: function(tooltipItems, data) {
+                        return data.labels[tooltipItems.index] +': $' + tooltipItems.yLabel;
+                    }
+                }
+            }
+        }
+    };
+    Chart.defaults.global.legend.labels.boxWidth = 12;
+    var ctx = document.getElementById(bindto);
+    window.myPolarArea = Chart.PolarArea(ctx, config);
+    /* document.getElementById('js-legend').innerHTML = myPolarArea.generateLegend(); */
+}
+
+function lifetime_spent(bindto, objects) {
+    var value = ['lifetime spending', 5000];
+    var max_val = 10000;
+
+    var chart4 = c3.generate({
+        bindto: bindto,
+        data: {
+            columns: [ value ],
+            labels: true,
+            type: 'gauge',
+            onclick: function (d, i) { /* console.log("onclick", d, i); */ },
+            onmouseover: function (d, i) { /* console.log("onmouseover", d, i); */},
+            onmouseout: function (d, i) { /* console.log("onmouseout", d, i); */}
+        },
+        gauge: {
+            max: max_val,
+            label: {
+                format: function(value, ratio) {
+                    return '$ '+value;
+                },
+                show: true
+            }
+        },
+        color: {
+            pattern: [seriesColors[1]], // the three color levels for the percentage values.
+        },
+        legend: {
+            show: true,
+            position: 'bottom',
+            format: function(value, ratio) {
+                return '$ '+value;
+            },
+        },    
+        transition: {
+            duration: 1500
+        },
+        tooltip: {
+            show: true,
+            format: {
+                value: function (value, ratio, id, index) { return value; }
+            }
+        }
+    });
+}
+
+function parseDate(d, format) {
+
+    if (format == 'Y') {
+        return d.getFullYear();
+    } else if (format == 'm') {
+        return d.toLocaleString("en-us", {month: "numeric"})
+    } else if (format == 'Y-M-D') {
+        return d.getFullYear() + '-' + d.toLocaleString("en-us", {month: "2-digit"}) + '-' + d.toLocaleString("en-us", {day: "2-digit"})
+    } else {
+        return '';
+    }
+}
+
+$(document).ready(function () {
+
+    var this_month = new Date();
+    var last_month = new Date();
+    var next_month = new Date();
+    this_month.setDate(1);
+    last_month.setDate(1);
+    last_month.setMonth(this_month.getMonth()-1);
+    next_month.setDate(1);
+    next_month.setMonth(this_month.getMonth()+1);
+
+    var column_x_yearly  = ['x'];
+    var column_x_3months = ['x'];
+    var total_monthly   = ['total'];
+    var cpu_monthly     = ['cpu'];
+    var storage_monthly = ['storage'];
+    var memory_monthly  = ['memory'];
+    var virtual_monthly = ['virtualization'];
+    var network_monthly = ['networking'];
+    
+    var deferred = [];
+
+    var current_month = new Date();
+    for (var i = 0; i <= this_month.getMonth(); i++) {
+        current_month.setMonth(i);
+        current_month.setDate(1);
+        column_x_yearly.push(parseDate(current_month,'Y-M-D'));
+        deferred.push(get_monthly_data(parseDate(current_month,'Y'), parseDate(current_month,'m')));
+    }
+    column_x_3months.push(parseDate(last_month,'Y-M-D'), parseDate(this_month,'Y-M-D'), parseDate(next_month,'Y-M-D'));
+
+    $.when.apply($, deferred).done(function () {
+        var objects=arguments;
+
+        for (var j = 0; j < objects.length; j++) {
+            var json = JSON.parse(objects[j][0]);
+
+            total_monthly.push(to_num(json.all));
+            cpu_monthly.push(to_num(json.cpu));
+            storage_monthly.push(to_num(json.storage));
+            memory_monthly.push(to_num(json.memory));
+            virtual_monthly.push(to_num(json.virtualization));
+            network_monthly.push(to_num(json.networking));
+        }
+
+        current_year_monthly_spent("#current-year-monthly-spent", [column_x_yearly, total_monthly]);
+        
+        current_year_monthly_spent_by_resource("#current-year-monthly-spent-by-resource", [column_x_yearly, cpu_monthly, storage_monthly, memory_monthly, virtual_monthly, network_monthly]);
+        
+        // future data supposed to come from same source?
+        current_year_three_months_spent("#current-three-months-spent", [column_x_3months, ['total', total_monthly.slice(-3)[0],total_monthly.slice(-2)[0],total_monthly.slice(-1)[0]]]);
+        
+        current_month_spent_by_resource("chartdiv-this-month-chart", [[cpu_monthly[0], storage_monthly[0], memory_monthly[0],virtual_monthly[0], network_monthly[0]], [cpu_monthly.slice(-1)[0], storage_monthly.slice(-1)[0], memory_monthly.slice(-1)[0], virtual_monthly.slice(-1)[0], network_monthly.slice(-1)[0]]]);
+        lifetime_spent("#lifetime-spent-gauge", objects); 
+    });
+});
+</script>
+
+
+
+<!--
                                                </div></div>
 
 
 
-<div class="col-xs-12 col-sm-9 col-md-10 col-lg-10 windows_plane">
+<div class="windows_plane">
 <div id="home_container">
 <div class="printlogo">
     <img id="logo_cl_img" alt="htvcenter Enterprise Cloud" src="/cloud-fortis/img/fortis-logo.png">
@@ -349,3 +708,122 @@ if (priceold !=0 || pricethis != 0) {
                                                     
                                                     </div>
                                                     </div>
+-->
+<div class="cat__content">
+    <cat-page>
+    <div class="row">
+        <div class="col-sm-12">
+            <section class="card">  
+                <div class="card-header">
+                    <span class="cat__core__title">
+                        <strong>Score Report Dashboard</strong>
+                    </span>
+                </div>
+                <div class="card-block">
+                    <div class="row">
+                        <div class="col-sm-6 dashboard">
+                            <section class="card">  
+                                <div class="card-header">
+                                    <span class="cat__core__title">
+                                        <strong>{currentyear} Total Spent</strong>
+                                    </span>
+                                </div>
+                                <div class="card-block">
+                                    <div class="panel-heading">
+                                        <div class="panel-control">
+                                        </div>
+                                        <h3 class="panel-title">&nbsp;</h3>
+                                    </div>
+                                    <div>
+                                        <div id="current-year-monthly-spent"  style="height: 16rem;"></div>
+                                    </div>
+                                </div>
+                            </section>
+                        </div>
+                        <div class="col-sm-6 dashboard">
+                            <section class="card">  
+                                <div class="card-header">
+                                    <span class="cat__core__title">
+                                        <strong>Monthly Projection</strong>
+                                    </span>
+                                </div>
+                                <div class="card-block">
+                                    <div class="panel-heading">
+                                        <div class="panel-control">
+                                        </div>
+                                        <h3 class="panel-title">&nbsp;</h3>
+                                    </div>
+                                    <div>
+                                        <div id="current-three-months-spent" style="height: 16rem;"></div>
+                                    </div>
+                                </div>
+                            </section>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-6 dashboard">
+                            <section class="card">  
+                                <div class="card-header">
+                                    <span class="cat__core__title">
+                                        <strong>{currentyear} Total Spent By Resource</strong>
+                                    </span>
+                                </div>
+                                <div class="card-block">
+                                    <div class="panel-heading">
+                                        <div class="panel-control">
+                                        </div>
+                                        <h3 class="panel-title">&nbsp;</h3>
+                                    </div>
+                                    <div>
+                                        <div id="current-year-monthly-spent-by-resource" style="height: 16rem;"></div>
+                                    </div>
+                                </div>
+                            </section>
+                        </div>
+                        <div class="col-sm-3 dashboard">
+                            <section class="card">  
+                                <div class="card-header">
+                                    <span class="cat__core__title">
+                                        <strong>Current Spending</strong>
+                                    </span>
+                                </div>
+                                <div class="card-block">
+                                    <div class="panel-heading">
+                                        <div class="panel-control">
+                                        </div>
+                                        <h3 class="panel-title">&nbsp;</h3>
+                                    </div>
+                                    <div style="height: 16rem;">
+                                        <canvas id="chartdiv-this-month-chart"></canvas>
+                                    </div>
+                                     <!-- <div id="js-legend" class="chart-legend"></div> -->
+                                </div>
+                            </section>
+                        </div>
+                        <div class="col-sm-3 dashboard">
+                            <section class="card">  
+                                <div class="card-header">
+                                    <span class="cat__core__title">
+                                        <strong>Lifetime Spending</strong>
+                                    </span>
+                                </div>
+                                <div class="card-block">
+                                    <div class="panel-heading">
+                                        <div class="panel-control">
+                                        </div>
+                                        <h3 class="panel-title">&nbsp;</h3>
+                                    </div>
+                                    <div>
+                                        <div id="lifetime-spent-gauge" style="height: 16rem;"></div>
+                                    </div>
+                                </div>
+                            </section>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+    </cat-page>
+</div>
+

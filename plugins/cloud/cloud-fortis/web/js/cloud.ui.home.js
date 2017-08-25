@@ -56,9 +56,9 @@ function get_limits() {
 		this_month_data = JSON.parse(v2[0]);
 		next_month_data = JSON.parse(v3[0]);
 
-		last_month_data = {"cpu":"$1","storage":"$0","memory":"$1","virtualization":"$0","networking":"$1","all":"$3.00"};
-		this_month_data = {"cpu":"$1.5","storage":"$1","memory":"$1","virtualization":"$0.5","networking":"$1","all":"$5.00"};
-		next_month_data = {"cpu":"$1","storage":"$1","memory":"$1","virtualization":"$1","networking":"$1","all":"$5.00"};
+		// last_month_data = {"cpu":"$1","storage":"$0","memory":"$1","virtualization":"$0","networking":"$1","all":"$3.00"};
+		// this_month_data = {"cpu":"$1.5","storage":"$1","memory":"$1","virtualization":"$0.5","networking":"$1","all":"$5.00"};
+		// next_month_data = {"cpu":"$1","storage":"$1","memory":"$1","virtualization":"$1","networking":"$1","all":"$5.00"};
 
 		// console.log(last_month_data);
 		// console.log(this_month_data);
@@ -84,7 +84,7 @@ function get_limits() {
 	$.when(response_deferred).done(function (v1) {
 		// console.log(v1);
 		var response = v1;
-		response = {"systems_list": [["free",7],["active",2],["paused",1]],"disk_list": [["free",900000],["active",100000],["paused",0]],"memory_list": [["free",90000],["active",1000],["paused",0]],"cpu_list": [["free",40],["active",10],["paused",0]],"network_list": [["free",20],["active",10],["paused",0]]};
+		// response = {"systems_list": [["free",7],["active",2],["paused",1]],"disk_list": [["free",900000],["active",100000],["paused",0]],"memory_list": [["free",90000],["active",1000],["paused",0]],"cpu_list": [["free",40],["active",10],["paused",0]],"network_list": [["free",20],["active",10],["paused",0]]};
 		make_doughnut('systems', response.systems_list,"");
 		make_gauge('disk', response.disk_list, "");
 		make_gauge('memory', response.memory_list, "");
