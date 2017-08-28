@@ -1,4 +1,5 @@
-<form id="create-vm-form" action="#">
+<form id="create-vm-form" action="index.php">
+<input class="hidden" name="cloud_ui" value="create" type="hidden">
 <div>
 <h3>Profile</h3>
 	<section>

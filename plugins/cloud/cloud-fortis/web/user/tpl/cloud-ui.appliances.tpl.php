@@ -164,7 +164,7 @@ $(document).ready(function() {
             dataType: "html",
             success : function (data) {
                 
-               $("#create-vm-modal .modal-body").append(data.slice(0,-20));
+               $("#create-vm-modal .modal-body").empty().append(data.slice(0,-20));
 
 
 					$("#create-vm-modal .modal-body input").addClass("form-control").addClass("require").removeClass("text");
@@ -174,8 +174,6 @@ $(document).ready(function() {
               // $(document).ready(function () {
 
 					var form = $("#create-vm-form");
-
-
 
 					form.validate({
 						errorPlacement: function errorPlacement(error, element) { element.before(error); },
@@ -213,7 +211,8 @@ $(document).ready(function() {
 						},
 						onFinished: function (event, currentIndex)
 						{
-							// ("Submitted!");
+							console.log("Submitted!");
+							form.submit();
 						}
 					}); 
 /*
@@ -305,6 +304,8 @@ $(document).ready(function() {
             }
         });  
 	}); 
+
+
 
 	function makeSummary() {
 		var apps = [];
