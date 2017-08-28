@@ -102,6 +102,10 @@
 {
     display: block;
 }
+.slick-initialized .slick-slide.hide
+{
+    display: none;
+}
 .slick-loading .slick-slide
 {
     visibility: hidden;

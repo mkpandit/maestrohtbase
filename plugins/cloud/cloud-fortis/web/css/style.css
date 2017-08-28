@@ -698,7 +698,6 @@ div#loginwindow div.form-inline div.form-group div.input-group{
     height: 64px;
     margin-bottom: 10px;
     position: relative;
-    left: 39px;
 }
 
 #applications_list .htmlobject_box .left {
@@ -1239,10 +1238,6 @@ input.submit:hover {
 
 #transaction_link a:hover, #manage_list a:hover {
     opacity: 0.8;
-}
-
-#cloud_ha_select {
-    margin-top: -5px;
 }
 
 #project_tab_uimsgBox, .msgBox strong {

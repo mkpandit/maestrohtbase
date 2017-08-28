@@ -26,7 +26,7 @@
 <link href="/cloud-fortis/css/slick.css" rel="stylesheet" type="text/css">
 <link href="/cloud-fortis/css/slick-theme.css" rel="stylesheet" type="text/css">
 
-<script src="https://cdn.datatables.net/1.10.15/js/jquery.dataTables.min.js" type="text/javascript"></script>
+<script src="/cloud-fortis/js/vender/dataTables/jquery.dataTables.min.js" type="text/javascript"></script>
 <script src="/cloud-fortis/js/jquery.validate.min.js" type="text/javascript"></script>
 <script src="/cloud-fortis/js/jquery.steps.min.js" type="text/javascript"></script>
 <script src="/cloud-fortis/js/ion.rangeSlider.js" type="text/javascript"></script>
@@ -64,11 +64,16 @@
 		margin: 0.2rem auto;
 	}
 
+	.wizard .form-group .item input.checkbox {
+		width: 20px;
+	}
+
 	.wizard .owl-carousel.owl-theme > .item {
 		display: inline-block;
 		width: 10.5rem;
 		height: 10.5rem;
 		margin-bottom: 1.1rem;
+		text-align: center;
 	}
 
 	.wizard .owl-carousel.owl-theme > .item.hide {
@@ -140,8 +145,162 @@
 <script src="/cloud-fortis/js/c3/c3.min.js" type="text/javascript"></script>
 <script type="text/javascript">
 /* run DataTable.js */
+
 $(document).ready(function() {
 
+	$('#create-vm-modal').on('shown.bs.modal', function (e) {
+
+		var url = '/cloud-fortis/user/index.php?cloud_ui=create';
+    
+        $.ajax({
+            url : url,
+            type: "GET",
+            cache: false,
+            async: true,
+            dataType: "html",
+            success : function (data) {
+                
+               $("#create-vm-modal .modal-body").append(data.slice(0,-20));
+
+
+					$("#create-vm-modal .modal-body input").addClass("form-control").addClass("require").removeClass("text");
+
+					$("#create-vm-modal .modal-body select").addClass("form-control").addClass("require");
+
+              // $(document).ready(function () {
+
+					var form = $("#create-vm-form");
+
+
+
+					form.validate({
+						errorPlacement: function errorPlacement(error, element) { element.before(error); },
+						rules: {
+							confirm: {
+								equalTo: "#password"
+							}
+						}
+					}); 
+
+					form.children("div").steps({
+						headerTag: "h3",
+						bodyTag: "section",
+						transitionEffect: "slideLeft",
+						onStepChanging: function (event, currentIndex, newIndex)
+						{
+							form.validate().settings.ignore = ":disabled,:hidden";
+
+							if (newIndex == 4) {
+								makeSummary();
+							}
+
+							return form.valid();
+						},
+						onStepChanged: function(event, currentIndex, priorIndex)
+						{
+							 if (currentIndex == 3) {
+								initiateOwlCarousel();
+							 }
+						},
+						onFinishing: function (event, currentIndex)
+						{
+							form.validate().settings.ignore = ":disabled";
+							return form.valid();
+						},
+						onFinished: function (event, currentIndex)
+						{
+							// ("Submitted!");
+						}
+					}); 
+/*
+					$("#cloud_disk_select").ionRangeSlider({
+						hide_min_max: false,
+						keyboard: true,
+						min: 2,
+						max: 100,
+						values: [2, 5, 10, 20, 50, 100],
+						type: 'single',
+						step: 0.2,
+						grid: true,
+						postfix: " GB",
+					});
+
+					$("#cloud_cpu_select").ionRangeSlider({
+						hide_min_max: false,
+						keyboard: true,
+						min: 1,
+						max: 4,
+						values: [1,2,4],
+						type: 'single',
+						step: 1,
+						grid: true,
+					});
+
+					$("#cloud_memory_select").ionRangeSlider({
+						hide_min_max: false,
+						keyboard: true,
+						min: 256,
+						max: 2048,
+						values: [256, 512, 1024, 2048],
+						type: 'single',
+						step: 0.2,
+						grid: true,
+						postfix: " MB",
+					});
+*/
+					function searchApp(txt) {
+						var txt_lc = txt.toLowerCase();
+						var found_match = false;
+						
+
+						$(".owl-carousel .item").each(function () {
+							$(this).removeClass("matched");
+
+							var app_name_lc = $(this).contents().filter(function() {
+							    return this.nodeType == 3;
+							}).text().trim().toLowerCase();
+
+							if (app_name_lc.indexOf(txt_lc) == -1) {
+								console.log("hiding");
+								$(this).addClass("hide");
+							} else {
+								$(this).removeClass("hide");
+								console.log("showing");
+								found_match = true;
+							}
+						});
+
+						if (!found_match) {
+							$(".owl-carousel .item").removeClass("hide");
+						} else {
+
+						}
+					}
+
+					var delay = (function(){
+						var timer = 0;
+						return function(callback, ms){
+							clearTimeout (timer);
+							timer = setTimeout(callback, ms);
+						};
+					})();
+
+					$("#search-app").keyup(function() {
+						var txt = $(this).val();
+
+						console.log(txt);
+
+						delay(function() {
+							searchApp(txt);
+						}, 300);
+					});
+
+
+				// });
+
+            }
+        });  
+	}); 
 
 	function makeSummary() {
 		var apps = [];
@@ -185,7 +344,7 @@ $(document).ready(function() {
 			});
 		});
 	}
-
+/*
 	function initiateOwlCarousel() {
 		if ($(".owl-carousel.uninitiated").length > 0) {
 			$(".owl-carousel.uninitiated").slick({
@@ -200,61 +359,7 @@ $(document).ready(function() {
 			$(window).trigger('resize'); 
 		}
 	}
-
-	var form = $("#create-vm-form");
-
-	form.validate({
-		errorPlacement: function errorPlacement(error, element) { element.before(error); },
-		rules: {
-			confirm: {
-				equalTo: "#password"
-			}
-		}
-	}); 
-
-	form.children("div").steps({
-		headerTag: "h3",
-		bodyTag: "section",
-		transitionEffect: "slideLeft",
-		onStepChanging: function (event, currentIndex, newIndex)
-		{
-			form.validate().settings.ignore = ":disabled,:hidden";
-
-			if (newIndex == 4) {
-				makeSummary();
-			}
-
-			return form.valid();
-		},
-		onStepChanged: function(event, currentIndex, priorIndex)
-		{
-			// if (currentIndex == 3) {
-			//	initiateOwlCarousel();
-			// }
-		},
-	/*	onInit: function(event, currentIndex)
-		{
-			console.log("steps onInit, currentIndex" + currentIndex);
-			if (currentIndex == 3) {
-				initiateOwlCarousel();
-			}
-		}, */
-		onFinishing: function (event, currentIndex)
-		{
-			form.validate().settings.ignore = ":disabled";
-			return form.valid();
-		},
-		onFinished: function (event, currentIndex)
-		{
-			// ("Submitted!");
-		}
-	}); 
-
-	$("#create-vm").click(function () {
-		$("#create-vm-modal").modal("show");
-		return false;
-	});
-
+*/
 	function format (d) {
 		// `d` is the original data object for the row
 		return	'<section class="card">'+
@@ -409,82 +514,6 @@ $(document).ready(function() {
 		});
 		*/
 	});
-
-	$("#vmDisk").ionRangeSlider({
-		hide_min_max: false,
-		keyboard: true,
-		min: 2,
-		max: 100,
-		values: [2, 5, 10, 20, 50, 100],
-		type: 'single',
-		step: 0.2,
-		grid: true,
-		postfix: " GB",
-	});
-
-	$("#vmCPU").ionRangeSlider({
-		hide_min_max: false,
-		keyboard: true,
-		min: 1,
-		max: 4,
-		values: [1,2,4],
-		type: 'single',
-		step: 1,
-		grid: true,
-	});
-
-	$("#vmMemory").ionRangeSlider({
-		hide_min_max: false,
-		keyboard: true,
-		min: 256,
-		max: 2048,
-		values: [256, 512, 1024, 2048],
-		type: 'single',
-		step: 0.2,
-		grid: true,
-		postfix: " MB",
-	});
-
-	function searchApp(txt) {
-		var txt_lc = txt.toLowerCase();
-		var found_match = false;
-		
-		/* $(".owl-carousel").slick("slickUnfilter"); */
-		$(".owl-carousel .item").each(function () {
-			$(this).removeClass("matched");
-			var app_name_lc = $(this).find("label span").text().toLowerCase();
-
-			if (app_name_lc.indexOf(txt_lc) == -1) {
-				$(this).addClass("hide");
-			} else {
-				$(this).removeClass("hide");
-				found_match = true;
-			}
-		});
-
-		if (!found_match) {
-			$(".owl-carousel .item").removeClass("hide");
-			/* $(".owl-carousel").slick("slickFilter",".matched"); */
-		} /* else {
-			$(".owl-carousel").slick("slickUnfilter");
-		} */
-	}
-
-	var delay = (function(){
-		var timer = 0;
-		return function(callback, ms){
-			clearTimeout (timer);
-			timer = setTimeout(callback, ms);
-		};
-	})();
-
-	$("#search-app").keyup(function() {
-		var txt = $(this).val();
-
-		delay(function() {
-			searchApp(txt);
-		}, 300);
-	});
 });
 
 
@@ -609,7 +638,7 @@ function get_state( id ) {
 						<a class="btn btn-primary" href="index.php?project_tab_ui=3&cloud_ui=create" target="_blank">New Instance <i class="fa fa-plus"></i></a>
 						-->
 						<div class="pull-right d-inline">
-							<a class="btn btn-sm btn-primary" href="#" id="create-vm">Create New Virtual Machine <i class="fa fa-plus"></i></a>
+							<a class="btn btn-sm btn-primary" data-toggle="modal" data-target="#create-vm-modal">Create New Virtual Machine <i class="fa fa-plus"></i></a>
 						</div>
 					</div>
 				</div>
@@ -630,153 +659,8 @@ function get_state( id ) {
 			<span aria-hidden="true">&times;</span>
 			</button>
 		</div>
-		<form id="create-vm-form" action="#">
-			<div class="modal-body">
-			<h3>Profile</h3>
-				<section>
-					<!--<div class="row"> -->
-						<div class="col-lg-12">
-							<div class="form-group">
-								<label for="vmName">Name *</label>
-								<input id="vmName" name="vmName" type="text" class="form-control required" placeholder="Name">
-							</div>
-							<div class="form-group">
-								<label for="vmDesc">Description *</label>
-								<input id="vmDesc" name="vmDesc" type="text" class="form-control required" placeholder="Description">
-							</div>
-							<div class="form-group">
-								<label for="vmType">Type *</label>
-								<select class="form-control required" id="vmType" name="vmType">
-									<option value="14936736988105">Cloud VM (localboot)</option>
-								</select>
-							</div>
-							<div class="form-group">
-								<label for="vmImage">Image *</label>
-								<select class="form-control required" id="vmImage" name="vmImage">
-									<option value="HyperTask">HyperTask</option>
-									<option value="Resrouce1234">Resrouce1234</option>
-								</select>
-							</div>
-						</div>
-						<p>(*) Mandatory</p>
-					<!-- </div> -->
-				</section>
-			<h3>Compute</h3>
-				<section>
-					<!-- <div class="row">  -->
-						<div class="col-lg-12">
-							<div class="form-group">
-								<label for="vmDisk">Disk *</label>
-								<input id="vmDisk" name="vmDisk" type="text"" value="" />
-							</div>
-							<div class="form-group">
-								<label for="vmCPU">CPU *</label>
-								<input id="vmCPU" name="vmCPU" type="text" value="" />
-							</div>
-							<div class="form-group">
-								<label for="vmMemory">Memory *</label>
-								<input id="vmMemory" name="vmMemory" type="text" value="" />
-							</div>
-						</div>
-						<p>(*) Mandatory</p>
-					<!-- </div> -->
-				</section>
-			<h3>Network</h3>
-				<section>
-					<!-- <div class="row">  -->
-						<div class="col-lg-12">
-							<div class="form-group">
-								<label for="vmNetwork">Network *</label>
-								<select id="vmNetwork" name="vmNetwork" class="form-control required">
-									<option value="192.168.0.111">192.168.0.111</option>
-									<option value="192.168.0.112">192.168.0.112</option>
-									<option value="192.168.0.113">192.168.0.113</option>
-									<option value="192.168.0.114">192.168.0.114</option>
-								</select>
-							</div>
-						</div>
-						<p>(*) Mandatory</p>
-					<!-- </div> -->
-				</section>
-			<h3>Marketplace</h3>
-				<section>
-					<!-- <div class="row">  -->
-						<!--
-						<div class="col-sm-1">
-							<i class="fa fa-arrow-left" aria-hidden="true"></i>
-						</div>
-						-->
-						<div class="col-lg-12">
-							<div class="form-group row d-inline">
-								<label class="col-sm-3 col-form-label">Marketplace</label>
-								<div class="col-sm-6 pull-right">
-									<div class="form-group row pull-right">
-										<label class="col-form-label" for="search-app">Search:&nbsp;&nbsp;</label>
-										<div class="form-input-icon form-input-icon-right">
-											<i class="fa fa-search" aria-hidden="true"></i>
-											<input class="form-control" id="search-app" placeholder="Search" type="text">
-										</div>
-									</div>
-								</div>
-							</div>
-
-							<div class="form-group d-inline-block" style="width: 100%;">
-								<div class="owl-carousel uninitiated owl-theme">
-									<div class="item">
-										<label rel="cloud_application_select_0"><img src="/cloud-fortis/img/servericon.png" width="75%" height="75%" /><span>Basic Server</span>
-										</label>
-										<input class="checkbox" name="cloud_application_select_0" value="puppet/basic-server" data-name="Basic Server" type="checkbox" />
-									</div>
-									<div class="item">
-										<label rel="cloud_application_select_1"><img src="/cloud-fortis/img/databaseicon.png" width="75%" height="75%" /><span>Database Server</span>
-										</label>
-										<input class="checkbox" name="cloud_application_select_1" value="puppet/database-server" data-name="Database Server" type="checkbox" />
-									</div>
-									<div class="item">
-										<label rel="cloud_application_select_2"><img src="/cloud-fortis/img/dockericon.png" width="75%" height="75%" /><span>Docker</span>
-										</label>
-										<input class="checkbox" name="cloud_application_select_2" value="puppet/docker" data-name="Docker" type="checkbox" />
-									</div>
-									<div class="item">
-										<label rel="cloud_application_select_3"><img src="/cloud-fortis/img/lampicon.png" width="75%" height="75%" /><span>Lamp</span>
-										</label>
-										<input class="checkbox" name="cloud_application_select_3" value="puppet/lamp" data-name="Lamp" type="checkbox" />
-									</div>
-									<div class="item">
-										<label rel="cloud_application_select_4"><img src="/cloud-fortis/img/openstackicon.png" width="75%" height="75%" /><span>Open Stack</span>
-										</label>
-										<input class="checkbox" name="cloud_application_select_4" value="puppet/openstack" data-name="Open Stack" type="checkbox" />
-									</div>
-									<div class="item">
-										<label rel="cloud_application_select_5"><img src="/cloud-fortis/img/webminicon.png" width="75%" height="75%" /><span>Web Admin</span>
-										</label>
-										<input class="checkbox" name="cloud_application_select_5" value="puppet/webmin" data-name="Web Admin" type="checkbox" />
-									</div>
-									<div class="item">
-										<label rel="cloud_application_select_6"><img src="/cloud-fortis/img/webservericon.png" width="75%" height="75%" /><span>Web Server</span>
-										</label>
-										<input class="checkbox" name="cloud_application_select_6" value="puppet/webserver" data-name="Web Server" type="checkbox" />
-									</div>
-									<div class="item">
-										<label rel="cloud_ha_select"><img src="/cloud-fortis/img/haicon.png" width="75%" height="75%" /><span>High Availability</span>
-										</label>
-										<input class="checkbox" name="cloud_ha_select" value="ha" data-name="High Availability" type="checkbox" />
-									</div>
-								</div>
-							</div>
-						</div>
-						
-				</section>
-			<h3>Summary</h3>
-				<section>
-					<label>Review VM Settings:</label>
-					<div id="summary-tab" class="col-lg-12">
-						<p>
-						</p>
-					</div>
-				</section>
-			</div>
-		</form>
+		<div class="modal-body">
+		</div>
 	</div>
 </div>
 
