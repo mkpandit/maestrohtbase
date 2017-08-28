@@ -482,7 +482,7 @@ div.cloud #add_product div.htmlobject_box div.right input[type="text"] {
 #add_product .buttons {
 	width: 50%;
 	left: 0px;
-	margin: 0px 0px 0px 25%;
+	margin: 0px 0px 0px 79%;
 }
 
 div.cloud div#requests_filter div.left {
@@ -566,4 +566,44 @@ div.cloud-table-class table tr td.actions, div.cloud-table-class table tr td.pag
 div.cloud #project_tab0 table td.actions {
 	margin: 0;
 	padding: 0;
+}
+
+div#add_product div.score-add-product {
+	width: 75%;
+}
+
+div#add_product div.score-add-product div.htmlobject_box {
+	width: 100%;
+}
+
+div#add_product div.score-add-product div.htmlobject_box div.left{
+	width: 30% !important;
+	margin:0 !important;
+}
+
+div#add_product div.score-add-product div.htmlobject_box div.right{
+	width: 69% !important;
+	margin: 0 !important;
+}
+
+div#add_product div.score-add-product div.htmlobject_box div.right input[type="text"]{
+	width: 100%;
+}
+
+div#add_product div.score-add-product div.buttons{
+	width: 100%;
+	margin: 0 1% 0 0;
+	position: relative;
+	float: right;
+	text-align: right;
+}
+
+div#add_product div.score-add-product div.htmlobject_box div.right .bootstrap-select{
+	width: 100% !important;
+	left: 0 !important;
+	width: 100% !important;
+}
+
+div#content-container div.cloud #project_tab {
+	right: 0 !important;
 }

@@ -457,6 +457,9 @@ var $lang = array(
 				$content[] = $this->transaction(true);
 				$content[] = $this->create(false);
 			break;
+			case 'create_modal':
+				$content[] = $this->create_modal(true);
+			break;
 		}
 		$tab = $this->response->html->tabmenu($this->prefix_tab);
 		$tab->message_param = $this->message_param;
@@ -501,6 +504,43 @@ var $lang = array(
 		return $content;
 	}
 
+
+	//--------------------------------------------
+	/**
+	 * Create Cloud User Request
+	 *
+	 * @access public
+	 * @param bool $hidden
+	 * @return array
+	 */
+	//--------------------------------------------
+	function create_modal( $hidden = true ) {
+		$data = '';
+		if( $hidden === true ) {
+			require_once($this->userdir.'/class/cloud-ui.create-modal.class.php');
+			$controller = new cloud_ui_create($this->htvcenter, $this->response);
+			$controller->actions_name    = $this->actions_name;
+			$controller->tpldir          = $this->tpldir;
+			$controller->clouduser       = $this->clouduser;
+			$controller->cloudconfig     = $this->cloudconfig;
+			$controller->message_param   = $this->message_param;
+			$controller->basedir         = $this->basedir;
+			$controller->rootdir         = $this->rootdir;
+			$controller->userdir         = $this->userdir;
+			$controller->identifier_name = $this->identifier_name;
+			$controller->lang            = $this->lang['create'];
+			$data = $controller->action();
+		}
+		$content['label']   = $this->lang['create']['tab'];
+		$content['value']   = $data;
+		$content['target']  = $this->response->html->thisfile;
+		$content['request'] = $this->response->get_array($this->actions_name, 'create' );
+		$content['onclick'] = false;
+		if($this->action === 'create'){
+			$content['active']  = true;
+		}
+		return $content;
+	}
 
 
 	//--------------------------------------------

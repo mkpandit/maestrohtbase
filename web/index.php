@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>HyperTask login</title>
+<title>Maestro Enterprise Login</title>
 
 <script type="text/javascript" src="js/jquery.js"></script>
 <script type="text/javascript" src="js/login.js"></script>
@@ -19,61 +19,49 @@
 	
 	<div id="loginside">
 		
-		<img src="logo.png" alt="HTBase - HyperTask" title="HTBase - HyperTask" />
-		
+		<img src="logo.png" alt="Maestro by HTBase" title="Maestro by HTBase" />
+		<h1>MAESTRO</h1>
 		<div id="loginwindow">
 
 			<div class="form-inline">
-				<label class="sr-onlys" for="exampleInputAmount">Username:</label>
+				<!-- <label class="sr-onlys" for="exampleInputAmount">Username:</label> -->
 		  	  	
 				<div class="form-group">
 		    		<div class="input-group">
-		      		  <div class="input-group-addon"><i class="fa fa-user"></i></div>
-		      			<input type="text" class="form-control" id="userlogin" placeholder="login">
+		      		  <!-- <div class="input-group-addon"><i class="fa fa-user"></i></div> -->
+		      			<input type="text" class="form-control" id="userlogin" placeholder="Username">
 		      
 		    		</div>
 		  	  	</div>
 		  	  
 			  	
-		 	 	<label class="sr-onlys" for="exampleInputAmount">Password:</label>
+		 	 	<!-- <label class="sr-onlys" for="exampleInputAmount">Password:</label> -->
 		  	  	
 				<div class="form-group">
-		    
-		    		<div class="input-group">
-		      	  	  <div class="input-group-addon"><i class="fa fa-lock"></i></div>
-					  <input type="password" class="form-control" id="userpassword" placeholder="password">
+		    		<div class="input-append input-group">
+		      	  	  <!-- <div class="input-group-addon"><i class="fa fa-lock"></i></div> -->
+					  <input type="password" class="form-control" id="userpassword" placeholder="Password">
+					  <span id="btnlogin-arrow" class="fa fa-arrow-right login-arrow"></span>
 		    		</div>
 		  		</div>
 		  
-		  	  	<div class="form-group">
+		  	  	<!-- <div class="form-group">
 					<div class="input-group">
-		  	  			<button type="submit" class="btn btn-primary" id="btnlogin">Log In to HyperTask</button>
+		  	  			<button type="submit" class="btn btn-primary" id="btnlogin">Log In to Maestro</button>
 					</div>
-				</div>
+				</div> -->
 		  	  	<!-- <div class="row addlinks"></div> -->
 			</div>
 
 		</div>
 	</div>
+	<div class="maestr-footer">&copy; <?php echo date("Y"); ?> HTBASE</div>
 </div>
-
 </body>
 </html>
 
+<!-- /*
+	HTVCenter Enterprise developed by HTBase Corp. All source code and content (c) Copyright 2015, htvcenter Corp unless specifically noted otherwise. This source code is released under the htvcenter Enterprise Server and Client License, unless otherwise agreed with HTBase Corp. By using this software, you acknowledge having read the license and agree to be bound thereby.
 
-
-<!--
-/*
-    htvcenter Enterprise developed by HTBase Corp
-
-    All source code and content (c) Copyright 2015, htvcenter Corp unless specifically noted otherwise.
-
-    This source code is released under the htvcenter Enterprise Server and Client License, unless otherwise agreed with HTBase Corp.
-
-    By using this software, you acknowledge having read the license and agree to be bound thereby.
-
-                http://www.htbase.com
-
-    Copyright 2015, HTBase Corp <contact@htbase.com>
-*/
--->
+	http://www.htbase.com, Copyright 2015, HTBase Corp <contact@htbase.com>
+*/ -->

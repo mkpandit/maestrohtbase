@@ -185,16 +185,14 @@ var $lang = array();
 		
 			
 			if (!$strleno || strstr($filtro, $plugin_type)) {
-			
+				
 				
 				// 
 				$b[$i] = array();
 
 				// plugin version mismatch
-$htvcenter_version = 5.2;
-$plugin_base_version = 5.2;				
+$htvcenter_version = 5.2;				
 if ($htvcenter_version != $plugin_base_version) {
-
 
 
 					$b[$i]['name'] = $plugin_name;
@@ -298,8 +296,6 @@ if ($htvcenter_version != $plugin_base_version) {
 								$plugin_name_title = $plugin_name;
 							break;
 						}
-
-
 						$b[$i]['name'] = '<div class="panel-heading"><div class="panel-control">
 										<i class="fa fa-info-circle infofa add-tooltip" data-placement="bottom" data-toggle="tooltip" data-original-title="'.$plugin_description.'"></i><span class="label label-purple">'.$plugin_type.'</span>
 									</div><h3 class="panel-title">'.$plugin_name_title.'</h3> </div>';

@@ -15,8 +15,34 @@
 */
 //-->
 
+<link href="/cloud-fortis/css/vender/bootstrap/css/utilities.css" rel="stylesheet" type="text/css">
+<link href="/cloud-fortis/css/vender/bootstrap/css/card.css" rel="stylesheet" type="text/css">
+<link href="/cloud-fortis/designplugins/datatables/media/css/jquery.dataTables.min.css" rel="stylesheet" type="text/css">
+<script src="https://cdn.datatables.net/1.10.15/js/jquery.dataTables.min.js" type="text/javascript"></script>
+
+<style>
+	#project_tab_ui { display: none; }
+	table.dataTable .thead-default th { background-color: rgb(255,255,255); }
+	table.dataTable tbody td { padding-left: 18px; padding-right: 18px; } /* for aligning with thead */
+	table.dataTable tbody td i { display: block; text-align: center; }
+	table.dataTable tbody td.hide { display: none; } 
+	table.dataTable.table-hover tbody tr:hover { background-color: rgb(189,199,231); }
 
 
+	/*table.dataTable tbody tr.even { background-color: rgb(228,233,240); }  */
+	table.dataTable tbody td section.card { margin-bottom: 0; }
+	table.dataTable tbody td.status.active { color: rgb(112,173,71); }
+	table.dataTable tbody td.status.inactive { color: red; }
+	table.dataTable .dropdown ul.dropdown-menu { padding: 3px 8px; min-width: 5em; }
+	.c3-graph { height: 179px; }
+	.d-inline.pull-left { margin: 3px 0; padding: 0; text-align: left; background: inherit; }
+	.d-inline-block.pull-left { margin: 0; padding: 0; }
+	.card-header .d-inline-block span { margin: 0 15px; }
+	.card-header i { display: inline !important; }
+	.op-button{
+		display: none;
+	}
+</style>
 
 <span id="storagekvmid">{storagekvmid}</span>
 
@@ -58,9 +84,29 @@
 <div id="form">
 	<form action="{thisfile}" method="POST">
 		{form}
-		{resource_filter}
-		{resource_type_filter}
-		{table}
+		<!-- {resource_filter}
+		{resource_type_filter}-->
+		<div class="search-elements">
+			{resource_type_filter}
+			<!-- <div id="pagination"> {pagerContainer} </div> -->
+		</div>
+		
+		<div class="divTable">
+			<!-- <div class="headRow">
+				<div class="divCell-big">
+					<div class="divCell" style="width: 13%;">VM Name</div>
+					<div class="divCell" style="width: 15%;">VM IP</div>
+					<div class="divCell" style="width: 18%;">Image</div>
+					<div class="divCell" style="width: 10%;">Total<br />Memory</div>
+					<div class="divCell" style="width: 10%;">Memory<br/>Used</div>
+					<div class="divCell" style="width: 10%;">CPU</div>
+					<div class="divCell" style="width: 10%;">CPU<br />Used</div>
+					<div class="divCell" style="width: 10%;">Status</div>
+				</div>
+			</div> -->
+			{div_html}
+		</div>
+		
 	</form>
 </div>
 
@@ -135,6 +181,81 @@
 
 
 <script>
+$(document).ready(function() {
+		
+	function format (d) {
+	
+		var onclickHtml = '<section class="card-maestro">'+
+		'<div class="card-header card-header-top">'+
+			
+			'<div class="d-inline-block col-sm-3 text-left">'+
+				'<span>'+d[1]+'</span>'+
+			'</div>'+
+			'<div class="d-inline-block col-sm-9 text-right">';
+				if (d[10]){
+					if (d[10].indexOf('stop') !== -1){
+						onclickHtml = onclickHtml + '<span><i class="fa fa-stop"></i> '+d[10]+'</span>';
+					} else {
+						onclickHtml = onclickHtml + '<span><i class="fa fa-play"></i> '+d[10]+'</span>';
+					}
+				}
+				if (d[11]){
+					onclickHtml = onclickHtml + '<span><i class="fa fa-edit"></i> '+d[11]+'</span>';
+				}
+				if (d[12]) {
+					onclickHtml = onclickHtml + '<span><i class="fa fa-refresh"></i> '+d[12]+'</span>';
+				}
+				onclickHtml = onclickHtml + '</div>'+
+			'</div>'+
+		'</section>';
+		return onclickHtml;
+	}
+
+	var dt = $("#cloud_appliances_table").DataTable( {
+		"columns": [
+				{ "visible": false },
+				null, null, null, null, null, null, null, null,
+				{ "orderable": false },
+				{ "visible": false },
+				{ "visible": false },
+				{ "visible": false },
+				{ "visible": false },
+		],
+		"order": [], "bLengthChange": false, "pageLength": 10, "search": { "regex": true }, "bAutoWidth": true
+	});
+
+	$(".toggle-graph a").click(function () {
+		var tr = $(this).closest('tr');
+		var row = dt.row( tr );
+		var row_id = tr.attr("id");
+			
+		if (row.child.isShown()) {
+			tr.removeClass('details');
+			row.child.hide();
+		} else {
+			tr.addClass('details');
+			row.child( format(row.data()) ).show();
+			row.child().addClass('hv-bg')
+		}
+	});
+	
+	var delay = (function(){
+		var timer = 0;
+		return function(callback, ms){
+			clearTimeout (timer);
+			timer = setTimeout(callback, ms);
+		};
+	})();
+	
+	$("#search-app").keyup(function() {
+			var txt = $(this).val();
+
+			delay(function() {
+				searchApp(txt);
+			}, 300);
+		});
+	});
+
 	function noVNCPOPUP(url) {
 		//path = "{url}";
 		noVncWindow = window.open(url, "noVnc_{port}", "titlebar=no, location=no, scrollbars=yes, width=800, height=500, top=50");
@@ -151,4 +272,32 @@
 		$('#volumepopupvnc').hide();
 	});
 	
+	$(".divRow").click(function(){
+		var showClass = 'child-div-'+$(this).attr('id');
+		if($("."+showClass).is(":visible")){
+			$("."+showClass).hide();
+		} else {
+			$("."+showClass).css('display', 'block');
+		}
+	});
+	$('#servadddd').click(function(e){
+		e.preventDefault();
+		$('.lead').hide();
+	  		var storagelink = $(this).find('a.add').attr('href');
+	 		$('#storageformaddn').load(storagelink+" #step1", function(){
+	  			$('.lead').hide();
+	  			$('#storageformaddn select').selectpicker();
+	  			$('#storageformaddn select').hide();
+	  			var heder = $('#appliance_tab0').find('h2').text();
+
+				if (heder == 'ServerAdd a new Server') {
+					$('#storageformaddn').find('#name').css('left','-20px');
+				}
+				$('#storageformaddn').find('#info').remove();
+  				$('#volumepopupaddn').show();
+	  		});  			
+	});
+	$('#volumepopupcloseaddn').click(function(){
+		$('#volumepopupaddn').hide();
+	});
 </script>

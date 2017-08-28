@@ -723,7 +723,7 @@ class cloud_controller
 		$ar = $this->response->html->request()->get('register_action');
 		// templating default if logged in; otherwise templating login
 		if (isset($_SERVER['PHP_AUTH_USER'])) {
-			if (strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest' && $_GET['cloud_ui'] == "create") {
+			if (strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest' && $_GET['cloud_ui'] == "create_modal") {
 				$tpl = $this->portaldir."/user/tpl/index.empty.tpl.php";
 			} else {
 				$tpl = $this->portaldir."/user/tpl/index.default.tpl.php";

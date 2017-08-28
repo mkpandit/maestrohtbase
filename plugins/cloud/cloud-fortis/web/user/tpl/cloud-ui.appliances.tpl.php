@@ -154,7 +154,7 @@ $(document).ready(function() {
 
 	$('#create-vm-modal').on('shown.bs.modal', function (e) {
 
-		var url = '/cloud-fortis/user/index.php?cloud_ui=create';
+		var url = '/cloud-fortis/user/index.php?cloud_ui=create_modal';
     
         $.ajax({
             url : url,

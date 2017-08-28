@@ -36,7 +36,6 @@
 
 	<div id="pluginsboxer" class="span2">
 		<fieldset>
-			
 			{myplugins}
 		</fieldset>
 	</div>

@@ -302,7 +302,6 @@ var $last_statistics = '';
 		$db=htvcenter_get_db_connection();
 		$recordSet = $db->SelectLimit($sql, 60, 0);
 		$datacenter_array = array();
-
 		if (!$recordSet) {
 			$this->log("get", $_SERVER['REQUEST_TIME'], 2, "datacenter.class.php", $db->ErrorMsg(), "", "", 0, 0, 0);
 		} else {
@@ -312,14 +311,7 @@ var $last_statistics = '';
 			}
 			$recordSet->Close();
 		}
-
-
 		return $datacenter_array;
-		
 	}
-
-
-
-
 }
 ?>

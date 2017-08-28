@@ -21,11 +21,12 @@
 .|Datacenter
 .|Dashboard|index.php?base=aa_server&controller=datacenter|Datacenter Dashboard
 .|Server|index.php?base=appliance|List of Server
-.|Components
-..|Images|index.php?base=image|List of server images
-..|Kernels|index.php?base=kernel|List of OS kernels
-..|Resources|index.php?base=resource|Available computing resources in the Datacenter
-..|Storage|index.php?base=storage|List of storage servers
+.|Clouds|index.php?base=cloud&cloud_action=cloudmenu|Maestro Multi-cloud
+#.|Components
+#..|Images|index.php?base=image|List of server images
+#..|Kernels|index.php?base=kernel|List of OS kernels
+#..|Resources|index.php?base=resource|Available computing resources in the Datacenter
+#..|Storage|index.php?base=storage|List of storage servers
 #..|All Events|index.php?base=event|Events in the htvcenter Server|active.png
 #..|Active|index.php?base=event&event_filter=active|Active Events|transition.png
 #..|Warning|index.php?base=event&event_filter=warning|Warning Events|unknown.png

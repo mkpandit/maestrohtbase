@@ -9,12 +9,10 @@
 					<label for="cloud_hostname_input">Name *</label>
 					{cloud_hostname_input}
 				</div>
-				<!--
-				<div class="form-group">
-					<label for="vmDesc">Description *</label>
-					<input id="vmDesc" name="vmDesc" type="text" class="form-control required" placeholder="Description">
+				<div class="form-group hide">
+					<input id="cloud_appliance_capabilities" name="cloud_appliance_capabilities" type="text"">
+					<input id="cloud_profile_name" name="cloud_profile_name" type="text"">
 				</div>
-				-->
 				<div class="form-group">
 					<label for="cloud_virtualization_select">Type *</label>
 					{cloud_virtualization_select}
@@ -134,6 +132,7 @@
 		<div id="summary-tab" class="col-lg-12">
 			<p>
 			</p>
+			<input class="submit" name="response[submit]" value="submit" type="submit" data-message="">
 		</div>
 	</section>
 </div>

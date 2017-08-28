@@ -118,6 +118,7 @@ var $lang = array();
 		$form	= $response->form;
 		$id		= $this->response->html->request()->get('resource_id');
 		$ip		= $form->get_request('ip');
+		$existing_ip	= $form->get_request('existing_ip');
 		if (strlen($ip)) {
 			if(!$form->get_errors() && $this->response->submit()) {
 				$resource = new resource();
@@ -132,6 +133,12 @@ var $lang = array();
 				$resource->update_info($id, $fields);
 				$response->msg = sprintf($this->lang['msg'], $id);
 				$response->resource_id = $id;
+				
+				require_once $this->rootdir."/plugins/ip-mgmt/class/ip-mgmt.class.php";
+				$ip_mgmt = new ip_mgmt();
+				$ip_mgmt->reset_ip_after_kvm_removed($existing_ip);
+				$ip_mgmt->delete_ip_after_used_in_kvm($ip);
+				
 			} else {
 				$response->error = sprintf($this->lang['msg_edit_failed']);
 			}
@@ -172,6 +179,12 @@ var $lang = array();
 		$d['ip']['object']['attrib']['type']      = 'text';
 		$d['ip']['object']['attrib']['value']     = $resource->ip;
 		$d['ip']['object']['attrib']['maxlength'] = 50;
+		
+		$d['existing_ip']['object']['type']                = 'htmlobject_input';
+		$d['existing_ip']['object']['attrib']['name']      = 'existing_ip';
+		$d['existing_ip']['object']['attrib']['type']      = 'hidden';
+		$d['existing_ip']['object']['attrib']['value']     = $resource->ip;
+		$d['existing_ip']['object']['attrib']['maxlength'] = 50;
 
 		$form->add($d);
 		$response->form = $form;

@@ -186,6 +186,10 @@ var $lang = array();
 					$resource->remove($id, $resource->mac);
 					$form->remove($this->identifier_name.'['.$key.']');
 					$message[] = sprintf($this->lang['msg'], $id);
+					
+					require_once $this->rootdir."/plugins/ip-mgmt/class/ip-mgmt.class.php";
+					$ip_mgmt = new ip_mgmt();
+					$ip_mgmt->reset_ip_after_kvm_removed($resource->ip);
 				}
 				if(count($errors) === 0) {
 					$response->msg = join('<br>', $message);

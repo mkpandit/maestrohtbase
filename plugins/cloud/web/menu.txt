@@ -18,7 +18,7 @@
 #	IMG
 #	Target
 #..|Help|
-..|Fortis|/cloud-fortis|The htvcenter Cloud||_blank
+..|Score|/cloud-fortis|The htvcenter Cloud||_blank
 ..|User|index.php?plugin=cloud&controller=cloud-user|The User on the Cloud
 ..|Projects|index.php?plugin=cloud&controller=cloud-usergroup|User Groups on the Cloud
 ..|Mail|index.php?plugin=cloud&controller=cloud-mail|Send a mail to the Cloud Users

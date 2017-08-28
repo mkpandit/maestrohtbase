@@ -119,3 +119,13 @@ var passgen = {
 	
  </div></div>
 </form>
+
+<script type="text/javascript">
+	$( document ).ready(function() {
+		$("li#tab_project_tab1 span a").click(function(){
+			var aherf			= $("li#tab_project_tab1 span a").attr('href');
+			var host_name		= document.location.hostname;
+			window.location = 'http://'+host_name+'/htvcenter/base/'+aherf;
+		});
+	});
+</script>

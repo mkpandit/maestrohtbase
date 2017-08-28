@@ -16,8 +16,16 @@
 //-->
 
 
-<h2 class="inner">{label}<span class="pull-right newstoragepop">{add}</span> <br/>
-</h2>
+<h2 class="inner">{label}</h2>
+<div id="btnsideee">
+	<!-- <span class="pull-right newstoragepop">{add}</span> -->
+	<a class="add btn-labeled fa fa-plus-o newstoragepop" title="Add new storage" href="index.php?base=storage&amp;storage_filter=&amp;storage_action=add&amp;storage[sort]=storage_id&amp;storage[order]=ASC&amp;storage[limit]=20&amp;storage[offset]=0">Add new storage</a>
+    <a class="add btn-labeled fa fa-hdd-o" id="stvolumesbtn" href="index.php?base=storage&storage_filter=&storage_action=load&splugin=kvm&kvm_action=edit&storage_id={storagekvmid}">Storage Volumes</a><br /><br />
+    <a class="add btn-labeled fa fa-hdd-o" id="addnewdiskbtn" href="/htvcenter/base/index.php?base=storage&storage_action=diskadd">Add New Disk</a><br /><br />
+    <!--<a class="add btn-labeled fa fa-hdd-o" id="showstoragesbtn">Storage Details</a>
+    <a class="add btn-labeled fa fa-hdd-o" id="showlizardbtn">HTSDS Details</a> -->
+</div>
+
 <div id="serverpanel">
                         <div class="col-sm-12 col-md-4 col-lg-4 col-sm-4">
                             <a href="/htvcenter/base/index.php?base=image">
@@ -80,18 +88,14 @@
 </div>
 
 
-<div id="btnsideee">
-    <a class="add btn-labeled fa fa-hdd-o" id="stvolumesbtn" href="index.php?base=storage&storage_filter=&storage_action=load&splugin=kvm&kvm_action=edit&storage_id={storagekvmid}">Storage Volumes</a>
-   <br /><a class="add btn-labeled fa fa-hdd-o" id="addnewdiskbtn" href="/htvcenter/base/index.php?base=storage&storage_action=diskadd">Add New Disk</a>
-   <br/> <a class="add btn-labeled fa fa-hdd-o" id="showstoragesbtn">Storage Details</a>
-    <a class="add btn-labeled fa fa-hdd-o" id="showlizardbtn">HTSDS Details</a>
-</div>
-
-
 <div class="row">
-	<div id="azure-disk-vm-list">
-		{html_information}
+	
+	<div class="row">
+		<div id="azure-disk-vm-list">
+			{html_information}
+		</div>
 	</div>
+	
 </div>
 
 <div id="volumepopup" class="modal-dialog volumepopup3">
@@ -141,5 +145,3 @@
                     
                             </div>
 </div>
-
-

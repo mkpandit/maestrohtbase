@@ -16,11 +16,13 @@
 -->
 
 <form action={thisfile} method="POST">
-	{form}
-	{product_name}
-	{product_quantity}
-	{product_price}
-	{product_description}
-	<div class="buttons">{submit}</div>
+	<div class="score-add-product">
+		{form}
+		{product_name}
+		{product_quantity}
+		{product_price}
+		{product_description}
+		<div class="buttons">{submit}</div>
+	</div>
 </form>
 

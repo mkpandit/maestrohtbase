@@ -213,37 +213,6 @@ var $lang = array();
 
 	}
 
-
-function startApi($appliance) {		
-						
-				$appliance = $appliance->get_instance_by_id($id);
-
-				$resource = new resource();
-				if ($appliance->resources <0) {
-					// an appliance with resource auto-select enabled
-					$appliance_virtualization=$appliance->virtualization;
-					$appliance->find_resource($appliance_virtualization);
-					$appliance->get_instance_by_id($id);
-				}
-
-				$resource->get_instance_by_id($appliance->resources);
-				
-				$app_resource = new resource();
-				$app_resource->get_instance_by_id($appliance->resources);
-				
-				if (strcmp($app_resource->state, "active")) {
-					$app_resource_virtualization = new virtualization();
-					$app_resource_virtualization->get_instance_by_id($app_resource->vtype);
-					
-				}
-				// if no errors then we start the appliance
-				$kernel = new kernel();
-				$kernel->get_instance_by_id($appliance->kernelid);
-				// send command to the htvcenter-server
-				$resource->send_command("127.0.0.1", "htvcenter_assign_kernel ".$resource->id." ".$resource->mac." ".$kernel->name);
-				$appliance->start();	
-}
-
 	//--------------------------------------------
 	/**
 	 * Get Response

@@ -1627,7 +1627,7 @@ function volupdatecron() {
 
 
 		}
-		
+				
 		$jsone = json_encode($jsonb);
 		//$jsone = str_replace('[', '{', $jsone);
 		//$jsone = str_replace(']', '}', $jsone);

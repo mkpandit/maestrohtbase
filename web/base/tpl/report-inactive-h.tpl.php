@@ -1,7 +1,6 @@
 <script>
 var nocontent = true;
 var inactivespl = true;
-var nointerface = true;
 </script>      
 
 <style>
@@ -11,7 +10,7 @@ var nointerface = true;
 </style>      
                                                
 
-<script src="{baseurl}/js/scheduler.js" type="text/javascript"></script>
+
 
 <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12 windows_plane">
 <div id="home_container">

@@ -24,6 +24,7 @@
 	<h3>{form_edit_resource}</h3>
 	{form}
 	{ip}
+	{existing_ip}
 </div>
 <div>{submit}&#160;{cancel}</div>
 </form>

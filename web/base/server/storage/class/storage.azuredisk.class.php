@@ -103,20 +103,27 @@ var $lang = array();
 	//--------------------------------------------
 	function disks() {
 		$d = array();
-		$html_information = "<div class='disk-loader-azure'>
-			<p>Loading available Azure resource hosts</p>
-		</div>";
-		$d['html_information']  = $html_information;
+		$html_information = "<div class='disk-loader-azure'>";
 		
-		/*$disk_info_dump = shell_exec('python '.$this->rootdir.'/server/storage/script/diskspace.py');
+		$html_information .= "<table class='azure-resource-table'>";
+		$html_information .= "<tr> <th>#</th> <th>Disk name</th> <th>Size</th> <th>Location</th> <th>Type</th> <th>OS</th></tr>";
+		$disk_info_dump = shell_exec('/usr/bin/python '.$this->rootdir.'/server/storage/script/scanazurestorage.py');
 		$disk_info = json_decode($disk_info_dump, true);
-		$data['stotal'] = str_replace(" Gi", "", $disk_info[0]);
-		$data['sfree'] = str_replace(" Gi", "", $disk_info[1]);
-		$data['sused'] = $data['stotal'] - $data['sfree'];
-		return $data;*/
 		
+		if(empty($disk_info)){
+			$html_information .= "<tr> <td colspan=6>Currenly no disk available on Azure</td></tr>";
+		} else {
+			$count = 1;
+			foreach($disk_info as $k => $v){
+				$temp = explode("_*_", $v);
+				$html_information .= "<tr> <td>" .$count. ".</td> <td>" .$temp[0]. "</td> <td>" .$temp[1]. " GB</td> <td>" .$temp[2]. "</td> <td>" .$temp[3]. "</td> <td>" .$temp[4]. "</td></tr>";
+				$count++;
+			}
+		}
+		$html_information .= "</table>";
+		$html_information .= "</div>";
+		$d['html_information']  = $html_information;
 		return $d;
 	}
-
 }
 ?>

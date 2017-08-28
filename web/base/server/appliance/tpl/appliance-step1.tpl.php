@@ -14,6 +14,10 @@
     Copyright 2014, htvcenter Enterprise GmbH <info@htvcenter-enterprise.com>
 */
 //-->
+
+<!-- div#storageformaddn div#comment_box div.left  -->
+
+
 <h2>{label}</h2>
 
 <div id="step1">
@@ -26,7 +30,8 @@
 	<div id="form" class="span5">
 		{form}
 		{name}
-		<label id="desklbl" >Description: </label>{comment}
+		<label id="desklbl" >Description</label>
+		{comment}
 	</div>
 	<div class="floatbreaker">&#160;</div>
 

@@ -25,6 +25,8 @@
 						<!--~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~-->
 						<!--End Navigation toogle button-->
 
+
+
 						<!--Notification dropdown-->
 						<!--~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~-->
 						<li class="dropdown">
@@ -460,13 +462,13 @@
 									<div class="modal-content">
 										<div class="modal-header">
 											<button type="button" data-dismiss="modal" class="close"><span>×</span><span class="sr-only">Close</span></button>
-											<h4 class="modal-title">About HyperTask</h4>
+											<h4 class="modal-title">About Maestro</h4>
 										</div>
 					
 										<div class="modal-body">
 											<img id="aboutimglogo" class="img-center" src="/htvcenter/base/img/logo.png"/><br/>
-        <p>HyperTask is developed by HTBase Corp.<br/><br/>
-This source code is released under the HyperTask Server and Client License unless otherwise agreed with HTBase Corp. By using this software, you acknowledge having read this license and agree to be bound thereby.</p>
+        <p>Maestro is developed by HTBase Corp.<br/><br/>
+This source code is released under the Maestro Server and Client License unless otherwise agreed with HTBase Corp. By using this software, you acknowledge having read this license and agree to be bound thereby.</p>
       
 										</div>
 					
@@ -772,7 +774,7 @@ This source code is released under the HyperTask Server and Client License unles
                                             	</div>
                     
                                                 <!--First tab-->
-                                                <div class="tab-pane active in" id="calendareventdemo-cls-tab1">
+                                                <div class="tab-pane active in" id="demo-cls-tab1">
                                                     <div id="volschedulerform">
                                                     	<div class="row">
 															  <div class="col-xs-5">

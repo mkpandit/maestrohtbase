@@ -26,18 +26,15 @@
 					</div>
 					<!--================================-->
 					<!--End shortcut buttons-->
-<div id="mainnav-menu-wrap" >
 					
-								<ul id="mainnav-menu" class="list-group">
-{menu_1}
+					<div id="mainnav-menu-wrap" >
+						<ul id="mainnav-menu" class="list-group">
+							{menu_1}
+							{menu_2}
+							<li class="" id="menu2_2009">&nbsp;<a ><span class="menu-title 3"><strong></strong></span></a></li>
+						</ul>
 
-{menu_2}
-
-
-<li class="" id="menu2_2009">&nbsp;<a ><span class="menu-title 3"><strong></strong></span></a></li>
-</ul>
-
-</div>
+					</div>
 </div>
 </nav>
 

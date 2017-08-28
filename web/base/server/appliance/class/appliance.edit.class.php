@@ -219,10 +219,10 @@ var $lang = array();
 				// update appliance
 				$appliance->update($id, $form->get_request());
 				$response->msg = sprintf($this->lang['msg'], $appliance->name);
-			} 
-			else if($form->get_errors()) {
+			} else if($form->get_errors()) {
 				$response->error = implode('<br>', $form->get_errors());
 			}
+			
 			$response->name = $appliance->name;
 		} else {
 			$response->msg = '';

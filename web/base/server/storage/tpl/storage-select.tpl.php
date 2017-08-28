@@ -23,6 +23,7 @@
 	<a class="add btn-labeled fa fa-plus-o newstoragepop" title="Add new storage" href="index.php?base=storage&amp;storage_filter=&amp;storage_action=add&amp;storage[sort]=storage_id&amp;storage[order]=ASC&amp;storage[limit]=20&amp;storage[offset]=0">Add new storage</a>
     <a class="add btn-labeled fa fa-hdd-o" id="stvolumesbtn" href="index.php?base=storage&storage_filter=&storage_action=load&splugin=kvm&kvm_action=edit&storage_id={storagekvmid}">Storage Volumes</a><br /><br />
     <a class="add btn-labeled fa fa-hdd-o" id="addnewdiskbtn" href="/htvcenter/base/index.php?base=storage&storage_action=diskadd">Add New Disk</a><br /><br />
+	<a class="add btn-labeled fa fa-hdd-o" id="addnewdiskbtn" href="/htvcenter/base/index.php?base=storage&storage_action=memoryadd">Add Memory Disk</a><br /><br />
     <a class="add btn-labeled fa fa-hdd-o" id="showstoragesbtn">Storage Details</a>
     <a class="add btn-labeled fa fa-hdd-o" id="showlizardbtn">HTSDS Details</a>
 </div>
@@ -98,7 +99,7 @@
 <div id="form" >
 	<form action="{thisfile}" method="POST">
 		{form}
-		{filter}
+		<!-- {filter} -->
 		{table}
 	</form>
 </div>

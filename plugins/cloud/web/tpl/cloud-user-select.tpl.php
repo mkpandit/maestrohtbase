@@ -18,9 +18,18 @@
 <form action="{thisfile}">
     
 {form}
-<div id="cloudusertablezo" class="usertblero">
 {table}
-</div>
 
 </form>
+
+<script type="text/javascript">
+	$( document ).ready(function() {
+		$("li#tab_project_tab1 span a").click(function(){
+			var aherf			= $("li#tab_project_tab1 span a").attr('href');
+			var host_name		= document.location.hostname;
+			//alert('http://'+host_name+'/htvcenter/base/'+aherf);
+			window.location = 'http://'+host_name+'/htvcenter/base/'+aherf;
+		});
+	});
+</script>
 

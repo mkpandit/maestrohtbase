@@ -127,8 +127,7 @@ img {
 	width: 20px;
 }
 .htmlobject_table .htmlobject_td.appliance_state {
-	width: 110px;
-	padding: 11px 0 0 8px;
+	padding: 5px;
 	text-align:left;
 	vertical-align:top;
 	width:90px;
@@ -144,10 +143,266 @@ img {
 #resource_filter {
 	margin: 0 0 0 0 !important;
 }
-#resource_type_filter {
-	margin: 0 0 30px 0 !important;
-}
 
 div#storageformvmf div.htmlobject_box .right input[type=text] {
 	width: 80%;
+}
+
+table#table-list-view,
+table#Tabellerr-list{
+	width: 99%;
+	border-collapse: collapse;
+}
+
+table#table-list-view td,
+table#table-list-view th,
+table#Tabellerr-list td, 
+table#Tabellerr-list th{
+	border: 1px solid #f3f3f3;
+	text-align: left;
+	text-align: center;
+	padding: 5px 3px;
+}
+
+table#Tabellerr-list .appliance_state {
+	float: none;
+}
+
+table#Tabellerr-list a.enable {
+	left: 0;
+}
+
+table#Tabellerr-list td div.vmaplfeatures {
+	float: none;
+	left: 0;
+	top: 0;
+}
+
+table#Tabellerr-list td.appliance_identifier input[type=checkbox] {
+	right: 0;
+	top: 0;
+}
+
+table#Tabellerr-list div.sort_box {
+	float: right;
+	padding: 20px 0;
+	width: 79%;
+	text-align: right;
+}
+
+table#Tabellerr-list .bootstrap-select:not([class*=col-]):not([class*=form-control]):not(.input-group-btn) {
+	width: 175px;
+}
+
+table#table-list-view div.pageturn_box,
+table#Tabellerr-list div.pageturn_box {
+	float: left;
+	padding: 20px 0;
+	width: 100%;
+	text-align:left;
+}
+
+table#table-list-view td.pageturn_left a,
+table#table-list-view td.pageturn_right a,
+table#Tabellerr-list td.pageturn_left a,
+table#Tabellerr-list td.pageturn_right a {
+	padding: 5px 10px;
+	margin: 1px;
+	color: #ffffff;
+	display: inline-block;
+	background-color: #579ddb;
+}
+
+div.divTable span.pill{
+	display: block;
+	padding: 5px 0;
+	text-align: center;
+	border-radius: 2px;
+	color: #ffffff;
+	background-color: #4e8ad9;
+	margin: 2px;
+}
+
+div.divTable span.active{
+	background-color: #9cc96b;
+}
+
+div.divTable span.inactive{
+	background-color: #579ddb;
+}
+
+div.divTable span.error{
+	background-color: #f76c51;
+}
+
+div.divTable span.transition{
+	background-color: #ebaa4b;
+}
+
+table#Tabellerr-list .sort_box .sort, 
+table#Tabellerr-list .sort_box .order, 
+table#Tabellerr-list .sort_box .limit {
+	width: auto !important;
+}
+
+table#Tabellerr-list .sort_box input {
+	top: -6px;
+	position: relative;
+}
+
+table#Tabellerr-list .sort_box input.refresh {
+	top: -12px;
+}
+
+table#Tabellerr-list div.appnamer{
+	left: 0;
+	top: 0;
+	width: 100%;
+}
+
+
+div.search-elements{
+	display:table;
+	width:99%;
+	background-color:#fff;
+	border:1px solid  #f0f2f9;
+	border-spacing:5px;
+	padding: 10px 0;
+}
+
+div.search-elements div#resource_type_filter{
+	width: 59%;
+	float: left;
+	margin: 0;
+}
+
+div.search-elements div#resource_type_filter div.left{
+	margin: 0;
+}
+
+div.search-elements div#resource_type_filter div.right div.btn-group{
+	margin: 0;
+}
+
+div.search-elements div#pagination{
+	width: 40%;
+	float: right;
+	text-align: right;
+	padding: 5px;
+}
+
+div.search-elements div#pagination a {
+	color: #579ddb;
+}
+
+.headRow{
+    display:table-row;
+	font-weight: bold;
+}
+.divTable{
+  display:table;         
+  width:99%;         
+  background-color:#fff;         
+  border:1px solid  #f0f2f9;         
+  border-spacing:5px;
+}
+.divRow{
+  display:table-row;
+  width:auto;
+  clear:both;
+  cursor: pointer;
+}
+div.odd{
+	background-color:#f0f2f9;  
+}
+div.even{
+	background-color:#fff;  
+}
+
+.divCell-big{
+	display:table-cell;
+	width:100%;
+}
+
+.divCell{
+	display: inline-block;
+	border-left: 2px solid #fff;
+	padding: 5px;
+}
+
+div.hide-div{
+	display: none;
+	border: 1px solid #f0f2f9;
+}
+
+div.hide-div a {
+	margin: 0 5px;
+}
+
+div.hide-div a.enable,
+div.hide-div a.disable,
+div.hide-div a.edit {
+	min-width: 100px;
+}
+
+table#cloud_appliances_table tr td.active {
+	background-color: inherit;
+}
+
+table#cloud_appliances_table tr td.active:hover {
+	background-color: #5591c6;
+}
+
+#container table#cloud_appliances_table tbody tr.hoverbg:hover,
+#container table.dataTable tbody tr.hoverbg:hover{
+	background-color: #5591c6;
+}
+
+#cloud_appliances_table tr.headrow, #cloud_appliances_table tr.headrow th{
+    background-color: #5fa2dd !important;
+    color: white !important;
+}
+
+#cloud_appliances_table tr.headrow td, #cloud_appliances_table tr.headrow th {
+    border-color: white !important;
+    border-radius: 0px !important;
+}
+
+#cloud_appliances_table b, #cloud_appliances_table strong {
+    color: #5591c6 !important;
+}
+
+#cloud_appliances_table a.plugin {
+    border-radius: 0px !important;
+    font-family: "open sans";
+    font-size: 14px; 
+}
+
+#cloud_appliances_table a.plugin:hover {
+    opacity: 0.8;
+}
+
+
+
+#cloud_network_select_box {
+    display: none;
+}
+
+
+div.card-header-top{
+	margin-top: 0px;
+	margin-bottom: 0px;
+	min-height: 30px;
+	padding-top: 5px;
+}
+
+#container table.dataTable tbody tr.hv-bg:hover {
+
+}
+
+#container table.dataTable tbody tr.hv-bg td {
+	border: 3px solid #5591c6;
+	background-color: #fff;
+	border-radius: 2px;
+
 }

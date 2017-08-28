@@ -16,8 +16,7 @@
     Copyright 2014, htvcenter Enterprise GmbH <info@htvcenter-enterprise.com>
  */
 
-class appliance_select
-{
+class appliance_select {
 /**
 * name of action buttons
 * @access public
@@ -108,27 +107,11 @@ var $lang = array();
 	 */
 	//--------------------------------------------
 	function select() {
-
 		$d = array();
 		$h = array();
-		$h['appliance_state']['title'] = $this->lang['table_state'];
-		$h['appliance_id']['title'] = $this->lang['table_id'];
-		$h['appliance_id']['hidden'] = true;
-		$h['appliance_name']['title'] = $this->lang['table_name'];
-		$h['appliance_name']['hidden'] = true;
-		$h['appliance_values']['title'] = '&#160;';
-		$h['appliance_values']['sortable'] = false;
-		$h['appliance_comment']['title'] ='&#160;';
-		$h['appliance_comment']['sortable'] = false;
-		$h['appliance_virtualization']['title'] ='Type';
-		$h['appliance_virtualization']['sortable'] = true;
-		$h['appliance_virtualization']['hidden'] = true;
-		$h['appliance_edit']['sortable'] = false;
-
 		$appliance = new appliance();
 		$params = $this->response->get_array($this->actions_name, 'select');
 		$b = array();
-
 		// unset unnecessary params
 		unset($params['resource_type_filter']);
 		unset($params['resource_filter']);
@@ -140,7 +123,7 @@ var $lang = array();
 		$table = $this->response->html->tablebuilder('appliance', $params);
 		$table->offset = 0;
 		$table->sort = 'appliance_id';
-		$table->limit = 20;
+		$table->limit = 2000;
 		$table->order = 'ASC';
 		$table->max = $appliance->get_count();
 		$table->init();
@@ -165,8 +148,12 @@ var $lang = array();
 		}
 
 		$disabled = array();
-		$appliances = $appliance->display_overview(0, 10000, $table->sort, $table->order);
+		
+		//$appliances = $appliance->display_overview(0, 10000, $table->sort, $table->order);
+		$appliances = $appliance->display_overview(0, 10000, 'appliance_id', 'ASC');
+
 		foreach ($appliances as $index => $appliance_db) {
+			
 			$appliance = new appliance();
 			$appliance->get_instance_by_id($appliance_db["appliance_id"]);
 			$resource = new resource();
@@ -249,20 +236,17 @@ var $lang = array();
 			
 				if ($appliance->stoptime == 0 || $appliance_resources == 0)  {
 					$state_icon=$active_state_icon;
+					$state_text_value = "active";
 				} else {
 					$state_icon=$inactive_state_icon;
+					$state_text_value = "inactive";
 				}
 				// no resource ip yet ?
-				
-				$ip_validity_state = preg_match('/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\z/', $resource->ip);
-				
-				if ($resource->ip == '0.0.0.0' && !$ip_validity_state) {
+				if ($resource->ip == '0.0.0.0') {
 					$state_icon = '<span class="pill transition">transition</span>';
+					$state_text_value = "transition";
 				}
-
 				// link to image edit
-
-
 				if (strlen($image->name) > 29) {
 					$imageros = substr($image->name,0,29).'...';
 				} else {
@@ -291,13 +275,11 @@ var $lang = array();
 						$a = $this->response->html->a();
 						$a->label = $this->lang['action_release'];
 						$a->title = $this->lang['resource_release'];
-						$a->css   = 'enable';
+						//$a->css   = 'enable btn-labeled fa fa-refresh';
 						$a->href  = $this->response->get_url($this->actions_name, 'release').'&appliance_id='.$appliance->id.''.$tp;
 						$release_resource = $a->get_string();
 					}
 				}
-
-
 				// appname my code here:
 				if (strlen($appliance_db["appliance_name"]) > 18) {
 					$spanname = substr($appliance_db["appliance_name"], 0, 18);
@@ -344,46 +326,30 @@ var $lang = array();
 				if ($spanname == 'htvcenter') {
 					$spanname = 'HyperTask';
 				}
-				$str = '<div class="appnamer panel-heading" appid="'.$appliance_db["appliance_id"].'">
-					<h3 class="panel-title">'.$spanname.'</h3></div>
-					<div class="panel-body"><strong>'.$this->lang['table_id'].':</strong> '.$appliance_db["appliance_id"].'<br>'.$clonelink.'
-						<strong>'.$this->lang['table_name'].':</strong> '.$appliance_db["appliance_name"].'<br>
-						<strong>Type:</strong> '.$appliance_virtualization_name.'<br>
-						<strong>Kernel:</strong> '.$kernel->name.'<br>
-						<strong>Image:</strong> '.$image_edit_link.'<br/>';
-                                
-						$RootDir = $_SERVER["DOCUMENT_ROOT"].'/htvcenter/base/';
-                                		require_once "$RootDir/include/htvcenter-database-functions.php";
-                                		$db = htvcenter_get_db_connection();
-                                		$appliance_id = $appliance_db["appliance_id"];
+				$str = '<div class="appnamer panel-heading" appid="'.$appliance_db["appliance_id"].'"><h3 class="panel-title">'.$spanname.'</h3></div><div class="panel-body"><strong>'.$this->lang['table_id'].':</strong> '.$appliance_db["appliance_id"].'<br>'.$clonelink.'
+					<strong>'.$this->lang['table_name'].':</strong> '.$appliance_db["appliance_name"].'<br>
+					<strong>Type:</strong> '.$appliance_virtualization_name.'<br>
+					<strong>Kernel:</strong> '.$kernel->name.'<br>
+					<strong>Image:</strong> '.$image_edit_link.'<br/>';
 
-						$ip = '';
-						/*if($resource->ip !== '10.100.0.1'){
-							$ip = '<br><strong>IP:</strong> '.$resource->ip;
-						} else {
-							$array = '';
-							$array = $db->Execute("select * from ip_mgmt where ip_mgmt_appliance_id='$appliance_id'");
-							if(isset($array->fields['ip_mgmt_address'])) {
-								if($array->fields['ip_mgmt_address'] == '0.0.0.0'){
-									$ip = '';
-								} else {
-									$ip = '<br><strong>IP:</strong> '.print_r($array->fields['ip_mgmt_address'], true);
-								}
-							}
-						}*/
-							
-						$ip_validity = preg_match('/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\z/', $resource->ip);
-						
-						if( $resource->ip !== '0.0.0.0' && $ip_validity){
-							$ip = '<br><strong>IP:</strong> '.$resource->ip;
-						} else {
-							$ip = '';
-						}
-						
-						#if (isset($resource->ip) && $resource->ip !='') {
-							$str .='<strong>Resource:</strong> '.$appliance_resources_str. $ip;
-							#$str .='<strong>IP:</strong> '.$resource->ip.'<br/>';
-						#}
+				$RootDir = $_SERVER["DOCUMENT_ROOT"].'/htvcenter/base/';
+				require_once "$RootDir/include/htvcenter-database-functions.php";
+				$db = htvcenter_get_db_connection();
+				$appliance_id = $appliance_db["appliance_id"];
+				$ip = '';
+				if($resource->ip !== '10.100.0.1'){
+					$ip = '<br><strong>IP:</strong> '.$resource->ip;
+				} else {
+					$array = '';
+					$array = $db->Execute("select * from ip_mgmt where ip_mgmt_appliance_id='$appliance_id'");
+					if(isset($array->fields['ip_mgmt_address'])) {
+						$ip = '<br><strong>IP:</strong> '.print_r($array->fields['ip_mgmt_address'], true);
+					}
+				}
+				#if (isset($resource->ip) && $resource->ip !='') {
+				$str .='<strong>Resource:</strong> '.$appliance_resources_str.$ip;
+				#$str .='<strong>IP:</strong> '.$resource->ip.'<br/>';
+				#}
 
 				if(strpos($virtualization->type, "-vm") && isset($resource->vhostid) && ($resource->vhostid != '')) {
 					$happliance = new appliance();
@@ -403,7 +369,7 @@ var $lang = array();
 				$a->title   = $this->lang['action_edit'];
 				$a->label   = $this->lang['action_edit'];
 				$a->handler = 'onclick="wait();"';
-				$a->css     = 'edit';
+				//$a->css     = 'edit';
 				$a->href    = $this->response->get_url($this->actions_name, 'edit').'&appliance_id='.$appliance->id.''.$tp;
 				$strEdit    = $a->get_string();
 
@@ -415,12 +381,12 @@ var $lang = array();
 					if ($appliance->stoptime == 0) {
 						$a->title = $this->lang['action_stop'];
 						$a->label = $this->lang['action_stop'];
-						$a->css   = 'disable';
+						//$a->css   = 'disable';
 						$a->href  = $this->response->get_url($this->actions_name, 'stop').'&'.$this->identifier_name.'[]='.$appliance->id.''.$tp;
 					} else {
 						$a->title = $this->lang['action_start'];
 						$a->label = $this->lang['action_start'];
-						$a->css   = 'enable';
+						//$a->css   = 'enable btn-labeled fa fa-play';
 						$a->href  = $this->response->get_url($this->actions_name, 'start').'&'.$this->identifier_name.'[]='.$appliance->id.''.$tp;
 					}
 					$strStart = $a->get_string();
@@ -457,9 +423,6 @@ var $lang = array();
 					$enabled_plugins = $plugin->enabled();
 					$alinkcount = 0;
 					foreach ($enabled_plugins as $index => $plugin_name) {
-						
-						
-
 						$plugin_appliance_link_section_hook = $this->htvcenter->get('webdir')."/plugins/".$plugin_name."/htvcenter-".$plugin_name."-appliance-link-hook.php";
 						if (file_exists($plugin_appliance_link_section_hook)) {
 							require_once "$plugin_appliance_link_section_hook";
@@ -474,17 +437,9 @@ var $lang = array();
 
 								//	$alink->handler = $alink->handler.' onclick="wait();"';
 									$alink->css = 'enable';
-									//$alink->title = preg_replace('~(.*?)<a.*>(.*?)</a>(.*?)~i', '$1$2$3', $p['description']);
-									
-									if($plugin_name == "novnc"){
-										$alink = '<a id="novnc-popup"
-											href="/cloud-fortis/user/api.php?action=novnc&amp;appliance_id='.$appliance->id.'"
-											class="white enable btn-labeled fa fa-plus">Svaccess</a>';
-									} else {
-										$alink = $alink->get_string();
-									}
-									
-									// /htvcenter/base/index.php?plugin=novnc&controller=novnc&novnc_action=console&appliance_id
+									$alink->title = preg_replace('~(.*?)<a.*>(.*?)</a>(.*?)~i', '$1$2$3', $p['description']);
+
+									$alink = $alink->get_string();
 									
 									if ($alinkcount == 5) {
 										$alinkcount = 0;
@@ -503,7 +458,6 @@ var $lang = array();
 					}
 
 					$appliance_link_section = '<br/><div class="appliance_links">'.$edit_resource_ip.' '.$appliance_link_section.'</div>';
-					
 					if($appliance_db["appliance_comment"] !== '') {
 						$appliance_comment  = $appliance_db["appliance_comment"];
 						$appliance_comment .= "<hr>";
@@ -512,27 +466,9 @@ var $lang = array();
 						$appliance_comment = "<br/><hr>".$appliance_link_section;
 					}
 				}
-
-
-			
-
-				$b[] = array(
-					'appliance_state' => $state_icon,
-					'appliance_id' => $appliance_db["appliance_id"],
-					'appliance_name' => $appliance_db["appliance_name"],
-					'appliance_values' => $str,
-					'appliance_comment' => $appliance_comment,
-					'appliance_virtualization' => $appliance_db["appliance_virtualization"],
-					'appliance_edit' => $strEdit.''.$strStart.''.$release_resource,
-				);
-
-				
+				$b[] = array('appliance_id' => $appliance_db["appliance_id"], 'appliance_name' => $appliance_db["appliance_name"], 'appliance_ip' => $resource->ip, 'appliance_values' => $str, 'appliance_comment' => $appliance_comment, 'appliance_virtualization' => $appliance_db["appliance_virtualization"], 'appliance_image' => $image_edit_link, 'appliance_total_memory' => $resource->memtotal, 'appliance_used_memory' => $resource->memused, 'appliance_cpu' => $resource->cpunumber, 'appliance_load' => $resource->load, 'appliance_edit' => $strEdit, 'appliance_start' => $strStart, 'appliance_release' => $release_resource, 'appliance_state' => $state_icon, 'appliance_state_value' => $state_text_value,);
 			}
-
 		}
-
-
-
 		// Filter
 		$virtulization_types = new virtualization();
 		$list = $virtulization_types->get_list();
@@ -540,7 +476,6 @@ var $lang = array();
 		$filter[] = array('', '');
 		foreach( $list as $l) {
 			//$filter[] = array( $l['label'], $l['value']);
-
 			if (!preg_match('@networkboot@', $l['label'])) {
 				$valll = str_replace('KVM', 'OCH', $l['label']);
 				$valll = str_replace('(localboot)', '', $valll);
@@ -548,7 +483,6 @@ var $lang = array();
 			}
 		}
 
-		
 		asort($filter);
 		$select = $this->response->html->select();
 		$select->add($filter, array(1,0));
@@ -579,13 +513,14 @@ var $lang = array();
 		$add->css     = 'add';
 		$add->href    = $this->response->get_url($this->actions_name, "step1").''.$tp;
 
-		$table->id = 'Tabellerr';
+		$table->id = 'Tabellerr-list';
 		$table->css = 'htmlobject_table';
 		$table->border = 1;
 		$table->cellspacing = 0;
 		$table->cellpadding = 3;
 		$table->autosort = true;
 		$table->sort_link = false;
+		$table->sort_form = false;
 		$table->max = count($b);
 		$table->head = $h;
 		$table->body = $b;
@@ -599,17 +534,41 @@ var $lang = array();
 		$table->identifier = 'appliance_id';
 		$table->identifier_name = $this->identifier_name;
 		$table->identifier_disabled = $disabled;
-		#$table->limit_select = array(
-		#	array("value" => 10, "text" => 10),
-		#	array("value" => 20, "text" => 20),
-		#	array("value" => 30, "text" => 30),
-		#	array("value" => 50, "text" => 50),
-		#	array("value" => 100, "text" => 100),
-		#);
+		
+		$div_html = '';
+		
+		$row_headers = array('ID', 'VM Name', 'VM IP', 'Image', 'Total Memory', 'Memory Used', 'CPU', 'CPU Used', 'Status', 'Details');
+		
+		$div_html = '<table class="table table-hover nowrap dataTable dtr-inline" id="cloud_appliances_table" role="grid" style="width: 100%;"><thead><tr>';
 
+		foreach ($row_headers as $head) {
+			$div_html .= '<th>'.$head.'</th>';
+		}
+		$div_html .= '</tr></thead><tbody>';
+		for ($i = 0; $i < count($b); $i++) {
+			$div_html .= '<tr class="hoverbg" id="' . $i . '">';
+			$div_html .= '<td>' . $i . '</td>';
+			$div_html .= '<td>' .  $b[$i]['appliance_name'] . '</td>';
+			$div_html .= '<td>' .  $b[$i]['appliance_ip'] . '</td>';
+			$div_html .= '<td>' .  $b[$i]['appliance_image'] . '</td>';
+			$div_html .= '<td>' .  $b[$i]['appliance_total_memory'] . '</td>';
+			$div_html .= '<td>' .  $b[$i]['appliance_used_memory'] . '</td>';
+			$div_html .= '<td>' .  $b[$i]['appliance_cpu'] . '</td>';
+			$div_html .= '<td>' .  $b[$i]['appliance_load'] . '</td>';
+			$div_html .= '<td class="status ' . $b[$i]['appliance_state_value'] .'">' .  $b[$i]['appliance_state_value'] . '</td>';
+			$div_html .= '<td class="toggle-graph" row-id="' . $i . '"><a href="#"><i class="fa fa-ellipsis-h" aria-hidden="true"></i></a></td>';
+			$div_html .= '<td class="app_start">'.$b[$i]['appliance_start'].'</td>';
+			$div_html .= '<td class="app_edit">'.$b[$i]['appliance_edit'].'</td>';
+			$div_html .= '<td class="app_release">'.$b[$i]['appliance_release'].'</td>';
+			$div_html .= '<td class="app_clone">'.$clonelink.'</td>';
+			$div_html .= '</tr>'; 
+		}
+		$div_html .=	'</tbody></table>';
+		
 		$d['form']   = $this->response->get_form($this->actions_name, 'select', false)->get_elements();
 		$d['add']    = $add->get_string();
 		$d['table']  = $table;
+		$d['div_html'] = $div_html;
 		$d['resource_type_filter'] = $box1->get_string();
 		$d['resource_filter'] = $box2->get_string();
 
@@ -760,7 +719,7 @@ var $lang = array();
 						$a = $this->response->html->a();
 						$a->label = $this->lang['action_release'];
 						$a->title = $this->lang['resource_release'];
-						$a->css   = 'enable';
+						//$a->css   = 'enable btn-labeled fa fa-refresh';
 						$a->href  = $this->response->get_url($this->actions_name, 'release').'&appliance_id='.$appliance->id.''.$tp;
 						$release_resource = $a->get_string();
 					}
@@ -800,4 +759,3 @@ var $lang = array();
 
 }
 ?>
-

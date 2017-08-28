@@ -1,4 +1,3 @@
-
 var remid = '';
 var globalid = '';
 var bufid = '';
@@ -7,25 +6,25 @@ var poolremid = '';
 var poolremidhost = '';
 
 
- $('.shortselect').selectpicker();
- $('#reportmonthdash').hide();
- $('#reportyeardash').hide();
- $('#reportuserdash').hide();
+$('.shortselect').selectpicker();
+$('#reportmonthdash').hide();
+$('#reportyeardash').hide();
+$('#reportuserdash').hide();
 
- 
+
 // scroll:
-        $("html").niceScroll();
-        $('#mainnav').niceScroll({autohidemode: "leave", hidecursordelay: 400});
-        $("#alltasks").niceScroll();
-        $(".warningeventwindow").find('.eventcontent').niceScroll();
-        $('.criticaleventwindow').find('.eventcontent').niceScroll();
-        $('.alleventswindow').find('.eventcontent').niceScroll();
-        $('#dnstextarea').niceScroll();
-        $('#dhcptextarea').niceScroll();
-        $('#lizardside').find('iframe').niceScroll();
-        $('iframe').niceScroll();
-        
+$("html").niceScroll();
+$('#mainnav').niceScroll({autohidemode: "leave", hidecursordelay: 400});
+$("#alltasks").niceScroll();
+$(".warningeventwindow").find('.eventcontent').niceScroll();
+$('.criticaleventwindow').find('.eventcontent').niceScroll();
+$('.alleventswindow').find('.eventcontent').niceScroll();
+$('#dnstextarea').niceScroll();
+$('#dhcptextarea').niceScroll();
+$('#lizardside').find('iframe').niceScroll();
+$('iframe').niceScroll();
 // --- end scroll ---
+
 
 $('body').on('click', '.budgremove', function(){
 	var id = $(this).closest('.budgservn').attr('remid');
@@ -44,46 +43,47 @@ $('body').on('click', '.rempercent', function(){
 	var url = '/cloud-fortis/user/index.php?budget=yes';
 	var dataval = 'editbudgets=1&place=percremove&globalid='+globalid+'&editval='+percval;
 	var bds = '';
-			$.ajax({
-				url : url,
-				type: "POST",
-				data: dataval,
-				cache: false,
-				async: false,
-				dataType: "html",
-				success : function (data) {
-					$('.lead').hide();
-					if (data != 'none') {
-						$('.lead').hide();
-						console.log(data);
-						bds = JSON.parse(data);
-					} else {
-						blackalert('Have not got any data of this period');
-					}
-				}
-			});
+	
+	$.ajax({
+		url : url,
+		type: "POST",
+		data: dataval,
+		cache: false,
+		async: false,
+		dataType: "html",
+		success : function (data) {
+			$('.lead').hide();
+			if (data != 'none') {
+				$('.lead').hide();
+				console.log(data);
+				bds = JSON.parse(data);
+			} else {
+				blackalert('Have not got any data of this period');
+			}
+		}
+	});
 });
 
-function refreshalerts(num) {
-		var bds = '';
-			$.ajax({
-				url : url,
-				type: "POST",
-				data: dataval,
-				cache: false,
-				async: false,
-				dataType: "html",
-				success : function (data) {
-					$('.lead').hide();
-					if (data != 'none') {
-						$('.lead').hide();
-						bds = JSON.parse(data);
-					} else {
-						blackalert('Have not got any data of this period');
-					}
-				}
-			});
 
+function refreshalerts(num) {
+	var bds = '';
+	$.ajax({
+		url : url,
+		type: "POST",
+		data: dataval,
+		cache: false,
+		async: false,
+		dataType: "html",
+		success : function (data) {
+			$('.lead').hide();
+			if (data != 'none') {
+				$('.lead').hide();
+				bds = JSON.parse(data);
+			} else {
+				blackalert('Have not got any data of this period');
+			}
+			}
+	});
 
 	if (bds[num].havealerts == 1) {
 		$('.newrow').remove();
@@ -97,47 +97,45 @@ function refreshalerts(num) {
 		$('.table-alerts').hide();
 		$('.noalerts').show();
 	}
-
-	
 }
 
-$('.alertpricedit').click(function(){
-		var val = $('#percentbudg').val();
-		val = parseInt(val);
 
-		if ( (val > 100) || (isNaN(val) == true) ) {
-			blackalert('Only integer number of percent value and not bigger, than 100, please');
-		} else {
-				
-				var row = '<tr class="newrow"><td class="text-center valperc">'+val+'</td><td class="text-center"><a class="rempercent"><i class="fa fa-close"></i> Remove</a></td></tr>';
-				$('.table-alerts').append(row);
-				$('.table-alerts').show();
-		}
+$('.alertpricedit').click(function(){
+	var val = $('#percentbudg').val();
+	val = parseInt(val);
+
+	if ( (val > 100) || (isNaN(val) == true) ) {
+		blackalert('Only integer number of percent value and not bigger, than 100, please');
+	} else {
+		var row = '<tr class="newrow"><td class="text-center valperc">'+val+'</td><td class="text-center"><a class="rempercent"><i class="fa fa-close"></i> Remove</a></td></tr>';
+		$('.table-alerts').append(row);
+		$('.table-alerts').show();
+	}
 
 	var url = '/cloud-fortis/user/index.php?budget=yes';
 	var dataval = 'editbudgets=1&place=percadd&globalid='+globalid+'&editval='+val;
 	var bds = '';
-			$.ajax({
-				url : url,
-				type: "POST",
-				data: dataval,
-				cache: false,
-				async: false,
-				dataType: "html",
-				success : function (data) {
-					$('.lead').hide();
-					if (data != 'none') {
-						$('.lead').hide();
-						console.log(data);
-						bds = JSON.parse(data);
-					} else {
-						blackalert('Have not got any data of this period');
-					}
-				}
-			});
-
+	$.ajax({
+		url : url,
+		type: "POST",
+		data: dataval,
+		cache: false,
+		async: false,
+		dataType: "html",
+		success : function (data) {
+			$('.lead').hide();
+			if (data != 'none') {
+				$('.lead').hide();
+				console.log(data);
+				bds = JSON.parse(data);
+			} else {
+				blackalert('Have not got any data of this period');
+			}
+		}
+	});
 	$('.noalerts').hide();
 });
+
 
 $('#addalert').click(function(){
 
@@ -5320,39 +5318,29 @@ function colorborder(objc) {
 
 $('.gaugetable').find('#Tabelle').removeClass('table-hover');
 
-
-
 }
 // --- end color change functionality ---
 
 // header align in plugins popup:
-	function headfix() {
-		if ($('#aa_plugins_tabmsgBox').is(':visible') == true) {
-
-			if($('#navbar').offset().top < 0) {
-				$('#navbar').css('top','50px');
-				$('#container.mainnav-lg #mainnav-container').css('top','50px');
-				$('#aa_plugins_tab0').css('top', '50px');
-			}
+function headfix() {
+	if ($('#aa_plugins_tabmsgBox').is(':visible') == true) {
+		if($('#navbar').offset().top < 0) {
+			$('#navbar').css('top','50px');
+			$('#container.mainnav-lg #mainnav-container').css('top','50px');
+			$('#aa_plugins_tab0').css('top', '50px');
 		}
-		
 	}
+}
 
-	/*if ($('#aa_plugins_tabmsgBox').is(':visible') == true) {
-		setInterval(headfix, 2500);
-		setInterval(headfix, 4000);
-	}*/
+/*if ($('#aa_plugins_tabmsgBox').is(':visible') == true) {
+	setInterval(headfix, 2500);
+	setInterval(headfix, 4000);
+}*/
 
-	Pace.on('done', headfix);
-		
-	$('#appliance_tab0 a.enable').each(function(){
-		if ($(this).text() == 'noVNC') {
-			$(this).text('Svaccess');
-		}
-	})
-
+Pace.on('done', headfix);
+$('#appliance_tab0 a.enable').each(function(){
+	if ($(this).text() == 'noVNC') {
+		$(this).text('Svaccess');
+	}
+})
 	// -- end header align --
-
-
-
-

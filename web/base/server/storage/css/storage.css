@@ -144,24 +144,6 @@ div#add-new-disk div.disk .fa-hdd-o:before {
 	20px
 }
 
-div#azure-disk-vm-list {
-	float: left;
-	margin-left: 3%;
-	width: 90%;
-}
-
-div#azure-disk-vm-list table{
-	width: 100%;
-}
-
-div#azure-disk-vm-list table th{
-	text-align: left;
-}
-
-div#azure-disk-vm-list table th, div#azure-disk-vm-list table td{
-	padding: 7px;
-}
-
 div#btnsideee {
 	width: 27%;
 	float: right;
@@ -197,4 +179,43 @@ div#btnsideee a#showlizardbtn {
 div#btnsideee .newstoragepop {
 	width: 160px;
 	display: none;
+}
+
+table.azure-resource-table {
+	border-collapse: collapse;
+	border: 1px solid #f1f1f1;
+	background: #fff;
+}
+
+table.azure-resource-table td{
+	border: 1px solid #f1f1f1;
+}
+
+table.azure-resource-table tr:hover;{
+	background: #ccc;
+}
+
+p.memory{
+	padding: 15px;
+	text-align: left;
+	display: block;
+}
+
+p.memory:hover;{
+	background: #e7ebee;
+	cursor: pointer;
+}
+
+p.memory i {
+	margin-right: 10px;
+}
+
+div.memory-add-form {
+	border: 1px solid #ccc;
+	margin: 30px 15px 15px 15px;
+	padding: 35px 0;
+}
+
+div.memory-add-form div#buttons{
+	margin-top: 20px;
 }

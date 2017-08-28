@@ -4,7 +4,7 @@
 <head>
 	<meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-	<title>HyperTask Enterprise 6</title>
+	<title>Maestro Enterprise Ultimate</title>
 	<meta http-equiv="content-type" content="text/html; charset=utf-8">
 
 	<link rel="icon" href="{baseurl}/img/favicon.ico" type="image/x-icon">
@@ -212,7 +212,7 @@ function get_info_box() {
 				<!--================================-->
 				<div class="navbar-header">
 					<a href="/htvcenter/base/" class="navbar-brand">
-						<img src="{baseurl}/img/logo.png" alt="HTBase - HyperTask Logo" title="HTBase - HyperTask Logo" class="brand-icon">
+						<img src="{baseurl}/img/logo.png" alt="HTBase Logo" title="HTBase Logo" class="brand-icon">
 					
 					</a>
 				</div>
@@ -452,7 +452,7 @@ function get_info_box() {
 
 			<!-- Visible when footer positions are static -->
 			<!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
-			<div class="hide-fixed pull-right pad-rgt">HyperTask Enterprise 6</div>
+			<div class="hide-fixed pull-right pad-rgt">Maestro Enterprise</div>
 
 
 

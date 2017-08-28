@@ -1299,6 +1299,7 @@ function newTreeMenu(
 			//unset($son);
 			// vertical lines from higher levels
 			for ($i=0; $i<$this->tree[$cnt]['level']-1; $i++) {
+				$subn = '';
 				if ($levels[$i] == 1) {
 					$img = $img_vertline;
 					$alt = $alt_vertline;
@@ -1384,7 +1385,12 @@ function newTreeMenu(
 					case 'Cloud':
 						$faicon = 'fa-cloud';
 						$label = '';
-						$this->tree[$cnt]['text'] = 'Fortis';
+						$this->tree[$cnt]['text'] = 'Score';
+					break;
+					
+					case 'Clouds':
+						$faicon = 'fa-cloud';
+						$label = '';
 					break;
 
 					case 'NoVNC':

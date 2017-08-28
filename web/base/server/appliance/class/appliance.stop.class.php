@@ -169,17 +169,6 @@ var $lang = array();
 
 	}
 
-	function stopApi($appliance) {		
-			$resource = new resource();
-			$resource->get_instance_by_id($appliance->resources);
-				
-			$kernel = new kernel();
-			$kernel->get_instance_by_id($appliance->kernelid);
-				
-			$resource->send_command("127.0.0.1", "htvcenter_assign_kernel ".$resource->id." ".$resource->mac." default");
-			$appliance->stop();
-	}
-
 	//--------------------------------------------
 	/**
 	 * Get Response

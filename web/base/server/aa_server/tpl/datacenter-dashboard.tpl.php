@@ -22,19 +22,15 @@ var lang_inventory_storages = "{lang_inventory_storages}";
 
 
 $(document).ready(function(){
-var flagmain = true;
-var sizes = ["{mempercent}%", "{swappercent}%", "{hddpercent}%"];
-var esxstorages = "{esxstoragespercent}";
-
-
+	var flagmain = true;
+	var sizes = ["{mempercent}%", "{swappercent}%", "{hddpercent}%"];
+	var esxstorages = "{esxstoragespercent}";
 	// index page actions:	
 	if (flagmain == true) {
-
-
 		 $('.progress-bar').each(function(i) {
 		 	i.target.css('width', sizes[i]);
+			//$(this).css('width', sizes[i]);
 		 });
-
 		// --- end progress animation ---
 	}
 });
@@ -326,7 +322,7 @@ if (priceold !=0 || pricethis != 0) {
 	
 	<div class="col-xs-12 col-sm-3 col-md-3 col-lg-3">
 		<div class="panel serverpanel">
-			<h2 class="dash"><i class="fa fa-server"></i> HyperTask Server</h2>
+			<h2 class="dash"><i class="fa fa-server"></i> Maestro Server</h2>
 			
 			<div class="iron-place" id="devicearea">
 				<h2 class="litli"><i class="fa fa-cogs"></i> CPU & memory:</h2>
@@ -363,7 +359,7 @@ if (priceold !=0 || pricethis != 0) {
 						var okchart = 'okkk';
 					</script>
 
-					<h2 class="dash"><i class="fa fa-signal"></i> HyperTask Network:</h2>
+					<h2 class="dash"><i class="fa fa-signal"></i> Maestro Network:</h2>
 					<div id="networkarea">
 					<div class="row">
 					<div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 networkpie">
@@ -373,8 +369,8 @@ if (priceold !=0 || pricethis != 0) {
 					<div id="sparklineinfo">
 						<div class="donut-chart-legend">
 							<ul>
-								<li><div class="legend-tile tooltip-l" style="background:#2d4859"><span>Physical ({physcount})</span></div></li>
-								<li><div class="legend-tile tooltip-l" style="background:#fe7211"><span>Bridge ({bridgecount})</span></div></li>
+								<li><div class="legend-tile" style="background:#2d4859"><span>Physical ({physcount})</span></div></li>
+								<li><div class="legend-tile" style="background:#fe7211"><span>Bridge ({bridgecount})</span></div></li>
 							</ul>
 						</div>
 					</div>
@@ -385,7 +381,7 @@ if (priceold !=0 || pricethis != 0) {
 			
 		</div>
 		<div class="panel storagespanel">
-			<h2 class="dash"><i class="fa fa-hdd-o"></i> HyperTask Storage</h2>
+			<h2 class="dash"><i class="fa fa-hdd-o"></i> Maestro Storage</h2>
 			<div id="storageareas">
 					
 				<div class="onestorage">

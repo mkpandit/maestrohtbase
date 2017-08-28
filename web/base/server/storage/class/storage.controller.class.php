@@ -85,9 +85,9 @@ var $lang = array(
 		'lang_filter' => 'Filter by Disk type',
 		'please_wait' => 'Loading. Please wait ..',
 	),
-	'azuredisk' => array (
-		'tab' => 'Disks on Azure',
-		'label' => 'Disks on Azure',
+	'memoryadd' => array (
+		'tab' => 'Add memory as disk storage',
+		'label' => 'Add memory as disk storage',
 		'action_remove' => 'remove',
 		'action_mgmt' => 'manage',
 		'action_edit' => 'edit',
@@ -100,6 +100,23 @@ var $lang = array(
 		'table_deployment' => 'Deployment',
 		'lang_filter' => 'Filter by Disk type',
 		'please_wait' => 'Loading. Please wait ..',
+	),
+	'addawsfile' => array (
+		'tab' => 'Add AWS Bucket (S3)',
+		'label' => 'Add AWS Bucket (S3)',
+		'action_remove' => 'remove',
+		'action_mgmt' => 'manage',
+		'action_edit' => 'edit',
+		'action_add' => 'Add new storage',
+		'table_state' => 'State',
+		'table_id' => 'Id',
+		'table_name' => 'Name',
+		'table_type' => 'Type',
+		'table_resource' => 'Resource',
+		'table_deployment' => 'Deployment',
+		'lang_filter' => 'Filter by Disk type',
+		'please_wait' => 'Loading. Please wait ..',
+		'aws_file_name' => 'Select file to upload'
 	),
 	'add' => array (
 		'label' => 'Add Storage',
@@ -278,9 +295,13 @@ var $lang = array(
 				$content[]  = $this->select(false);
 				$content[]  = $this->diskadd(true);
 			break;
-			case 'azuredisk':
+			case 'memoryadd':
 				$content[]  = $this->select(false);
-				$content[]  = $this->azuredisk(true);
+				$content[]  = $this->memoryadd(true);
+			break;
+			case 'addawsfile':
+				$content[]  = $this->select(false);
+				$content[]  = $this->addawsfile(true);
 			break;
 			case 'add':
 				$content[] = $this->select(false);
@@ -390,7 +411,7 @@ var $lang = array(
 	
 	//--------------------------------------------
 	/**
-	 * Disks on Microsoft Azure
+	 * Add memory as disk storage
 	 *
 	 * @access public
 	 * @param bool $hidden
@@ -398,25 +419,60 @@ var $lang = array(
 	 */
 	//--------------------------------------------
 	
-	function azuredisk( $hidden = true ) {
+	function memoryadd( $hidden = true ) {
 		$data = '';
 		if( $hidden === true ) {
-			require_once($this->rootdir.'/server/storage/class/storage.azuredisk.class.php');
-			$controller = new storage_azuredisk($this->htvcenter, $this->response);
+			require_once($this->rootdir.'/server/storage/class/storage.memoryadd.class.php');
+			$controller = new storage_memoryadd($this->htvcenter, $this->response);
 			$controller->actions_name    = $this->actions_name;
 			$controller->tpldir          = $this->tpldir;
 			$controller->message_param   = $this->message_param;
 			$controller->identifier_name = $this->identifier_name;
-			$controller->lang            = $this->lang['azuredisk'];
+			$controller->lang            = $this->lang['memoryadd'];
 			$data = $controller->action();
 		}
 		
-		$content['label']   = $this->lang['azuredisk']['tab'];
+		$content['label']   = $this->lang['memoryadd']['tab'];
 		$content['value']   = $data;
 		$content['target']  = $this->response->html->thisfile;
-		$content['request'] = $this->response->get_array($this->actions_name, 'azuredisk' );
+		$content['request'] = $this->response->get_array($this->actions_name, 'memoryadd' );
 		$content['onclick'] = false;
-		if($this->action === 'azuredisk'){
+		if($this->action === 'memoryadd'){
+			$content['active']  = true;
+		}
+		return $content;
+	}
+	
+	//--------------------------------------------
+	/**
+	 * Add an AWS Storage (S3)
+	 *
+	 * @access public
+	 * @param bool $hidden
+	 * @return array
+	 */
+	//--------------------------------------------
+	
+	function addawsfile( $hidden = true ) {
+		$data = '';
+		if( $hidden === true ) {
+			require_once($this->rootdir.'/server/storage/class/storage.addawsfile.class.php');
+			$controller = new addawsfile($this->htvcenter, $this->response);
+			$controller->actions_name    = $this->actions_name;
+			$controller->tpldir          = $this->tpldir;
+			$controller->message_param   = $this->message_param;
+			$controller->identifier_name = $this->identifier_name;
+			$controller->lang            = $this->lang['addawsfile'];
+			$controller->rootdir         = $this->rootdir;
+			$controller->prefix_tab      = $this->prefix_tab;
+			$data = $controller->action();
+		}
+		$content['label']   = $this->lang['addawsfile']['label'];
+		$content['value']   = $data;
+		$content['target']  = $this->response->html->thisfile;
+		$content['request'] = $this->response->get_array($this->actions_name, 'addawsfile' );
+		$content['onclick'] = false;
+		if($this->action === 'addawsfile' || $this->action === $this->lang['select']['action_add']){
 			$content['active']  = true;
 		}
 		return $content;
