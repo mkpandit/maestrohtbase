@@ -166,6 +166,7 @@ var $use_api = true;
 		$t->add($cloud_disk_select_html, 'cloud_disk_select');
 		$t->add($cloud_cpu_select_html, 'cloud_cpu_select');
 		$t->add($cloud_memory_select_html, 'cloud_memory_select');
+		$t->add($cloud_network_select_html, 'cloud_network_select');
 		$t->add($cloud_ip_select_0_html, 'cloud_ip_select_0');
 		$t->add($cloud_application_select_0_label, 'cloud_application_select_0_label');
 		$t->add($cloud_application_select_0_checkbox, 'cloud_application_select_0_checkbox');

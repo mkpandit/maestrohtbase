@@ -54,6 +54,10 @@
 	<section>
 		<!-- <div class="row">  -->
 			<div class="col-lg-12">
+				<div class="form-group hide">
+					<label for="cloud_network_select">Select Network *</label>
+					{cloud_network_select}
+				</div>
 				<div class="form-group">
 					<label for="cloud_ip_select_0">Network *</label>
 					{cloud_ip_select_0}

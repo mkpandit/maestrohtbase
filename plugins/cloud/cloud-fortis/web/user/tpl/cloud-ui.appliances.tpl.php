@@ -130,6 +130,10 @@
 		vertical-align: top;
 	}
 
+	.form-group.hide {
+		display: none;
+	}
+
 	/*
 	select, textarea, input {
 		background-color: #fff;
@@ -198,9 +202,9 @@ $(document).ready(function() {
 						},
 						onStepChanged: function(event, currentIndex, priorIndex)
 						{
-							 if (currentIndex == 3) {
-								initiateOwlCarousel();
-							 }
+							// if (currentIndex == 3) {
+							//	initiateOwlCarousel();
+							// }
 						},
 						onFinishing: function (event, currentIndex)
 						{
@@ -305,17 +309,20 @@ $(document).ready(function() {
 	function makeSummary() {
 		var apps = [];
 		var html = '';
-		html += '<label>VM Name: </label><label>' + $("#vmName").val() + '</label><br/>';
-		html += '<label>VM Description: </label><label>' + $("#vmDesc").val() + '</label><br/>';
-		html += '<label>VM Type: </label><label>' + $("#vmType").val() + '</label><br/>';
-		html += '<label>VM Iamge: </label><label>' + $("#vmImage").val() + '</label><br/>';
-		html += '<label>DIsk: </label><label>' + $("#vmDisk").val() + ' GB</label><br/>';
-		html += '<label>CPU: </label><label>' + $("#vmCPU").val() + '</label><br/>';
-		html += '<label>Memory: </label><label>' + $("#vmMemory").val() + ' MB</label><br/>';
-		html += '<label>Network: </label><label>' + $("#vmNetwork").val() + '</label><br/>';
+		html += '<label>VM Name: </label><label>' + $("#cloud_hostname_input").val() + '</label><br/>';
+		// html += '<label>VM Description: </label><label>' + $("#vmDesc").val() + '</label><br/>';
+		html += '<label>VM Type: </label><label>' + $("#cloud_virtualization_select option:selected").text() + '</label><br/>';
+		html += '<label>VM Iamge: </label><label>' + $("#cloud_image_select option:selected").text() + '</label><br/>';
+		html += '<label>VM Kernel: </label><label>' + $("#cloud_kernel_select option:selected").text() + '</label><br/>';
+		html += '<label>DIsk: </label><label>' + $("#cloud_disk_select").val() + ' GB</label><br/>';
+		html += '<label>CPU: </label><label>' + $("#cloud_cpu_select").val() + '</label><br/>';
+		html += '<label>Memory: </label><label>' + $("#cloud_memory_select").val() + ' MB</label><br/>';
+		html += '<label>Network: </label><label>' + $("#cloud_ip_select_0 option:selected").text() + '</label><br/>';
 
 		$(".owl-carousel div.item:not(.slick-cloned) input.checkbox:checked").each(function () {
-			var elem = $(this).data("name");
+			var elem = $(this).parent("div.item").first().contents().filter(function() {
+							    return this.nodeType == 3;
+							}).text().trim().toLowerCase();
 
 			if (apps.indexOf(elem) == -1) {
 				apps.push(elem); 
