@@ -640,45 +640,54 @@ if (typeof(datepickeryep) != 'undefined' && datepickeryep == true) {
 
 
 
-if ( (typeof(explorer) != 'undefined') && (explorer == true) ) {
-
+if ((typeof(explorer) != 'undefined') && (explorer == true)) {
 	var url = '/cloud-fortis/user/index.php?report=yes';
 	var dataval = 'explorer=1&explorerajax=getservers';
 	var vms = '';
-			$.ajax({
-				url : url,
-				type: "POST",
-				data: dataval,
-				cache: false,
-				async: false,
-				dataType: "html",
-				success : function (data) {
-					$('.lead').hide();
-					if (data != 'none') {
-						$('.lead').hide();
-						
-						vms = JSON.parse(data);
-					} else {
-						alert('Have not got any data of this period');
-					}
-				}
-			});
-	var servers = '<li class="carstart">'; 
+	$.ajax({
+		url : url,
+		type: "POST",
+		data: dataval,
+		cache: false,
+		async: false,
+		dataType: "html",
+		success : function (data) {
+			$('.lead').hide();
+			if (data != 'none') {
+				$('.lead').hide();
+				vms = JSON.parse(data);
+				console.log(vms);
+			} else {
+				alert('Have not got any data of this period');
+			}
+		}
+	});
+	//var servers = '<li class="carstart">'; 
+	var servers = '<table class="table table-hover nowrap dataTable dtr-inline" id="score_cloud_appliances_table" role="grid" style="width: 100%;"><thead><tr>';
+	var servers = servers + '<tr><th>VM Name</th><th>VM IP</th><th>CPU</th><th>Memory</th><th>Storage</th><th>Status</th><th>Creation time</th><th>Working time</th><th>Cost</th>';
+	var servers = servers + '</tr></thead><tbody>';
 	var i = 0;
 	$.each(vms, function(key, serv){
 		i = i + 1;
-		servers = servers + '<div class="panel panel-primary panel-colorful servn" num="'+i+'"><div class="panel-body text-center"><p class="text-uppercase mar-btm text-sm">'+serv.name+'</p><i class="fa fa-desktop fa-3x"></i><hr><p class="h2 text-thin">'+serv.price+'</p></div></div>';
-			
+		//servers = servers + '<div class="panel panel-primary panel-colorful servn" num="'+i+'"><div class="panel-body text-center"><p class="text-uppercase mar-btm text-sm">'+serv.name+'</p><i class="fa fa-desktop fa-3x"></i><hr><p class="h2 text-thin">'+serv.price+'</p></div></div>';
+		servers = servers + '<tr><td>'+serv.name+'</td>';
+		servers = servers + '<td>'+serv.ip+'</td>';
+		servers = servers + '<td>'+serv.cpu+'</td>';
+		servers = servers + '<td>'+serv.ram+'</td>';
+		servers = servers + '<td>'+serv.storage+'</td>';
+		servers = servers + '<td>'+serv.status+'</td>';
+		servers = servers + '<td>'+serv.created+'</td>';
+		servers = servers + '<td>'+serv.worked+'</td>';
+		servers = servers + '<td>'+serv.price+'</td></tr>';
 		if (i == 9) {
 			i = 0;
-			servers = servers + '</li>';
+			//servers = servers + '</li>';
 		}
-			
 	});
-		
-	
+	var servers = servers + '</tbody></table>';
 	$('#namespaces').html(servers);
-	$('.jcarousel').jcarousel();
+	//$('.jcarousel').jcarousel();
+	$("#server-cost-table-data").html(servers);
 }
 
 $('#cpubd').click(function() {

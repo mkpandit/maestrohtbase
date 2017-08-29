@@ -881,3 +881,27 @@ a.logout {
 	background-repeat: no-repeat;
 	cursor: pointer;
 }
+
+
+/* Cost Explorer */
+div.windows_plane{
+	width: 100%;
+	max-width: 100%;
+	margin: 0;
+	padding: 0;
+}
+div#server-cost-table-data{
+	margin: 0;
+	padding: 10px 18px;
+}
+div#server-cost-table-data table{
+	width: 100%;
+}
+
+div#server-cost-table-data div#score_cloud_appliances_table_wrapper{
+	width: 100%;
+}
+
+h2.redh2{
+	width: 100%;
+}
