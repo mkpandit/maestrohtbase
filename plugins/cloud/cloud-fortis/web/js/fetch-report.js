@@ -15,7 +15,7 @@ var seriesColors = [
 
 function current_year_monthly_spent_by_resource(bindto, data) {
 
-    console.log(data);
+    // console.log(data);
     /* data = [
         ['x', '2017-01-01', '2017-02-01', '2017-03-01', '2017-04-01', '2017-05-01', '2017-06-01', '2017-07-01', '2017-08-01'],
         ['cpu',             300, 200, 250, 240, 260, 250, 200, 240],
@@ -73,7 +73,7 @@ function get_monthly_data(year_str, month_str) {
             type: "POST",
             data: dataval,
             cache: false,
-            async: false,
+            async: true,
             dataType: "html",
         });
 

@@ -30,8 +30,8 @@
 <link type="text/css" href="{baseurl}/css/nifty.css" rel="stylesheet">
 -->
 <link href="http://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700&amp;subset=latin" rel="stylesheet">
-<link rel="icon" href="{baseurl}/img/favicon.ico" type="image/x-icon">
-<link rel="shortcut icon" href="{baseurl}/img/favicon.ico" type="image/x-icon">
+<link rel="icon" href="{baseurl}/img/favicon.ico?v=2" type="image/x-icon">
+<link rel="shortcut icon" href="{baseurl}/img/favicon.ico?v=2" type="image/x-icon">
 
 	<!--Morris.js [ OPTIONAL ]
 	<link href="{baseurl}designplugins/morris-js/morris.min.css" rel="stylesheet"> -->

@@ -11,8 +11,8 @@
 <link type="text/css" href="{baseurl}/css/fontawesome/css/font-awesome.min.css" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css?family=PT+Sans:400,400i,700,700i&amp;subset=cyrillic" rel="stylesheet">
-<link rel="icon" href="{baseurl}img/favicon.ico" type="image/x-icon">
-<link rel="shortcut icon" href="{baseurl}img/favicon.ico" type="image/x-icon">
+<link rel="icon" href="{baseurl}img/favicon.ico?v=2" type="image/x-icon">
+<link rel="shortcut icon" href="{baseurl}img/favicon.ico?v=2" type="image/x-icon">
 <script type="text/javascript" src="{baseurl}js/login-interface.js"></script>
 <script type="text/javascript" src="{baseurl}js/cookie.js"></script>
 <link type="text/css" href="{baseurl}css/cleanui/core.cleanui.css" rel="stylesheet">

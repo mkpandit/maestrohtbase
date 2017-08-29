@@ -1,5 +1,44 @@
 <style>
     #project_tab_ui { display: none; }  /* hack for tabmenu issue */
+
+    hr { 
+        display: block;
+        margin-top: 0.5em;
+        margin-bottom: 0.5em;
+        margin-left: auto;
+        margin-right: auto;
+        border-style: solid;
+        border-width: 2px;
+        width:24px;
+    }
+
+    hr.cpu {
+        border-color: #dfdfdf;
+    }
+
+    hr.storage {
+        border-color: #41bee9 ;
+    }
+
+    hr.memory {
+        border-color: rgb(255, 99, 132);
+    }
+
+    hr.virtualization {
+        border-color: rgb(255, 205, 86);
+    }
+
+    hr.networking {
+        border-color: rgb(75, 192, 192);
+    }
+
+    hr.total {
+        border-color: rgb(153, 102, 255);
+    }
+
+    #current-month-spent-by-resource tr td div {
+        text-align: center;
+    }
 </style>
 <script src="/cloud-fortis/js/c3/d3.v3.min.js" type="text/javascript"></script>
 <script src="/cloud-fortis/js/c3/c3.min.js" type="text/javascript"></script>
@@ -9,14 +48,9 @@
 <script>
 var nocontent = true;
 var repflag = true;
+var chart = null;
 
 function get_last_12_months_report(month, year) {
-
-    var curr_month = new Date();
-    curr_month.setDate(1);
-    curr_month.setMonth(month);
-    curr_month.setYear(year);
-
     var column_x_yearly  = ['x'];
     var total_monthly   = ['total'];
     var cpu_monthly     = ['cpu'];
@@ -25,11 +59,17 @@ function get_last_12_months_report(month, year) {
     var virtual_monthly = ['virtualization'];
     var network_monthly = ['networking'];
     var deferred = [];
+    var curr_month = new Date();
+    curr_month.setYear(year);
+    curr_month.setMonth(month);
+    curr_month.setDate(1);
     var loop_month = curr_month;
 
-    for (var i = 11; i >= 0; i--) {
-        loop_month.setMonth(loop_month.getMonth() - 1);
-        loop_month.setDate(1);
+    for (var i = 0; i < 12; i++) {
+        if (i > 0) {
+            loop_month.setMonth(loop_month.getMonth() - 1);
+            loop_month.setDate(1);
+        }
         column_x_yearly.push(parseDate(loop_month,'Y-M-D'));
         deferred.push(get_monthly_data(parseDate(loop_month,'Y'), parseDate(loop_month,'m')));
     }
@@ -37,9 +77,8 @@ function get_last_12_months_report(month, year) {
     $.when.apply($, deferred).done(function () {
         var objects=arguments;
 
-         for (var j = 0; j < objects.length; j++) {
+        for (var j = 0; j < objects.length; j++) {
             var json = JSON.parse(objects[j][0]);
-
             total_monthly.push(to_num(json.all));
             cpu_monthly.push(to_num(json.cpu));
             storage_monthly.push(to_num(json.storage));
@@ -48,13 +87,40 @@ function get_last_12_months_report(month, year) {
             network_monthly.push(to_num(json.networking));
         }
 
-        current_year_monthly_spent_by_resource("#current-year-monthly-spent-by-resource", [column_x_yearly, cpu_monthly, storage_monthly, memory_monthly, virtual_monthly, network_monthly]);
+        $('#cpu-usage, .amount-cpu').empty().append("<span>$"+cpu_monthly[1]+"</span>");
+        $('#storage-usage, .amount-storage').empty().append("<span>$"+storage_monthly[1]+"</span>");
+        $('#memory-usage, .amount-memory').empty().append("<span>$"+memory_monthly[1]+"</span>");
+        $('#virtualization-usage, .amount-virtualization').empty().append("<span>$"+virtual_monthly[1]+"</span>");
+        $('#networking-usage, .amount-networking').empty().append("<span>$"+network_monthly[1]+"</span>");
+        $('#total-usage, .amount-total').empty().append("<span>$"+total_monthly[1]+"</span>");
+
+        if (chart) {
+            chart.load({
+                columns: [column_x_yearly, cpu_monthly, storage_monthly, memory_monthly, virtual_monthly, network_monthly] 
+            });
+        } else {
+            chart = current_year_monthly_spent_by_resource("#current-year-monthly-spent-by-resource", [column_x_yearly, cpu_monthly, storage_monthly, memory_monthly, virtual_monthly, network_monthly]);
+        }
     });
 }
 
 $(document).ready(function() {
+    var today = new Date();
+    get_last_12_months_report(today.getMonth(),today.getYear());
 
-    get_last_12_months_report(7,2017);
+
+    $("#report-year, #report-month").change(function() {
+        
+        console.log("year month changed");
+
+        var year = $("#report-year").val();
+        var month = $("#report-month").val();
+
+        get_last_12_months_report(month,year);
+
+    });
+
+
 
 });
 
@@ -151,25 +217,27 @@ $(document).ready(function() {
                     </span>
                     <div class="d-inline-block">
                         <label class="col-form-label col-sm-4">Month:</label> 
-                        <select id="reportmonth" class="form-control col-sm-7 d-inline-block">
-                            <option value="Jan">January</option>
-                            <option value="Feb">February</option>
-                            <option value="Mar">March</option>
-                            <option value="Apr">April</option>
-                            <option value="May">May</option>
-                            <option value="Jun">June</option>
-                            <option value="Jul">July</option>
-                            <option value="Aug">August</option>
-                            <option value="Sep">September</option>
-                            <option value="Oct">October</option>
-                            <option value="Nov">November</option>
-                            <option value="Dec">December</option>
+                        <select id="report-month" class="form-control col-sm-7 d-inline-block">
+                            <option value="0">January</option>
+                            <option value="1">February</option>
+                            <option value="2">March</option>
+                            <option value="3">April</option>
+                            <option value="4">May</option>
+                            <option value="5">June</option>
+                            <option value="6">July</option>
+                            <option value="7">August</option>
+                            <option value="8">September</option>
+                            <option value="9">October</option>
+                            <option value="10">November</option>
+                            <option value="11">December</option>
                         </select>
                     </div>
                     <div class="d-inline-block">
                         <label class="col-form-label col-sm-4">Year:</label> 
-                        <select id="reportyear" class="form-control col-sm-7 d-inline-block">
+                        <select id="report-year" class="form-control col-sm-7 d-inline-block">
                             <option value="2017">2017</option>
+                            <option value="2016">2016</option>
+                            <option value="2015">2015</option>
                         </select>
                     </div>
                 </div>
@@ -208,7 +276,46 @@ $(document).ready(function() {
                                         <h3 class="panel-title">&nbsp;</h3>
                                     </div>
                                     <div>
-                                        <div id="current-three-months-spent" style="height: 16rem;"></div>
+                                        <div id="current-month-spent-by-resource" style="height: 16rem;">
+                                            <table class="table table-bordered table-hover table-stripped">
+                                                <tr>
+                                                    <td width="50%">
+                                                        <div><strong>CPU</strong></div>
+                                                        <div id="cpu-usage"></div>
+                                                        <hr class="cpu">
+                                                    </td>
+                                                    <td width="50%">
+                                                        <div><strong>Storage</strong></div>
+                                                        <div id="storage-usage"></div>
+                                                        <hr class="storage">
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td width="50%">
+                                                        <div><strong>Memory</strong></div>
+                                                        <div id="memory-usage"></div>
+                                                        <hr class="memory">
+                                                    </td>
+                                                    <td width="50%">
+                                                        <div><strong>Virtualization</strong></div>
+                                                        <div id="virtualization-usage"></div>
+                                                        <hr class="virtualization">
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td width="50%">
+                                                        <div><strong>Networking</strong></div>
+                                                        <div id="networking-usage"></div>
+                                                        <hr class="networking">
+                                                    </td>
+                                                    <td width="50%">
+                                                        <div><strong>Total</strong></div>
+                                                        <div id="total-usage"></div>
+                                                        <hr class="total">
+                                                    </td>
+                                                </tr>
+                                            </table>
+                                        </div>
                                     </div>
                                 </div>
                             </section>
@@ -234,37 +341,37 @@ $(document).ready(function() {
                 <div class="card-block">
                     <div class="col-sm-12 dashboard">
                         <section class="card">  
-                            <div id="current-year-monthly-spent"  style="height: 24rem;">
+                            <div id="current-monthly-spent"  style="height: 24rem;">
                                 <table class="table table-bordered table-hover table-stripped">
                                     <tr class="header"><td>Details</td><td width="200px">Total</td></tr>
                                     <tr class="slideractive">
                                         <td><b>Cloud Services Charges <i class="fa fa-arrow-down slidedownfa"></i></b></td>
-                                        <td><b class="total">0</b>
+                                        <td><b class="amount-total">0</b>
                                         </td></td>
-                                    </tr>
-                                    <tr class="hideslider">        
-                                        <td class="value">Storage</td>
-                                        <td class="amount storage">0</td>
                                     </tr>
                                     <tr class="hideslider">
                                         <td class="value">CPU</td>
-                                        <td class="amount cpu">0</td>
+                                        <td class="amount-cpu">0</td>
+                                    </tr>
+                                    <tr class="hideslider">
+                                        <td class="value">Storage</td>
+                                        <td class="amount-storage">0</td>
                                     </tr>
                                     <tr class="hideslider">
                                         <td class="value">Memory</td>
-                                        <td class="amount memory">0</td>
-                                    </tr>
-                                    <tr class="hideslider">
-                                        <td class="value">Networking</td>
-                                        <td class="amount networking">0</td>
+                                        <td class="amount-memory">0</td>
                                     </tr>
                                     <tr class="hideslider">
                                         <td class="value">Virtualisation</td>
-                                        <td class="amount virtualization">0</td>
+                                        <td class="amount-virtualization">0</td>
+                                    </tr>
+                                     <tr class="hideslider">
+                                        <td class="value">Networking</td>
+                                        <td class="amount-networking">0</td>
                                     </tr>
                                     <tr>
                                         <td><b>Total</b></td>
-                                        <td><b class="total">0</b></td>
+                                        <td><b class="amount-total">0</b></td>
                                     </tr>
                                 </table>
                             </div>
