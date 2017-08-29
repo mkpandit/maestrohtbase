@@ -1,4 +1,9 @@
 <style>
+    @media print {
+        /* body { font-family: "Times New Roman" !important; } */
+        .card-header { font-size: 18px; }
+    }
+
     #project_tab_ui { display: none; }  /* hack for tabmenu issue */
 
     hr { 
@@ -46,11 +51,12 @@
 <script src="/cloud-fortis/js/chartjs/utils.js" type="text/javascript"></script>
 <script src="/cloud-fortis/js/fetch-report.js" type="text/javascript"></script>
 <script>
-var nocontent = true;
-var repflag = true;
+// var nocontent = true;
+// var repflag = true;
 var chart = null;
 
 function get_last_12_months_report(month, year) {
+
     var column_x_yearly  = ['x'];
     var total_monthly   = ['total'];
     var cpu_monthly     = ['cpu'];
@@ -63,16 +69,21 @@ function get_last_12_months_report(month, year) {
     curr_month.setYear(year);
     curr_month.setMonth(month);
     curr_month.setDate(1);
-    var loop_month = curr_month;
+
+    $("#current-monthly-title").text(parseDate(curr_month, "mon") + " " + parseDate(curr_month, "Y"));
 
     for (var i = 0; i < 12; i++) {
         if (i > 0) {
-            loop_month.setMonth(loop_month.getMonth() - 1);
-            loop_month.setDate(1);
+            curr_month.setMonth(curr_month.getMonth() - 1);
+            curr_month.setDate(1);
+        } else {
+
         }
-        column_x_yearly.push(parseDate(loop_month,'Y-M-D'));
-        deferred.push(get_monthly_data(parseDate(loop_month,'Y'), parseDate(loop_month,'m')));
+        column_x_yearly.push(parseDate(curr_month,'Y-M-D'));
+        deferred.push(get_monthly_data(parseDate(curr_month,'Y'), parseDate(curr_month,'m')));
     }
+
+    $("#current-year-monthly-title").text($("#current-monthly-title").text() + " ~ " + parseDate(curr_month, "mon") + " " + parseDate(curr_month, "Y"));
 
     $.when.apply($, deferred).done(function () {
         var objects=arguments;
@@ -105,23 +116,30 @@ function get_last_12_months_report(month, year) {
 }
 
 $(document).ready(function() {
+
     var today = new Date();
-    get_last_12_months_report(today.getMonth(),today.getYear());
+    $("#reportmonth").val(parseDate(today,"mon"));
+    $("#reportyear").val(parseDate(today,"Y"));
+
+    get_last_12_months_report(today.getMonth(),today.getFullYear());
+
+    $("#reportyear, #reportmonth").change(function() {
+
+        console.log("changed");
+
+        var year = $("#reportyear").val();
+        var month = $("#reportmonth option:selected").data("val");
+
+        //var selected = new Date();
+        //selected.setYear(year);
+        //selected.setMonth(month);
 
 
-    $("#report-year, #report-month").change(function() {
-        
-        console.log("year month changed");
-
-        var year = $("#report-year").val();
-        var month = $("#report-month").val();
+       
+        // $("#current-year-monthly-title").text("")
 
         get_last_12_months_report(month,year);
-
     });
-
-
-
 });
 
 
@@ -208,7 +226,7 @@ $(document).ready(function() {
 
 <div class="cat__content">
     <cat-page>
-    <div class="row">
+    <div class="row" id="chart-row">
         <div class="col-sm-12">
             <section class="card">  
                 <div class="card-header">
@@ -217,24 +235,24 @@ $(document).ready(function() {
                     </span>
                     <div class="d-inline-block">
                         <label class="col-form-label col-sm-4">Month:</label> 
-                        <select id="report-month" class="form-control col-sm-7 d-inline-block">
-                            <option value="0">January</option>
-                            <option value="1">February</option>
-                            <option value="2">March</option>
-                            <option value="3">April</option>
-                            <option value="4">May</option>
-                            <option value="5">June</option>
-                            <option value="6">July</option>
-                            <option value="7">August</option>
-                            <option value="8">September</option>
-                            <option value="9">October</option>
-                            <option value="10">November</option>
-                            <option value="11">December</option>
+                        <select id="reportmonth" class="form-control col-sm-7 d-inline-block">
+                            <option value="Jan" data-val="0">January</option>
+                            <option value="Feb" data-val="1">February</option>
+                            <option value="Mar" data-val="2">March</option>
+                            <option value="Apr" data-val="3">April</option>
+                            <option value="May" data-val="4">May</option>
+                            <option value="Jun" data-val="5">June</option>
+                            <option value="Jul" data-val="6">July</option>
+                            <option value="Aug" data-val="7">August</option>
+                            <option value="Sep" data-val="8">September</option>
+                            <option value="Oct" data-val="9">October</option>
+                            <option value="Nov" data-val="10">November</option>
+                            <option value="Dec" data-val="11">December</option>
                         </select>
                     </div>
                     <div class="d-inline-block">
                         <label class="col-form-label col-sm-4">Year:</label> 
-                        <select id="report-year" class="form-control col-sm-7 d-inline-block">
+                        <select id="reportyear" class="form-control col-sm-7 d-inline-block">
                             <option value="2017">2017</option>
                             <option value="2016">2016</option>
                             <option value="2015">2015</option>
@@ -253,11 +271,11 @@ $(document).ready(function() {
                                 <div class="card-block">
                                     <div class="panel-heading">
                                         <div class="panel-control">
+                                            <h3 class="panel-title" id="current-year-monthly-title">&nbsp;</h3>
                                         </div>
-                                        <h3 class="panel-title">&nbsp;</h3>
                                     </div>
                                     <div>
-                                        <div id="current-year-monthly-spent-by-resource" style="height: 16rem;"></div>
+                                        <div id="current-year-monthly-spent-by-resource" style="height: 18rem;"></div>
                                     </div>
                                 </div>
                             </section>
@@ -272,11 +290,11 @@ $(document).ready(function() {
                                 <div class="card-block">
                                     <div class="panel-heading">
                                         <div class="panel-control">
+                                             <h3 class="panel-title" id="current-monthly-title">&nbsp;</h3>
                                         </div>
-                                        <h3 class="panel-title">&nbsp;</h3>
                                     </div>
                                     <div>
-                                        <div id="current-month-spent-by-resource" style="height: 16rem;">
+                                        <div id="current-month-spent-by-resource" style="height: 18rem;">
                                             <table class="table table-bordered table-hover table-stripped">
                                                 <tr>
                                                     <td width="50%">
@@ -325,7 +343,7 @@ $(document).ready(function() {
             </section>
         </div>
     </div>
-
+    <a class="gobackprint">Go back</a>
     <div class="row">
         <div class="col-sm-12">
             <section class="card">  
@@ -340,42 +358,40 @@ $(document).ready(function() {
                 </div>
                 <div class="card-block">
                     <div class="col-sm-12 dashboard">
-                        <section class="card">  
-                            <div id="current-monthly-spent"  style="height: 24rem;">
-                                <table class="table table-bordered table-hover table-stripped">
-                                    <tr class="header"><td>Details</td><td width="200px">Total</td></tr>
-                                    <tr class="slideractive">
-                                        <td><b>Cloud Services Charges <i class="fa fa-arrow-down slidedownfa"></i></b></td>
-                                        <td><b class="amount-total">0</b>
-                                        </td></td>
-                                    </tr>
-                                    <tr class="hideslider">
-                                        <td class="value">CPU</td>
-                                        <td class="amount-cpu">0</td>
-                                    </tr>
-                                    <tr class="hideslider">
-                                        <td class="value">Storage</td>
-                                        <td class="amount-storage">0</td>
-                                    </tr>
-                                    <tr class="hideslider">
-                                        <td class="value">Memory</td>
-                                        <td class="amount-memory">0</td>
-                                    </tr>
-                                    <tr class="hideslider">
-                                        <td class="value">Virtualisation</td>
-                                        <td class="amount-virtualization">0</td>
-                                    </tr>
-                                     <tr class="hideslider">
-                                        <td class="value">Networking</td>
-                                        <td class="amount-networking">0</td>
-                                    </tr>
-                                    <tr>
-                                        <td><b>Total</b></td>
-                                        <td><b class="amount-total">0</b></td>
-                                    </tr>
-                                </table>
-                            </div>
-                        </section>
+                        <div id="current-monthly-spent"  style="height: 26rem;">
+                            <table class="table table-bordered table-hover table-stripped">
+                                <tr class="header"><td>Details</td><td width="200px">Total</td></tr>
+                                <tr class="slideractive">
+                                    <td><b>Cloud Services Charges <i class="fa fa-arrow-down slidedownfa"></i></b></td>
+                                    <td><b class="amount-total">0</b>
+                                    </td></td>
+                                </tr>
+                                <tr class="hideslider">
+                                    <td class="value">CPU</td>
+                                    <td class="amount-cpu">0</td>
+                                </tr>
+                                <tr class="hideslider">
+                                    <td class="value">Storage</td>
+                                    <td class="amount-storage">0</td>
+                                </tr>
+                                <tr class="hideslider">
+                                    <td class="value">Memory</td>
+                                    <td class="amount-memory">0</td>
+                                </tr>
+                                <tr class="hideslider">
+                                    <td class="value">Virtualisation</td>
+                                    <td class="amount-virtualization">0</td>
+                                </tr>
+                                 <tr class="hideslider">
+                                    <td class="value">Networking</td>
+                                    <td class="amount-networking">0</td>
+                                </tr>
+                                <tr>
+                                    <td><b>Total</b></td>
+                                    <td><b class="amount-total">0</b></td>
+                                </tr>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </section>

@@ -656,7 +656,6 @@ if ((typeof(explorer) != 'undefined') && (explorer == true)) {
 			if (data != 'none') {
 				$('.lead').hide();
 				vms = JSON.parse(data);
-				console.log(vms);
 			} else {
 				alert('Have not got any data of this period');
 			}
@@ -825,6 +824,7 @@ $('.printbill').click(function(){
 	$('#cloud-content').css('width', '100%');
 
 	$('.reportbtnbill').hide();
+	$('#chart-row').hide();
 	$('.printlogo').show();
 	$('.hideslider').show();
 	$('#home_container').css('position', 'relative');

@@ -85,9 +85,11 @@ function parseDate(d, format) {
     if (format == 'Y') {
         return d.getFullYear();
     } else if (format == 'm') {
-        return d.toLocaleString("en-us", {month: "numeric"})
+        return d.toLocaleString("en-us", {month: "numeric"});
+    }  else if (format == 'mon') {
+        return d.toLocaleString("en-us", {month: "short"});
     } else if (format == 'Y-M-D') {
-        return d.getFullYear() + '-' + d.toLocaleString("en-us", {month: "2-digit"}) + '-' + d.toLocaleString("en-us", {day: "2-digit"})
+        return d.getFullYear() + '-' + d.toLocaleString("en-us", {month: "2-digit"}) + '-' + d.toLocaleString("en-us", {day: "2-digit"});
     } else {
         return '';
     }

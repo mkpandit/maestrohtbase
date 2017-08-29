@@ -26,6 +26,8 @@ class cloud_controller
 	 */
 	//--------------------------------------------
 	function __construct() {
+
+		
 		// handle timezone needed since php 5.3
 		if(function_exists('ini_get')) {
 			if(ini_get('date.timezone') === '') {
@@ -44,6 +46,9 @@ class cloud_controller
 		$html = new htvcenter_htmlobject();
 		$file = new file_handler();
 		$this->response = $html->response();
+
+
+
 
 		// handle user
 		$user = '';
@@ -300,23 +305,11 @@ class cloud_controller
 					$serverblocks[$i]['cpu'] = $rez['cr_cpu_req'];
 
 					$hostname = $rez['cr_appliance_hostname'];
-					$query = 'SELECT `appliance_resources`, `appliance_state` FROM `appliance_info` WHERE `appliance_name` = "'.$hostname.'"';
+					$query = 'SELECT `appliance_state` FROM `appliance_info` WHERE `appliance_name` = "'.$hostname.'"';
 					$stres = mysql_query($query);
 
 					while($strez = mysql_fetch_assoc($stres)) {
 						$state = $strez['appliance_state'];
-						$res_id = $strez['appliance_resources'];
-					}
-					
-					$resource_ip_sql = mysql_query("SELECT resource_ip FROM resource_info WHERE resource_id=".$res_id);
-					while($res_ip = mysql_fetch_assoc($resource_ip_sql)){
-						$resip = $res_ip['resource_ip'];
-					}
-					
-					if($resip){
-						$serverblocks[$i]['ip'] = $resip;
-					} else {
-						$serverblocks[$i]['ip'] = "IP did not found";
 					}
 
 					if ($state == '') {
