@@ -16,6 +16,7 @@
 -->
 <style>
 	#project_tab_ui { display: none; }  /* hack for tabmenu issue */
+	.left { min-width: 10rem; }
 </style>
 
 <div class="cat__content">
@@ -48,7 +49,9 @@
 		<p><b>{cloud_user_ccus}:</b> {cloud_user_ccus_value}</p>
 		<p><b>{cloud_user_lang}:</b> {cloud_user_lang_value}</p>
 		<br/>
-		{transactions}	
+		<!--
+		{transactions}
+		-->
 	</div>
 	</section>
 	</cat-page>

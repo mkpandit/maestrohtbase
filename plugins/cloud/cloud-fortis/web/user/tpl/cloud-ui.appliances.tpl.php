@@ -169,12 +169,15 @@ $(document).ready(function() {
 
 				var form = $("#create-vm-form");
 
+				$.validator.addMethod("HOSTNAME", function(value, element) {
+					return this.optional(element) || /^[a-z0-9]{1,}[a-z0-9-]*[a-z0-9]$/i.test( value );
+				}, 'Please use only alphanumeric characters for the name; Dash(-) is allowed only in the middle.');
+
+
 				form.validate({
 					errorPlacement: function errorPlacement(error, element) { element.before(error); },
 					rules: {
-						confirm: {
-							equalTo: "#password"
-						}
+						cloud_hostname_input: "HOSTNAME",
 					}
 				}); 
 
@@ -210,33 +213,21 @@ $(document).ready(function() {
 							.val("submit")
 							.appendTo(form);
 
-
 						return form.valid();
 					},
 					onFinished: function (event, currentIndex)
 					{
 						return form.submit();
-						// console.log("123");
-						// return $("#create-vm-form").submit( function() {
-						//	console.log("234");
-							
-							// console.log("345");
-							// return true;
-						// });
 					}
 				}); 
 
 
 				$("#cloud_disk_select").hide().after("<input class='hide' id='cloud_disk_input' type='text'></input>");
-
 				$("#cloud_cpu_select").hide().after("<input class='hide' id='cloud_cpu_input' type='text'></input>");
-
 				$("#cloud_memory_select").hide().after("<input class='hide' id='cloud_memory_input' type='text'></input>");
 
 				var values_disk = $.map($('#cloud_disk_select option') ,function(option) { return (parseInt(option.value) / 1000); });
-
 				var values_cpu = $.map($('#cloud_cpu_select option') ,function(option) { return option.value; });
-
 				var values_memory = $.map($('#cloud_memory_select option') ,function(option) { return (parseInt(option.value) / 1024); }); 
 
 				$("#cloud_disk_input").ionRangeSlider({
@@ -292,15 +283,13 @@ $(document).ready(function() {
 						$(this).removeClass("matched");
 
 						var app_name_lc = $(this).contents().filter(function() {
-						    return this.nodeType == 3;
+							return this.nodeType == 3;
 						}).text().trim().toLowerCase();
 
 						if (app_name_lc.indexOf(txt_lc) == -1) {
-							console.log("hiding");
 							$(this).addClass("hide");
 						} else {
 							$(this).removeClass("hide");
-							console.log("showing");
 							found_match = true;
 						}
 					});
