@@ -1381,23 +1381,20 @@ input.submit:hover {
     margin-bottom: 50px;
 }
 
-
 tr.header, div.header {
-  
-    background-color: #4ebcda;
+    background-color: rgb(189,199,231);
     color: white;
     padding: 15px;
 }
 
 tr.header td {
-    padding-bottom: 15px !important;
-    padding-top: 15px !important;
+    padding-bottom: 12px !important;
+    padding-top: 12px !important;
 }
 
 tr.header:hover {
-    background-color: #4ebcda !important;
+    background-color: rgb(189,199,231) !important;
 }
-
 #report {
     color: #515151;
     cursor: pointer;
@@ -1444,6 +1441,7 @@ tr.header:hover {
 .reportbtnbill {
     position: relative;
     top: 5px;
+    right: 10px;
     float: right;
 }
 

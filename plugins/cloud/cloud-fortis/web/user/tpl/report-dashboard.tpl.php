@@ -439,8 +439,8 @@ function current_month_spent_by_resource(bindto, data) {
 }
 
 function lifetime_spent(bindto, objects) {
-    var value = ['lifetime spending', 5000];
-    var max_val = 10000;
+    var value = ['lifetime spending', 0];
+    var max_val = value[1] * 2; /* show 50% gauge */
 
     var chart4 = c3.generate({
         bindto: bindto,

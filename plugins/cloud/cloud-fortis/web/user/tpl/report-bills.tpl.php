@@ -340,15 +340,18 @@ $(document).ready(function() {
                         <strong>Report Bills</strong>
                     </span>
                         <div class="reportbtnbill pull-right">
-                            <a class="btn btn-primary billcsvdownload"><i class="fa fa-download"></i> &nbsp; Download CSV</a>
-                            <a class="btn btn-primary printbill"><i class="fa fa-print"></i> &nbsp; Print</a>
+                            <a class="btn btn-primary btn-sm billcsvdownload"><i class="fa fa-download"></i> &nbsp; Download CSV</a>
+                            <a class="btn btn-primary btn-sm printbill"><i class="fa fa-print"></i> &nbsp; Print</a>
                         </div>
                 </div>
                 <div class="card-block">
                     <div class="col-sm-12 dashboard">
-                        <div id="current-monthly-spent"  style="height: 26rem;">
+                        <div id="current-monthly-spent"  style="height: 25rem;">
                             <table class="table table-bordered table-hover table-stripped">
-                                <tr class="header"><td>Details</td><td width="200px">Total</td></tr>
+                                <tr class="header">
+                                    <td>Details</td>
+                                    <td width="200px">Total</td>
+                                </tr>
                                 <tr class="slideractive">
                                     <td><b>Cloud Services Charges <i class="fa fa-arrow-down slidedownfa"></i></b></td>
                                     <td><b class="amount-total">0</b>
