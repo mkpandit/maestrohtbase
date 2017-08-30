@@ -273,7 +273,6 @@ function renderdash() {
 
 function current_year_monthly_spent(bindto, data) {
 
-    console.log(data);
     /* data = [
         ['x', '2017-01-01', '2017-02-01', '2017-03-01', '2017-04-01', '2017-05-01', '2017-06-01', '2017-07-01', '2017-08-01'],
         ['total',             2300, 2100, 2250, 2140, 2260, 2150, 2000, 2400],
@@ -315,7 +314,6 @@ function current_year_monthly_spent(bindto, data) {
 
 function current_year_three_months_spent(bindto, data) {
 
-    console.log(data);
     var x_column = ['x', '2017-07-01', '2017-08-01', '2017-09-01'];
     var y_column = ['total', 750, 1200, 1080];
     // data = [x_column, y_column];
@@ -369,7 +367,6 @@ function current_year_three_months_spent(bindto, data) {
 
 function current_month_spent_by_resource(bindto, data) {
 
-    console.log(data);
     var numbers = [240,230,320,250,160];
     var labels = ["cpu","storage","memory","virtualization","networking"];
     //data = [labels,numbers];
