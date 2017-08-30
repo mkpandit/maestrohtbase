@@ -132,7 +132,9 @@
 		<div id="summary-tab" class="col-lg-12">
 			<p>
 			</p>
-			<input class="submit" name="response[submit]" value="submit" type="submit" data-message="">
+			<div class="form-group hide">
+				<input class="submit" name="response[submit]" value="submit" type="submit" data-message="">
+			</div>
 		</div>
 	</section>
 </div>

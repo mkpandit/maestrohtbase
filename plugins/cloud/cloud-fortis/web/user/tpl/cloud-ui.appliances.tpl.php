@@ -155,154 +155,180 @@ $(document).ready(function() {
 	$('#create-vm-modal').on('shown.bs.modal', function (e) {
 
 		var url = '/cloud-fortis/user/index.php?cloud_ui=create_modal';
-    
-        $.ajax({
-            url : url,
-            type: "GET",
-            cache: false,
-            async: true,
-            dataType: "html",
-            success : function (data) {
-                
-               $("#create-vm-modal .modal-body").empty().append(data.slice(0,-20));
 
+		$.ajax({
+			url : url,
+			type: "GET",
+			cache: false,
+			async: true,
+			dataType: "html",
+			success : function (data) {
+				$("#create-vm-modal .modal-body").empty().append(data.slice(0,-20));
+				$("#create-vm-modal .modal-body input").addClass("form-control").addClass("require").removeClass("text");
+				$("#create-vm-modal .modal-body select").addClass("form-control").addClass("require");
 
-					$("#create-vm-modal .modal-body input").addClass("form-control").addClass("require").removeClass("text");
+				var form = $("#create-vm-form");
 
-					$("#create-vm-modal .modal-body select").addClass("form-control").addClass("require");
-
-              // $(document).ready(function () {
-
-					var form = $("#create-vm-form");
-
-					form.validate({
-						errorPlacement: function errorPlacement(error, element) { element.before(error); },
-						rules: {
-							confirm: {
-								equalTo: "#password"
-							}
-						}
-					}); 
-
-					form.children("div").steps({
-						headerTag: "h3",
-						bodyTag: "section",
-						transitionEffect: "slideLeft",
-						onStepChanging: function (event, currentIndex, newIndex)
-						{
-							form.validate().settings.ignore = ":disabled,:hidden";
-
-							if (newIndex == 4) {
-								makeSummary();
-							}
-
-							return form.valid();
-						},
-						onStepChanged: function(event, currentIndex, priorIndex)
-						{
-							// if (currentIndex == 3) {
-							//	initiateOwlCarousel();
-							// }
-						},
-						onFinishing: function (event, currentIndex)
-						{
-							form.validate().settings.ignore = ":disabled";
-							return form.valid();
-						},
-						onFinished: function (event, currentIndex)
-						{
-							console.log("Submitted!");
-							form.submit();
-						}
-					}); 
-/*
-					$("#cloud_disk_select").ionRangeSlider({
-						hide_min_max: false,
-						keyboard: true,
-						min: 2,
-						max: 100,
-						values: [2, 5, 10, 20, 50, 100],
-						type: 'single',
-						step: 0.2,
-						grid: true,
-						postfix: " GB",
-					});
-
-					$("#cloud_cpu_select").ionRangeSlider({
-						hide_min_max: false,
-						keyboard: true,
-						min: 1,
-						max: 4,
-						values: [1,2,4],
-						type: 'single',
-						step: 1,
-						grid: true,
-					});
-
-					$("#cloud_memory_select").ionRangeSlider({
-						hide_min_max: false,
-						keyboard: true,
-						min: 256,
-						max: 2048,
-						values: [256, 512, 1024, 2048],
-						type: 'single',
-						step: 0.2,
-						grid: true,
-						postfix: " MB",
-					});
-*/
-					function searchApp(txt) {
-						var txt_lc = txt.toLowerCase();
-						var found_match = false;
-						
-
-						$(".owl-carousel .item").each(function () {
-							$(this).removeClass("matched");
-
-							var app_name_lc = $(this).contents().filter(function() {
-							    return this.nodeType == 3;
-							}).text().trim().toLowerCase();
-
-							if (app_name_lc.indexOf(txt_lc) == -1) {
-								console.log("hiding");
-								$(this).addClass("hide");
-							} else {
-								$(this).removeClass("hide");
-								console.log("showing");
-								found_match = true;
-							}
-						});
-
-						if (!found_match) {
-							$(".owl-carousel .item").removeClass("hide");
-						} else {
-
+				form.validate({
+					errorPlacement: function errorPlacement(error, element) { element.before(error); },
+					rules: {
+						confirm: {
+							equalTo: "#password"
 						}
 					}
+				}); 
 
-					var delay = (function(){
-						var timer = 0;
-						return function(callback, ms){
-							clearTimeout (timer);
-							timer = setTimeout(callback, ms);
-						};
-					})();
+				form.children("div").steps({
+					headerTag: "h3",
+					bodyTag: "section",
+					transitionEffect: "slideLeft",
+					onStepChanging: function (event, currentIndex, newIndex)
+					{
+						form.validate().settings.ignore = ":disabled,:hidden";
 
-					$("#search-app").keyup(function() {
-						var txt = $(this).val();
+						if (newIndex == 4) {
+							makeSummary();
+						}
 
-						console.log(txt);
+						return form.valid();
+					},
+					onStepChanged: function(event, currentIndex, priorIndex)
+					{
+						// if (currentIndex == 3) {
+						//	initiateOwlCarousel();
+						// }
+					},
+					onFinishing: function (event, currentIndex)
+					{
+						form.validate().settings.ignore = ":disabled";
 
-						delay(function() {
-							searchApp(txt);
-						}, 300);
+						$('<input />')
+							.attr('type', 'hidden')
+							.attr('name', 'response[submit]')
+							.attr('data-message', '')
+							.addClass("submit")
+							.val("submit")
+							.appendTo(form);
+
+
+						return form.valid();
+					},
+					onFinished: function (event, currentIndex)
+					{
+						return form.submit();
+						// console.log("123");
+						// return $("#create-vm-form").submit( function() {
+						//	console.log("234");
+							
+							// console.log("345");
+							// return true;
+						// });
+					}
+				}); 
+
+
+				$("#cloud_disk_select").hide().after("<input class='hide' id='cloud_disk_input' type='text'></input>");
+
+				$("#cloud_cpu_select").hide().after("<input class='hide' id='cloud_cpu_input' type='text'></input>");
+
+				$("#cloud_memory_select").hide().after("<input class='hide' id='cloud_memory_input' type='text'></input>");
+
+				var values_disk = $.map($('#cloud_disk_select option') ,function(option) { return (parseInt(option.value) / 1000); });
+
+				var values_cpu = $.map($('#cloud_cpu_select option') ,function(option) { return option.value; });
+
+				var values_memory = $.map($('#cloud_memory_select option') ,function(option) { return (parseInt(option.value) / 1024); }); 
+
+				$("#cloud_disk_input").ionRangeSlider({
+					hide_min_max: false,
+					keyboard: true,
+					min: values_disk[0],
+					max: values_disk.slice(-1)[0],
+					values: values_disk,
+					type: 'single',
+					step: 1,
+					grid: true,
+					postfix: " GB",
+					onChange: function () {
+						$("#cloud_disk_select").val(parseInt($("#cloud_disk_input").val()) * 1000);
+					}
+				});
+
+				$("#cloud_cpu_input").ionRangeSlider({
+					hide_min_max: false,
+					keyboard: true,
+					min: values_cpu[0],
+					max: values_cpu.slice(-1)[0],
+					values: values_cpu,
+					type: 'single',
+					step: 1,
+					grid: true,
+					onChange: function () {
+						$("#cloud_cpu_select").val($("#cloud_cpu_input").val());
+					}
+				});
+
+				$("#cloud_memory_input").ionRangeSlider({
+					hide_min_max: false,
+					keyboard: true,
+					min: values_memory[0],
+					max: values_memory.slice(-1)[0],
+					values: values_memory,
+					type: 'single',
+					step: 1,
+					grid: true,
+					postfix: " GB",
+					onChange: function () {
+						$("#cloud_memory_select").val(parseInt($("#cloud_memory_input").val()) * 1024);
+					}
+				});
+
+				function searchApp(txt) {
+					var txt_lc = txt.toLowerCase();
+					var found_match = false;
+					
+
+					$(".owl-carousel .item").each(function () {
+						$(this).removeClass("matched");
+
+						var app_name_lc = $(this).contents().filter(function() {
+						    return this.nodeType == 3;
+						}).text().trim().toLowerCase();
+
+						if (app_name_lc.indexOf(txt_lc) == -1) {
+							console.log("hiding");
+							$(this).addClass("hide");
+						} else {
+							$(this).removeClass("hide");
+							console.log("showing");
+							found_match = true;
+						}
 					});
 
+					if (!found_match) {
+						$(".owl-carousel .item").removeClass("hide");
+					} else {
 
-				// });
+					}
+				}
 
-            }
-        });  
+				var delay = (function(){
+					var timer = 0;
+					return function(callback, ms){
+						clearTimeout (timer);
+						timer = setTimeout(callback, ms);
+					};
+				})();
+
+				$("#search-app").keyup(function() {
+					var txt = $(this).val();
+
+					delay(function() {
+						searchApp(txt);
+					}, 300);
+				});
+			}
+		});
 	}); 
 
 
@@ -315,9 +341,9 @@ $(document).ready(function() {
 		html += '<label>VM Type: </label><label>' + $("#cloud_virtualization_select option:selected").text() + '</label><br/>';
 		html += '<label>VM Iamge: </label><label>' + $("#cloud_image_select option:selected").text() + '</label><br/>';
 		html += '<label>VM Kernel: </label><label>' + $("#cloud_kernel_select option:selected").text() + '</label><br/>';
-		html += '<label>DIsk: </label><label>' + $("#cloud_disk_select").val() + ' GB</label><br/>';
+		html += '<label>DIsk: </label><label>' + (parseInt($("#cloud_disk_select").val()) / 1000) + ' GB</label><br/>';
 		html += '<label>CPU: </label><label>' + $("#cloud_cpu_select").val() + '</label><br/>';
-		html += '<label>Memory: </label><label>' + $("#cloud_memory_select").val() + ' MB</label><br/>';
+		html += '<label>Memory: </label><label>' + (parseInt($("#cloud_memory_select").val()) / 1024) + ' GB</label><br/>';
 		html += '<label>Network: </label><label>' + $("#cloud_ip_select_0 option:selected").text() + '</label><br/>';
 
 		$(".owl-carousel div.item:not(.slick-cloned) input.checkbox:checked").each(function () {

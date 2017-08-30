@@ -1,6 +1,5 @@
 <style>
     @media print {
-        /* body { font-family: "Times New Roman" !important; } */
         .card-header { font-size: 18px; }
     }
 
@@ -125,19 +124,8 @@ $(document).ready(function() {
 
     $("#reportyear, #reportmonth").change(function() {
 
-        console.log("changed");
-
         var year = $("#reportyear").val();
         var month = $("#reportmonth option:selected").data("val");
-
-        //var selected = new Date();
-        //selected.setYear(year);
-        //selected.setMonth(month);
-
-
-       
-        // $("#current-year-monthly-title").text("")
-
         get_last_12_months_report(month,year);
     });
 });
