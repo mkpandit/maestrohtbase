@@ -345,7 +345,7 @@ $(document).ready(function() {
                         </div>
                 </div>
                 <div class="card-block">
-                    <div class="col-sm-12 dashboard">
+                    <!-- <div class="col-sm-12 dashboard"> -->
                         <div id="current-monthly-spent"  style="height: 25rem;">
                             <table class="table table-bordered table-hover table-stripped">
                                 <tr class="header">
@@ -383,7 +383,7 @@ $(document).ready(function() {
                                 </tr>
                             </table>
                         </div>
-                    </div>
+                    <!-- </div> -->
                 </div>
             </section>
         </div>
