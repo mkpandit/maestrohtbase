@@ -22,8 +22,10 @@ $(document).ready(function() {
 
 <div class="col-xs-12 col-sm-9 col-md-10 col-lg-10 windows_plane">
 <div id="home_container">
-	<div class="row paddingrow">
-		<h2 class="redh2">Instance Cost Explorer</h2>
+	<div class="row paddingrow cost-explorer">
+		<div class="cost-explorer-header">
+			<h3 class="text-black d-inline"><strong>Instance Cost Explorer</strong></h3>
+		</div>
     	<div id="server-cost-table-data" class="row">
 			<p>Loading cost data ...</p>
 		</div>

@@ -483,7 +483,7 @@ function optionsselect() {
 
 	$query = 'SELECT `appliance_id`, `appliance_name` FROM `appliance_info` WHERE 1';
 	$rez = mysql_query($query);
-	
+	$options = "";	
 	if ($rez) {
 		while($res = mysql_fetch_assoc($rez)) {
 			$options .= '<option value="'.$res['appliance_id'].'">'.$res['appliance_name'].'</option>';
