@@ -359,41 +359,63 @@ if ( ( typeof(budgetpage) != 'undefined' ) && ( budgetpage == true) ) {
 	var url = '/cloud-fortis/user/index.php?budget=yes';
 	var dataval = 'getbudgets=1';
 	var bds = '';
-			$.ajax({
-				url : url,
-				type: "POST",
-				data: dataval,
-				cache: false,
-				async: false,
-				dataType: "html",
-				success : function (data) {
-					$('.lead').hide();
-					if (data != 'none') {
-						$('.lead').hide();
-						console.log(data);
-						bds = JSON.parse(data);
-					} else {
-						alert('Have not got any data of this period');
-					}
-				}
-			});
 
-
-	var servers = '<li class="carstart">'; 
-	var i = 0;
-	$.each(bds, function(key, serv) {
-		console.log(serv);
-		i = i + 1;
-		servers = servers + '<div class="panel panel-primary panel-colorful budgservn" num="'+i+'" remname="'+serv.name+'" remid="'+serv.id+'"><div class="panel-body text-center"><p class="text-uppercase mar-btm text-sm">'+serv.name+'</p><i class="fa fa-credit-card fa-3x"></i><hr><p class="h2 text-thin"><a class="budgremove"><i class="fa fa-close"></i> Remove</a></p></div></div>';
-		
-		if (i == 9) {
-			i = 0;
-			servers = servers + '</li>';
-		}		
+	$.ajax({
+		url : url,
+		type: "POST",
+		data: dataval,
+		cache: false,
+		async: false,
+		dataType: "html",
+		success : function (data) {
+			$('.lead').hide();
+			if (data != 'none') {
+				$('.lead').hide();
+				//console.log(data);
+				bds = JSON.parse(data);
+			} else {
+				alert('Have not got any data of this period');
+			}
+		}
 	});
 
+	//var servers = '<li class="carstart">'; 
+	var i = 0;
+	var budgets = [];
 
+	$.each(bds, function(key, serv) {
 		
+		if (i == 0) {
+			$('#budget-name').html('<strong>' + serv.name + '</strong>&nbsp;&nbsp;(' + serv.date_start + ' ~ ' + serv.date_end + ')').attr("rel",serv.id);
+		}
+
+		var html =	'<table id="' +  serv.id + '" class="table table-hover table-stripped"' + (i > 0 ? ' style="display:none;" ' : '')   + '><tbody>';
+		html	+=		'<tr><td style="width: 40%"><strong>' + "CPU:" + 			'</strong></td><td>' + serv.cpu + 		'</td></tr>';
+		html	+=		'<tr><td style="width: 40%"><strong>' + "Storage:" + 		'</strong></td><td>' + serv.storage + 	'</td></tr>';
+		html	+=		'<tr><td style="width: 40%"><strong>' + "Memory:" + 		'</strong></td><td>' + serv.memory + 	'</td></tr>';
+		html	+=		'<tr><td style="width: 40%"><strong>' + "Virtualization:" +	'</strong></td><td>' + serv.vm + 		'</td></tr>';
+		html	+=		'<tr><td style="width: 40%"><strong>' + "Network:" +		'</strong></td><td>' + serv.network + 	'</td></tr>';
+		html	+=	'</tbody></table>';
+	
+		$("#budgets-setting").append(html);
+
+		var html_alerts = '';
+
+		if (serv.havealerts) {
+			html_alerts =	'<table id="alerts-' +  serv.id + '" class="table table-hover table-stripped"' + (i > 0 ? '' : '')   + '>';
+			html_alerts +=		'<tbody><tr><td style="width: 50%"><strong>' + "% of Budget" + '</strong></td><td><strong>' + "Action" + '</strong></td></tr>';
+
+			for (j = 0; j < serv.alerts.length; j++) {
+				html_alerts +=	'<tr><td style="width: 50%">' + serv.alerts[j] + '</td><td><a href="#"><i class="fa fa-minus-circle" style="color:red"></i>&nbsp;Remove</a></td></tr>';
+			}
+			html_alerts	+=	'</tbody></table>';
+		}
+
+		$("#budgets-alert").append(html_alerts);
+
+		i++;
+	});
+
 	if (i > 0) {
 		$('.carbudgbtn').show();
 	}

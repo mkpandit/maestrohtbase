@@ -66,6 +66,13 @@
         overflow-y: auto;
         padding-bottom: 3.34em;
     }
+    a {
+        cursor: pointer;
+    }
+    a.disabled {
+        opacity: 0.25;
+        cursor: not-allowed;
+    }
 </style>
 </head>
 <body>

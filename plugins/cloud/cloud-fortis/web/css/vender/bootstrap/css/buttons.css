@@ -35,6 +35,10 @@
     line-height: 1.7;
 }
 
+.btn:hover {
+    cursor: pointer;
+}
+
 .btn:hover, .btn:active {
     -webkit-transition: color .1s ease-in-out, background .1s ease-in-out, border .1s ease-in-out;
     transition: color .1s ease-in-out, background .1s ease-in-out, border .1s ease-in-out;
