@@ -1,0 +1,1 @@
+/usr/share/htvcenter/plugins/novnc/vncclient/include/input.js

@@ -1,0 +1,126 @@
+# main
+case "$HYPERV_COMMAND" in
+
+
+	create)
+		# check requirements
+		if [ "$HYPERV_VOLUME_PATH" == "" ]; then
+			htvcenter_post_event 0 "create" 3 "htvcenter-hyperv-datastore" "Wrong usage, Volume path missing!"
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			hyperv_usage
+		fi
+		# support whitespaces in path
+		HYPERV_VOLUME_PATH=`echo $HYPERV_VOLUME_PATH | sed -e "s/@/ /g"`
+		if [ "$HYPERV_VOLUME_SIZE" == "" ]; then
+			htvcenter_post_event 0 "create" 3 "htvcenter-hyperv-datastore" "Wrong usage, Volume size missing!"
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			hyperv_usage
+		fi
+		if [ "$HYPERV_VOLUME_NAME" == "" ]; then
+			htvcenter_post_event 0 "create" 3 "htvcenter-hyperv-datastore" "Wrong usage, Volume name missing!"
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			hyperv_usage
+		fi
+		HYPERV_VOLUME_NAME=`echo $HYPERV_VOLUME_NAME | sed -e "s/@/ /g"`
+
+		LOCK_TIME=`htvcenter_lock_queue aquire hyperv`
+		trap "htvcenter_lock_queue release hyperv $LOCK_TIME" EXIT
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+
+		HYPERV_VOLUME_SIZE="$HYPERV_VOLUME_SIZE""MB"
+
+		if ! $WINEXE -A $htvcenter_HYPERV_HOST_CONF_DIR/$HYPERV_HOST_IP.conf //$HYPERV_HOST_IP "powershell.exe -inputformat none -ExecutionPolicy RemoteSigned New-VHD -Path '$HYPERV_VOLUME_PATH/$HYPERV_VOLUME_NAME.vhdx' -SizeBytes $HYPERV_VOLUME_SIZE"; then
+			htvcenter_post_event 0 "create" 3 "htvcenter-hyperv" "Failed to create Hyper-V Volume $HYPERV_VOLUME_NAME!"
+
+			htvcenter_lock_queue release hyperv $LOCK_TIME
+			trap '' EXIT
+
+			exit 1
+		fi
+
+		htvcenter_lock_queue release hyperv $LOCK_TIME
+		trap '' EXIT
+
+		;;
+
+
+	clone)
+		# check requirements
+		if [ "$HYPERV_VOLUME_PATH" == "" ]; then
+			htvcenter_post_event 0 "clone" 3 "htvcenter-hyperv-datastore" "Wrong usage, Volume path missing!"
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			hyperv_usage
+		fi
+		# support whitespaces in path
+		HYPERV_VOLUME_PATH=`echo $HYPERV_VOLUME_PATH | sed -e "s/@/ /g"`
+		if [ "$HYPERV_VOLUME_CLONE_NAME" == "" ]; then
+			htvcenter_post_event 0 "clone" 3 "htvcenter-hyperv-datastore" "Wrong usage, Volume clone name missing!"
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			hyperv_usage
+		fi
+		HYPERV_VOLUME_CLONE_NAME=`echo $HYPERV_VOLUME_CLONE_NAME | sed -e "s/@/ /g"`
+		if [ "$HYPERV_VOLUME_NAME" == "" ]; then
+			htvcenter_post_event 0 "clone" 3 "htvcenter-hyperv-datastore" "Wrong usage, Volume name missing!"
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			hyperv_usage
+		fi
+		HYPERV_VOLUME_NAME=`echo $HYPERV_VOLUME_NAME | sed -e "s/@/ /g"`
+
+		LOCK_TIME=`htvcenter_lock_queue aquire hyperv`
+		trap "htvcenter_lock_queue release hyperv $LOCK_TIME" EXIT
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+
+		if ! $WINEXE -A $htvcenter_HYPERV_HOST_CONF_DIR/$HYPERV_HOST_IP.conf //$HYPERV_HOST_IP "powershell.exe -inputformat none -ExecutionPolicy RemoteSigned copy '$HYPERV_VOLUME_PATH/$HYPERV_VOLUME_NAME.vhdx' '$HYPERV_VOLUME_PATH/$HYPERV_VOLUME_CLONE_NAME.vhdx'"; then
+			htvcenter_post_event 0 "clone" 3 "htvcenter-hyperv" "Failed to clone Hyper-V Volume $HYPERV_VOLUME_NAME to $HYPERV_VOLUME_CLONE_NAME!"
+
+			htvcenter_lock_queue release hyperv $LOCK_TIME
+			trap '' EXIT
+
+			exit 1
+		fi
+
+		htvcenter_lock_queue release hyperv $LOCK_TIME
+		trap '' EXIT
+
+		;;
+
+
+	remove)
+		# check requirements
+		if [ "$HYPERV_VOLUME_PATH" == "" ]; then
+			htvcenter_post_event 0 "remove" 3 "htvcenter-hyperv-datastore" "Wrong usage, Volume path missing!"
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			hyperv_usage
+		fi
+		# support whitespaces in path
+		HYPERV_VOLUME_PATH=`echo $HYPERV_VOLUME_PATH | sed -e "s/@/ /g"`
+		HYPERV_VOLUME_NAME=`echo $HYPERV_VOLUME_NAME | sed -e "s/@/ /g"`
+
+		LOCK_TIME=`htvcenter_lock_queue aquire hyperv`
+		trap "htvcenter_lock_queue release hyperv $LOCK_TIME" EXIT
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+
+		if ! $WINEXE -A $htvcenter_HYPERV_HOST_CONF_DIR/$HYPERV_HOST_IP.conf //$HYPERV_HOST_IP "powershell.exe -inputformat none -ExecutionPolicy RemoteSigned del '$HYPERV_VOLUME_PATH'"; then
+			htvcenter_post_event 0 "start" 3 "htvcenter-hyperv" "Failed to remove Hyper-V Volume $HYPERV_VOLUME_NAME!"
+
+			htvcenter_lock_queue release hyperv $LOCK_TIME
+			trap '' EXIT
+
+			exit 1
+		fi
+
+		htvcenter_lock_queue release hyperv $LOCK_TIME
+		trap '' EXIT
+
+		;;
+
+
+
+	*)
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+		hyperv_usage
+		;;
+
+
+esac
+

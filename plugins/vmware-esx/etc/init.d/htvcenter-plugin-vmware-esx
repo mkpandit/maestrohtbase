@@ -1,0 +1,132 @@
+#!/bin/bash
+# init script for the htvcenter vmware-esx-plugin
+#
+# htvcenter Enterprise developed by htvcenter Enterprise GmbH.
+#
+# All source code and content (c) Copyright 2014, htvcenter Enterprise GmbH unless specifically noted otherwise.
+#
+# This source code is released under the htvcenter Enterprise Server and Client License, unless otherwise agreed with htvcenter Enterprise GmbH.
+# The latest version of this license can be found here: http://htvcenter-enterprise.com/license
+#
+# By using this software, you acknowledge having read this license and agree to be bound thereby.
+#
+#           http://htvcenter-enterprise.com
+#
+# Copyright 2014, htvcenter Enterprise GmbH <info@htvcenter-enterprise.com>
+#
+
+htvcenter_SERVER_BASE_DIR=$(pushd $(dirname $0)/../../../../.. > /dev/null; echo $PWD; popd > /dev/null)
+. $htvcenter_SERVER_BASE_DIR/htvcenter/etc/htvcenter-server.conf
+. $htvcenter_SERVER_BASE_DIR/htvcenter/include/htvcenter-functions
+. $htvcenter_SERVER_BASE_DIR/htvcenter/include/htvcenter-server-functions
+. $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-esx/include/htvcenter-plugin-vmware-esx-functions
+. $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-esx/etc/htvcenter-plugin-vmware-esx.conf
+# get the ip config
+htvcenter_server_get_config
+export resource_htvcenterserver=$htvcenter_SERVER_IP_ADDRESS
+export LANG=C
+# define wget to use with https
+if [ "$htvcenter_WEB_PROTOCOL" == "https" ]; then
+	WGET_NO_CERT_CHECK="--no-check-certificate"
+fi
+
+function htvcenter_plugin_vmware_esx_start() {
+	echo "Starting the htvcenter vmware-esx-plugin"
+	touch $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/vmware-esx/.running
+}
+
+
+function htvcenter_plugin_vmware_esx_stop() {
+	echo "Stopping the htvcenter vmware-esx-plugin"
+	rm -f $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/vmware-esx/.running
+}
+
+function htvcenter_plugin_vmware_esx_uninstall() {
+	local USERNAME=$1
+	local PASSWORD=$2
+	if [ "$USERNAME" == "" ] && [ "$PASSWORD" == "" ]; then
+		echo -n "vmware-esx: Please give a username to uninstall the plugin : "
+		read USERNAME
+		echo
+		echo -n "vmware-esx: Please give the password for user $USERNAME : "
+		read PASSWORD
+		echo
+	fi
+	echo "Uninstalling the htvcenter vmware-esx-plugin"
+	htvcenter_plugin_vmware_esx_stop
+	# removing the table
+	if ! wget -q $WGET_NO_CERT_CHECK -O /dev/null --http-user=$USERNAME --http-password=$PASSWORD "$htvcenter_WEB_PROTOCOL://$resource_htvcenterserver/htvcenter/base/plugins/vmware-esx/vmware-esx-action.php?vmware_esx_command=uninstall"; then
+		vmware_esx_log init "ERROR: Could not drop the vmware-esx plugin tables in the database!"
+		return 1
+	fi
+	htvcenter_server_remove_deployment_type $USERNAME $PASSWORD esx-deployment
+	htvcenter_server_remove_virtualization_type $USERNAME $PASSWORD vmware-esx
+	htvcenter_server_remove_virtualization_type $USERNAME $PASSWORD vmware-esx-vm-local
+	htvcenter_server_remove_virtualization_type $USERNAME $PASSWORD vmware-esx-vm-net
+	rm -f $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/boot-service/image.esx-deployment.php
+	rm -f $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/vmware-esx
+	rm -f $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/action/vmware-esx-integrate.php
+}
+
+function htvcenter_plugin_vmware_esx_init() {
+	local USERNAME=$1
+	local PASSWORD=$2
+	if [ "$USERNAME" == "" ] && [ "$PASSWORD" == "" ]; then
+		echo -n "vmware-esx: Please give a username to init the plugin : "
+		read USERNAME
+		echo
+		echo -n "vmware-esx: Please give the password for user $USERNAME : "
+		read PASSWORD
+		echo
+	fi
+	echo "Initializing the htvcenter vmware-esx-plugin"
+	# linking the web dir
+	ln -sf $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-esx/web $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/vmware-esx
+	# creating the table
+	if ! wget -q $WGET_NO_CERT_CHECK -O /dev/null --http-user=$USERNAME --http-password=$PASSWORD "$htvcenter_WEB_PROTOCOL://$resource_htvcenterserver/htvcenter/base/plugins/vmware-esx/vmware-esx-action.php?vmware_esx_command=init"; then
+		vmware_esx_log init "ERROR: Could not create the vmware-esx plugin tables in the database!"
+		return 1
+	fi
+	# linking the image deployment parameters menu
+	ln -sf $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/vmware-esx/web/image.esx-deployment.php $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/boot-service/image.esx-deployment.php
+
+	# add deployment type
+	htvcenter_server_add_deployment_type $USERNAME $PASSWORD esx-deployment esx-deployment "Local Deployment VMWare ESX" vmware-esx "VMWare ESX"
+	# adding virtualization type
+	htvcenter_server_add_virtualization_type $USERNAME $PASSWORD vmware-esx "ESX Host"
+	htvcenter_server_add_virtualization_type $USERNAME $PASSWORD vmware-esx-vm-local "ESX VM (localboot)"
+	htvcenter_server_add_virtualization_type $USERNAME $PASSWORD vmware-esx-vm-net "ESX VM (networkboot)"
+
+}
+
+USER=$2
+PASS=$3
+
+case "$1" in
+	start)
+		htvcenter_plugin_vmware_esx_start
+		;;
+	stop)
+		htvcenter_plugin_vmware_esx_stop
+		;;
+	restart)
+		htvcenter_plugin_vmware_esx_stop
+		sleep 1
+		htvcenter_plugin_vmware_esx_start
+		;;
+	init)
+		htvcenter_plugin_vmware_esx_init $USER $PASS
+		;;
+	uninstall)
+		htvcenter_plugin_vmware_esx_uninstall $USER $PASS
+		;;
+	*)
+		echo "Usage: $0 {start|stop|restart|init|uninstall}"
+		exit 1
+
+esac
+exit $?
+
+
+
+

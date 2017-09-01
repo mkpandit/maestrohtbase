@@ -1,0 +1,183 @@
+#!/bin/bash
+#
+# htvcenter Enterprise developed by htvcenter Enterprise GmbH.
+#
+# All source code and content (c) Copyright 2014, htvcenter Enterprise GmbH unless specifically noted otherwise.
+#
+# This source code is released under the htvcenter Enterprise Server and Client License, unless otherwise agreed with htvcenter Enterprise GmbH.
+# The latest version of this license can be found here: http://htvcenter-enterprise.com/license
+#
+# By using this software, you acknowledge having read this license and agree to be bound thereby.
+#
+#           http://htvcenter-enterprise.com
+#
+# Copyright 2014, htvcenter Enterprise GmbH <info@htvcenter-enterprise.com>
+
+# this script automatically manages ipmi
+htvcenter_SERVER_BASE_DIR=$(dirname $0)/../../../..
+htvcenter_SERVER_BASE_DIR=$(pushd $htvcenter_SERVER_BASE_DIR > /dev/null && echo $PWD && popd > /dev/null)
+. $htvcenter_SERVER_BASE_DIR/htvcenter/include/htvcenter-functions
+# unblock starting command queue early for non-blocking + ui commands
+# only blocking commands
+. $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/ipmi/include/htvcenter-plugin-ipmi-functions
+. $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/ipmi/etc/htvcenter-plugin-ipmi.conf
+. $htvcenter_SERVER_BASE_DIR/htvcenter/etc/htvcenter-server.conf
+. $htvcenter_SERVER_BASE_DIR/htvcenter/include/htvcenter-server-functions
+htvcenter_server_get_config
+export LANG=C
+export resource_htvcenterserver=$htvcenter_SERVER_IP_ADDRESS
+
+# let only root run this script
+WHOAMI=`whoami`
+if [ "$WHOAMI" != "root" ]; then
+	echo "ERROR: Please run this script as root!"
+	exit 6
+fi
+
+if ! which ipmitool 1>/dev/null; then
+	htvcenter_unblock_starting_queue $@
+	htvcenter_post_event 0 "ipmi" 2 "htvcenter-ipmi" "The ipmitool utility is not installed! Please install and try again."
+	exit 6
+fi
+
+
+function ipmi_usage() {
+	echo "Usage : $0 wakeup -i <resource-ipmi-ip> -u <resource-ipmi-user> -p <resource-ipmi-pass>"
+	echo "        $0 sleep -i <resource-ipmi-ip> -u <resource-ipmi-user> -p <resource-ipmi-pass>"
+	echo "        $0 reset -i <resource-ipmi-ip> -u <resource-ipmi-user> -p <resource-ipmi-pass>"
+	echo ""
+	echo "Optional parameters:"
+	echo "             [--htvcenter-ui-user <username>]"
+	echo "             [--htvcenter-internal-cmd <true/false>]"
+	echo "             [--htvcenter-cmd-mode <regular/background/fork>]"
+	exit 1
+}
+
+
+FULL_COMMANDLINE="$0 $@"
+IPMI_COMMAND=$1
+shift
+
+while [ $# -ne 0 ]; do
+	case "$1" in
+		-i)
+			PARAM_RESOURCE_IPMI_IP=$2
+			shift
+			;;
+		-u)
+			PARAM_RESOURCE_IPMI_USER=$2
+			shift
+			;;
+		-p)
+			PARAM_RESOURCE_IPMI_PASS=$2
+			shift
+			;;
+		--htvcenter-ui-user)
+			htvcenter_UI_USER=$2
+			shift
+			;;
+		--htvcenter-internal-cmd)
+			htvcenter_INTERNAL_CMD=$2
+			shift
+			;;
+		--htvcenter-cmd-mode)
+			htvcenter_CMD_MODE=$2
+			shift
+			;;
+		*)
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			echo "ERROR: Free commandline arguments are not allowed"
+			ipmi_usage
+			exit 6
+			;;
+	esac
+	shift
+done
+
+# checks
+if [ "$IPMI_COMMAND" == "" ]; then
+	htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+	ipmi_usage
+fi
+if [ "$PARAM_RESOURCE_IPMI_IP" == "" ] || [ "$PARAM_RESOURCE_IPMI_USER" == "" ] || [ "$PARAM_RESOURCE_IPMI_PASS" == "" ]; then
+	htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+	ipmi_usage
+fi
+if [ "$htvcenter_UI_USER" != "" ]; then
+	htvcenter_UI_USER_PARAMETER=" --htvcenter-ui-user $htvcenter_UI_USER"
+fi
+
+# main
+case "$IPMI_COMMAND" in
+
+	wakeup)
+		LOCK_TIME=`htvcenter_lock_queue aquire ipmi`
+		trap "htvcenter_lock_queue release ipmi $LOCK_TIME" EXIT
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+
+		htvcenter_post_event 0 "ipmi" 5 "htvcenter-ipmi" "Waking up $PARAM_RESOURCE_IPMI_IP."
+
+		CMD_ERR=`ipmitool power on -I $htvcenter_PLUGIN_IPMI_INTERFACE -H $PARAM_RESOURCE_IPMI_IP -U $PARAM_RESOURCE_IPMI_USER -P $PARAM_RESOURCE_IPMI_PASS 2>&1`
+		if [ "$?" != 0 ]; then
+			CMD_ERR=`htvcenter_format_error_msg $CMD_ERR`
+			htvcenter_post_event 0 "ipmi" 3 "htvcenter-ipmi" "Error waking up $PARAM_RESOURCE_IPMI_IP."
+
+			htvcenter_lock_queue release ipmi $LOCK_TIME
+			trap '' EXIT
+
+			exit 1
+		fi
+
+		htvcenter_lock_queue release ipmi $LOCK_TIME
+		trap '' EXIT
+		;;
+	sleep)
+		LOCK_TIME=`htvcenter_lock_queue aquire ipmi`
+		trap "htvcenter_lock_queue release ipmi $LOCK_TIME" EXIT
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+
+		htvcenter_post_event 0 "ipmi" 5 "htvcenter-ipmi" "Setting $PARAM_RESOURCE_IPMI_IP to sleep."
+		CMD_ERR=`ipmitool power off -I $htvcenter_PLUGIN_IPMI_INTERFACE -H $PARAM_RESOURCE_IPMI_IP -U $PARAM_RESOURCE_IPMI_USER -P $PARAM_RESOURCE_IPMI_PASS 2>&1`
+		if [ "$?" != 0 ]; then
+			CMD_ERR=`htvcenter_format_error_msg $CMD_ERR`
+			htvcenter_post_event 0 "ipmi" 3 "htvcenter-ipmi" "Error waking up $PARAM_RESOURCE_IPMI_IP."
+
+			htvcenter_lock_queue release ipmi $LOCK_TIME
+			trap '' EXIT
+
+			exit 1
+		fi
+
+		htvcenter_lock_queue release ipmi $LOCK_TIME
+		trap '' EXIT
+		;;
+	reset)
+		LOCK_TIME=`htvcenter_lock_queue aquire ipmi`
+		trap "htvcenter_lock_queue release ipmi $LOCK_TIME" EXIT
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+
+		htvcenter_post_event 0 "ipmi" 5 "htvcenter-ipmi" "Reseting $PARAM_RESOURCE_IPMI_IP."
+		CMD_ERR=`ipmitool power cycle -I $htvcenter_PLUGIN_IPMI_INTERFACE -H $PARAM_RESOURCE_IPMI_IP -U $PARAM_RESOURCE_IPMI_USER -P $PARAM_RESOURCE_IPMI_PASS 2>&1`
+		if [ "$?" != 0 ]; then
+			CMD_ERR=`htvcenter_format_error_msg $CMD_ERR`
+			htvcenter_post_event 0 "ipmi" 3 "htvcenter-ipmi" "Error waking up $PARAM_RESOURCE_IPMI_IP."
+
+			htvcenter_lock_queue release ipmi $LOCK_TIME
+			trap '' EXIT
+
+			exit 1
+		fi
+
+		htvcenter_lock_queue release ipmi $LOCK_TIME
+		trap '' EXIT
+		;;
+
+
+	*)
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+		ipmi_usage
+		;;
+
+
+esac
+

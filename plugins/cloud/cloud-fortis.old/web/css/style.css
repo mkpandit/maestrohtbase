@@ -1,0 +1,1207 @@
+/* begin css for hypertask version */
+
+#loginside {
+    margin: 50px auto auto;
+    width: 500px;
+    z-index: 9999999;
+}
+
+
+#loginside img {
+    margin: auto;
+    display: block;
+}
+
+#fullbg {
+    background-color: #32404e;
+    height: 200%;
+    position: absolute;
+    top: -90px;
+    width: 100%;
+    z-index: 2147483647;
+}
+
+#cloud_logo {
+    background-color: #32404e;
+ }
+
+#cloud_logo:hover {
+    opacity: 0.8;
+}
+
+#logo_cl_img {
+    width: 120px;
+    z-index: 9999;
+}
+
+#topspan {
+    color: white;
+    font-size: 18px;
+    position: relative;
+    top: 65px;
+}
+
+/* end css for hypertask version */
+
+/* comment menubutton2 in js for hypertask */
+
+
+#page {
+    width: 100% !important;
+}
+
+#demo-cls-wz {
+    font-size: 12px !important;
+}
+
+#storageform h1, #popupform h2 {
+    font-size: 16px !important;
+    color: #cc6165 !important;
+}
+
+#detailreport {
+    color: #5fa2dd;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+#popupform #buttons {
+    width: 100%;
+    float: right;
+}
+
+#orderreport {
+    margin-top: 5px;
+
+}
+
+#detailtable {
+    display: none;
+}
+
+#resulttotal {
+    line-height: 30px;
+}
+
+#detailreport {
+    float: right;
+    margin-right: 10px;
+}
+
+.total {
+    font-weight: bold;
+}
+
+#popupform label {
+     display: block;
+    float: left;
+    margin-right: 10px;
+    width: 120px !important;
+    margin-bottom: 10px;
+}
+
+#popupform select {
+    float: right;
+    margin-right: 10px;
+    width: 240px !important;
+    margin-bottom: 10px;
+}
+
+#storageform .submit, #popupform .submit {
+     background-color: #5fa2dd !important;
+    border-radius: 0 !important;
+    font-family: "open sans";
+    font-size: 14px;
+}
+
+#storageform, #popupform {
+     font-family: "open sans";
+    font-size: 13px;
+}
+
+
+
+#loginwindow {
+     background-color: #f1f1f1;
+     border: 1px solid lightgray;
+     height: 300px;
+     width: 500px;
+ 
+      border-bottom: 4px solid lightgray;
+      position: absolute;
+   
+}
+
+#volumepopup, #popup {
+    width: 440px;
+    position: fixed;
+    top: 30%;
+    left: 35%;
+    display: none;
+    z-index: 999999999999 !important;
+}
+
+#popuptable {
+     width: 840px;
+    position: fixed;
+    top: 10%;
+    left: 18%;
+    display: none;
+    height: 500px;
+    z-index: 999999999999 !important;
+}
+
+#popuptableform {
+    overflow-y: scroll;
+    height: 450px;
+    position: relative;
+    left: -10px;
+}
+
+
+
+#volumepopup input.submit, #popup input.submit {
+    float: right;
+    margin-right: 5px;
+}
+
+#volumepopupclose, #popupclose, #popuptableclose {
+    float: right;
+    margin-right: 20px;
+    cursor: pointer;
+    margin-top: 15px;
+    color: gray;
+    font-size: 15px;
+}
+
+#popup {
+    display: none;
+}
+
+
+
+#volumepopupclose:hover, #popupclose:hover, #popuptableclose:hover  {
+    opacity: 0.9;
+}
+
+#storageform input[type=text], #popupform input[type=text] {
+    min-width: 220px;
+}
+
+#btnlogin {
+    float: right;
+    margin-right: 45px;
+}
+
+.restorepass {
+    margin-left: 20px;
+}
+
+#loginwindow a.links {
+    color: #579ddb;
+    text-decoration: underline;
+    font-size: 14px;
+}
+
+#loginwindow a.links:hover {
+    text-decoration: none;
+}
+
+#loginwindow a.links i {
+    text-decoration: none !important;
+}
+
+#loginwindow .sr-onlys {
+   margin-top: 10px;
+    margin-left: 20px;
+    font-family: "open sans";
+    font-size: 16px;
+    color: #579ddb !important;
+}
+
+#loginwindow .addlinks {
+    position: relative;
+    top: 35px;
+    float: left;
+    left: 30px;
+}
+
+#loginwindow .addlinks a {
+    margin-right: 3px;
+}
+#loginwindow .form-inline {
+    margin-left: 20px;
+    margin-top: 10px;;
+}
+
+#loginwindow .btn {
+    margin-left: 20px;
+    font-size: 13px;
+    margin-left: 15px;
+}
+
+#loginwindow .input-group {
+    margin-top: 5px;
+    margin-left: 15px;
+    width: 420px;
+}
+
+#loginwindow .input-group-addon {
+    width: 50px;
+    background-color: #579ddb;
+    color: white;
+}
+
+
+
+.myconsole, .mynovnc {
+    background-image: none !important;
+    padding: 2px 8px 2px 8px !important;
+}
+
+#cloud_appliances tr.headrow, #cloud_appliances tr.headrow th{
+    background-color: #5fa2dd !important;
+    color: white !important;
+}
+
+#cloud_appliances tr.headrow td, #cloud_appliances tr.headrow th {
+    border-color: white !important;
+    border-radius: 0px !important;
+}
+
+#cloud_appliances b, #cloud_appliances strong {
+    color: #5591c6 !important;
+}
+
+#cloud_appliances a.plugin {
+    background-color: #5fa2dd !important;
+    border-radius: 0px !important;
+    font-family: "open sans";
+    font-size: 14px; 
+}
+
+#cloud_appliances a.plugin:hover {
+    color: white !important;
+    opacity: 0.8;
+}
+
+
+
+#cloud_network_select_box {
+    display: none;
+}
+
+.nano-content {
+    position: relative;
+    top: -5px;
+}
+
+.myinfocolor {
+    background-color: #5fa2dd !important;
+    color: white !important;
+    border-color: white !important;
+}
+
+.myinfocolor td {
+    border-color: white !important;
+}
+
+#price_list {
+    position: fixed;
+}
+
+body {
+    background-color: #fafafa !important;
+}
+#demo-set-btn {
+    display: none;
+}
+
+.maintitlo {
+    text-align: center;
+}
+
+#valllgb, #valllgb1, #valllgb2 {
+    position: relative;
+    top: 10px;
+    left: -26px;
+}
+
+.donut-chart-legend {
+    position: relative;
+    top: -40px;
+}
+
+#limitscontent {
+    margin-top: 40px;
+    margin-left: 20px;
+}
+
+.charto {
+    display: block;
+    float: left;
+    left: 0;
+    position: relative;
+    text-align: center;
+    width: 180px;
+    top: -50px;
+}
+
+.dashboard {
+  margin-left: 15px;
+  margin-right: 15px;
+  margin-top: 30px;
+  margin-bottom: -15px;
+  width: 30%;
+  height: 310px;
+}
+
+.dashboard .panel-title {
+    color: #515151 !important;
+}
+
+.rightero {
+    width: 100%;
+    float: left;
+    height: 220px;
+}
+
+#sliderrr, #sliderrr1, #sliderrr2 {
+    height: 180px;
+}
+
+#valll, #cloud_disk_select_box, #valll1, #cloud_memory_select_box, #valll2, #cloud_cpu_select_box {
+    display: none;
+}
+
+#applications_list .htmlobject_box {
+    width: 120px !important;
+    float: left;
+    margin: 0px !important;
+    padding: 0px !important;
+    margin-bottom: 30px !important;
+}
+
+.pips {
+    position: relative;
+    left: -20px;
+}
+
+#cloud_cpu_select_box_slide, #cloud_memory_select_box_slide, #cloud_disk_select_box_slide {
+    height: 220px;
+ text-align: center;
+}
+
+#cloud_cpu_select_box_slide .left label, #cloud_memory_select_box_slide .left label, #cloud_disk_select_box_slide .left label {
+     left: -7px;
+    position: relative;
+    text-align: center;
+    top: -10px;
+}
+
+.imgrow img {
+    width: 64px;
+    height: 64px;
+    margin-bottom: 10px;
+    position: relative;
+    left: 39px;
+}
+
+#applications_list .htmlobject_box .left {
+    float: left;
+    text-align: center;
+    width: 120px !important;
+    margin: 0px !important;
+    padding: 0px !important;
+}
+
+#cloud_ha_select {
+    left: 121px !important;
+}
+
+#applications_list .htmlobject_box .left label {
+    width: 120px;
+    display: block;
+    float: left;
+    text-align: center;
+}
+
+#applications_list {
+    padding: 0px !important;
+    margin: 0px !important;
+}
+
+#applications_list .htmlobject_box .right {
+    float: left;
+    width: 120px;
+    text-align: center !important;
+}
+
+#applications_list .htmlobject_box .right .checkbox {
+       left: 62px;
+    position: relative;
+    top: 10px;
+}
+
+.panel-title {
+    color: white !important;
+    font-size: 18px !important;
+    font-family: "Open Sans","Helvetica Neue",Helvetica,Arial,sans-serif !important;
+} 
+
+.niftypanel {
+    padding: 0px !important;
+    border: 0px !important;
+    border-radius: 0px !important;
+}
+
+
+
+.niftypanel .submit, #manage_list ul li a {
+    background-color: #579ddb !important;
+    border-color: #5fa2dd !important;
+    color: #ffffff !important;
+    border-radius: 0 !important;
+    cursor: pointer !important;
+    font-size: 11px !important;
+    line-height: 1.42857 !important;
+    padding: 6px 12px !important;
+    transition: all 0.25s ease 0s !important;
+    vertical-align: middle !important;
+
+}
+
+#mainnav-menu {
+    margin-top: 50px;
+}
+
+.voldel, .voladd {
+    cursor: pointer;
+}
+
+
+
+#navbar-container {
+   
+}
+
+.navbar-brand {
+    height: 65px !important;
+    background-color: #32404e !important;
+}
+
+#langselect {
+    display: none;
+}
+
+.cdromeject {
+    display: none;
+    cursor: pointer;
+}
+
+#storageidedit {
+    display: none;
+}
+
+#addmoredisks {
+    color: white !important;
+    background-color: #6799bf !important;
+    border-color: #6799bf !important;
+    margin-bottom: 20px;
+}
+
+.selecto {
+    width: 100%;
+    float: left;
+}
+
+.cdrom {
+    cursor: pointer;
+    z-index: 999999;
+}
+
+#managedisks {
+    margin-bottom: 30px;
+}
+
+#typevolumeselect, #volumeselect, #typeeditvolumeselect, #sizeeditvolumeselect {
+    width: 220px;
+}
+
+#typevolumeselect, #typeeditvolumeselect, #namevolumeinput, #nameeditvolumeinput {
+    display: none;
+}
+
+.valspan {
+    border: medium none !important;
+    font-size: 15px;
+    text-decoration: none !important;
+}
+
+.moredisk label {
+    min-width: 60px;
+    float: left;
+}
+
+.moredisk input {
+    width: 220px;
+}
+
+.storagedit, .storageremove {
+    cursor: pointer;
+}
+
+
+#addvolumebtn {
+    background-color: #6799bf !important;
+    border-color: #6799bf !important;
+}
+
+#disks_box {
+   margin-bottom: 35px;
+    margin-top: 70px;
+    padding-bottom: 0 !important;
+    position: relative;
+    top: 10px;
+}
+
+
+#managedisks {
+     
+    
+    z-index: 999;
+}
+
+input.text, input.submit, select, textarea {
+    background-color: #fff;
+    background-image: none;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.075) inset;
+    color: #555;
+    display: block;
+    font-size: 14px;
+    height: 34px;
+    line-height: 1.42857;
+    padding: 4px 12px;
+    transition: border-color 0.15s ease-in-out 0s, box-shadow 0.15s ease-in-out 0s;
+    width: 100%;
+}
+
+#project_tab_ui .fa, #register_tab .fa {
+    font-size: 18px;
+    margin-right: 10px;
+}
+
+#capabilities_slot .submit {
+    float: right !important;
+    margin-right: 8px;
+    margin-top: -25px;
+}
+
+#cloud_ha_select_box label {
+     margin-left: 60px;
+    text-transform: lowercase;
+}
+
+#cloud_ha_select_box input {
+    left: -15px;
+}
+#applications_list .checkbox {
+     background: red none repeat scroll 0 0;
+    margin-top: 0px;
+    position: relative;
+    top: 5px;
+}
+
+
+
+
+
+
+#flagzone {
+    height: 24px;
+    margin-left: 64px;
+    margin-top: 1px;
+}
+
+
+.headinfo {
+     color: #515151;
+    cursor: pointer;
+    font-size: 23px !important;
+    left: 49px;
+    position: relative;
+    top: 4px;
+}
+
+.headinfo:hover {
+    opacity: 0.8;
+}
+
+
+#cloud_top_menu {
+    background-color: white;
+    height: 60px;
+    position: fixed;
+    width: 100%;
+    z-index: 1030;
+    margin-top: -100px;
+}
+
+
+
+#cloud_ip_select_0, #cloud_ip_select_1, #cloud_ip_select_2, #cloud_ip_select_3 {
+    border-radius: 0px !important;
+}
+
+.htmlobject_tabs li.current {
+    color: #fafafa !important;
+    font-weight: bold;
+    background-color: #232323 !important;
+}
+
+
+#cloud-content {
+    background-color: #fafafa;
+    margin-top: 100px;
+    min-height: 1000px;
+    padding-top: 40px;
+    position: relative;
+    top: -40px;
+}
+
+.langua {
+    color: #ffd055;
+    float: left;
+     font-size: 22px;
+    left: 115px;
+    position: relative;
+    top: 4px;
+    left: 100px;
+}
+
+#htvcenter_enterprise_footer a {
+   position: relative;
+    top: 12px;
+    color: #9a9a9b;
+    font-size: 14px;
+    margin-right: 10px;
+}
+
+.sidebar {
+    background-color: #32404e;
+    min-height: 900px;
+    position: fixed;
+    margin-top: -60px;
+ 
+}
+
+@media screen and (-webkit-min-device-pixel-ratio:0)
+{ 
+    .sidebar {
+        margin-top: -90px;
+    }
+}
+
+.htmlobject_tabs ul li a {
+    background-color: #32404e;
+    color: white;
+    margin: 0px;
+    padding: 0px;
+}
+
+#register_tab ul li, #project_tab_ui ul li {
+    background-color: #32404e;
+}
+
+#register_tab ul li.current, #project_tab_ui li.current {
+    background-color: #32404e !important;
+    border-left: 6px solid #2986b8;
+}
+
+#register_container img {
+    width: 100% !important;
+}
+
+.windows_plane {
+    float: right;
+     margin-top: -40px;
+}
+
+#htvcenter_enterprise_footer {
+    font-family: "Helvetica Neue",Helvetica,Arial,sans-serif !important;
+    font-size: 14px;
+}
+
+.arrow {
+    margin-top: 5px;
+}
+
+label {
+    color: #1fa67a;
+    font-family: "Arial Narrow",arial,verdana;
+    font-size: 19px;
+    font-weight: normal; 
+    min-width: 140px;
+    text-align: left;
+}
+
+h1 {
+    color: #cc6165 !important;
+    font-size: 40px !important; 
+    font-family: "Helvetica Neue",Helvetica,Arial,sans-serif !important;
+}
+
+b, strong {
+    color: #1fa67a;
+    font-weight: bold;
+}
+
+
+
+
+
+#manage_list {
+    float: left !important;
+}
+
+input.submit, #transaction_link a, #manage_list a {
+     background: #6799bf none repeat scroll 0 0 !important;
+    border: 0 none !important;
+    border-radius: 3px !important;
+    color: #fff !important;
+    cursor: pointer;
+    display: inline-block;
+    font-family: arial,verdana;
+    font-size: 10px;
+    line-height: 17px;
+    margin-bottom: 7px;
+    margin-right: 3px;
+    padding: 4px 8px;
+    text-decoration: none;
+    text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.25);
+    text-transform: uppercase;
+    white-space: nowrap;
+    width: auto !important;
+}
+
+input.submit:hover {
+    opacity: 0.8;
+}
+
+
+
+#langselect {
+     -moz-appearance: none;
+    background-color:#515151;
+  border:1px solid #515151;
+  border-radius:6px;
+  color:white;
+  cursor:pointer;
+  font-size:15px;
+  height:26px;
+  left:-16px;
+  margin-bottom:0;
+  margin-left:0;
+  margin-right:37px !important;
+  margin-top:-10px;
+  padding:1px 0 1px 5px !important;
+  position:relative;
+  top:7px;
+  width:46px !important;
+}
+
+#langselect_box label {
+    font-size: 22px;
+}
+
+#cloud_language_select .htmlobject_box .left {
+    left: 8px ;
+    margin-top: -10px !important;
+    position: relative;
+    width: auto;
+    float: left;
+ }
+
+
+
+ .heightspan {
+    margin-bottom: 60px;
+ }
+
+ h3, .jqplot-title {
+    font-family: "Helvetica Neue",Helvetica,Arial,sans-serif !important;
+    color: #cc6165 !important;
+    font-size: 30px !important;
+ }
+
+ .texto p, #cloud_account_right_column p {
+    font-size: 14px !important;
+    font-family: "Helvetica Neue",Helvetica,Arial,sans-serif !important;
+ }
+
+#transaction_link a, #transaction_link li, #manage_list li {
+    background: none;
+    border: none;
+}
+
+#transaction_link a:hover, #manage_list a:hover {
+    opacity: 0.8;
+}
+
+#cloud_ha_select {
+    margin-top: -5px;
+}
+
+#project_tab_uimsgBox, .msgBox strong {
+    color: #8a6d3b !important; 
+}
+
+
+
+#misc_slot .submit {
+    margin-top: -1px;
+}
+
+#transaction_link li, #righter li, #manage_list li {
+    background: none !important;
+}
+
+.leftsidebtn {
+    text-align: left !important;
+
+}
+
+.htmlobject_th.state {
+    width: 120px !important;
+} 
+
+#hardware_slot {
+    margin-bottom: 20px;
+    width: 100%;
+}
+
+.sort_box select {
+    float: left;
+    margin-right: 5px;
+}
+
+.htmlobject_tr.headrow th, .htmlobject_tr.headrow td {
+    background-color: #d1e0eb !important;
+    color: #cc6165;
+    font-family: "Arial Narrow",arial,verdana;
+    font-size: 21px !important;
+    font-weight: normal !important;
+}
+
+.htmlobject_td {
+    font-family: "Arial Narrow",arial,verdana;
+    font-size: 16px;
+}
+
+.pageturn_table td.pageturn_middle {
+    color: #444;
+    padding: 3px 10px 0;
+    text-align: center;
+    font-weight: bold;
+    font-size: 16px;
+}
+
+.pageturn_middle {
+    font-weight: bold;
+    color: #333;
+}
+
+.sort_box {
+    float: right;
+}
+#network_slot, #ip_slot .htmlobject_box {
+    background-color: #ffffe0 !important;
+    border-color: #ffffe0 !important;
+}
+
+.pageturn_box {float: left;}
+
+.refreshlink {
+     color: #cc6165 !important;
+    cursor: pointer;
+    font-size: 23px !important;
+    text-decoration: none !important;
+    margin-top: 2px;
+}
+
+#applications_slot, #capabilities_slot {
+    margin-bottom: 20px;
+}
+
+#cloud_ha_select_box  {
+    position: relative;
+    left: -60px;
+}
+
+#network_slot label, #ip_slot .htmlobject_box label {
+    color: #8a6d3b !important;
+}
+
+.clclc {
+
+}
+
+
+
+#righter {
+  float: right;
+    left: 4%;
+    position: relative;
+}
+
+ .donut-chart-legend ul li {
+    font-size: 14px !important;
+    margin-top: 3px;
+ }
+
+ .donut-chart-legend {
+     display: block;
+    left: 37%;
+    position: absolute;
+    top: 150px;
+    width: 220px;
+ }
+
+
+
+
+
+
+#menubutton {
+  color: #515151;
+    cursor: pointer;
+    display: block;
+    float: left;
+    font-size: 30px;
+    position: relative;
+    margin-left: 35px;
+    margin-top: 6px;
+}
+
+#order {
+  color: #515151;
+    cursor: pointer;
+    display: block;
+    float: left;
+    font-size: 26px;
+    position: relative;
+    left: 20px;
+    top: 11px;
+}
+
+#order:hover {
+    opacity: 0.8;
+}
+
+
+.menubutton2 {
+
+    margin-left: 110px !important;
+    margin-top: 8px !important;
+   
+}
+
+
+
+
+#menubutton:hover {
+    opacity: 0.8;
+}
+
+#register_tab, #project_tab_ui {
+   left: -15px !important;
+   width: 215px;
+   top: 80px;
+}
+
+.modal-title {
+    color: #cc6165 !important;
+    font-size: 28px;
+}
+
+#cloud_language_select {
+    font-size: 22px;
+}
+
+a.logout {
+    color: #515151 !important;
+
+}
+
+
+a.logout:hover {
+    opacity: 0.8;
+}
+
+.ava {
+    width: 40px;
+    height: 40px;
+    border-radius: 20px;
+    margin-left: 7px;
+}
+
+#avatarside {
+    cursor: pointer;
+    height: 66px;
+    left: 25px;
+    padding: 16px 20px;
+    position: relative;
+    top: -25px;
+}
+#langselect_box {
+    float: left;
+    width: 320px;
+}
+#avatarside:hover {
+    opacity: 0.8;
+    background-color: #f2f2f2;
+}
+
+
+
+.dropdownwin {
+   background-color: white;
+    border: 1px solid #f2f2f2;
+    display: none;
+    float: right;
+    margin-left: -4px;
+    margin-top: -30px;
+    padding: 20px;
+    position: absolute;
+    width: 180px;
+}
+
+#project_tab_uimsgBox {
+    position: absolute;
+    right: -300px;
+    top: 25px;
+     background-color: #4d5257;
+    border-color: transparent;
+     border-radius: 0;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1) inset;
+    margin: 0;
+    text-align: left;
+    padding: 15px 3em 15px 15px;
+   opacity: 0.8;
+   color: white !important;
+   font-size: 13px;
+   width: 250px;
+}
+
+#fortis5 {
+        background-color: silver;
+    height: 100%;
+    margin-bottom: 0 !important;
+    margin-left: -15px;
+    margin-right: 0 !important;
+    margin-top: 0 !important;
+    padding: 0 !important;
+    position: absolute;
+}
+
+#fortis5 img {
+    width: 100% !important;
+}
+
+#filepicker {
+    -moz-border-bottom-colors: none;
+    -moz-border-left-colors: none;
+    -moz-border-right-colors: none;
+    -moz-border-top-colors: none;
+    background: white none repeat scroll 0 0;
+    border-color: -moz-use-text-color -moz-use-text-color #ddd #ddd;
+    border-image: none;
+    border-style: none none solid solid;
+    border-width: 0 0 1px 1px;
+    box-shadow: 3px 3px 8px rgba(0, 0, 0, 0.3);
+    left: 45% !important;
+    position: fixed !important;
+    top: 100px !important;
+    width: 280px;
+    z-index: 10;
+}
+#filepicker .functionbox-capation input {
+    background: #fff none repeat scroll 0 0;
+    border: 1px solid;
+    color: black;
+    font-size: 10px;
+    height: 18px;
+    line-height: 18px;
+    padding: 0;
+    position: absolute;
+    right: 5px;
+    text-align: center;
+    top: 7px;
+    width: 18px;
+}
+#filepicker #canvas {
+    height: 340px;
+    overflow-x: auto;
+    overflow-y: scroll;
+    text-align: center;
+    vertical-align: middle;
+}
+#filepicker table {
+    border: 0 none;
+    margin: 0;
+    width: 100%;
+}
+
+
+#filepicker table td {
+    border-bottom: 1px solid #ccc;
+}
+
+#filepicker table a {
+    display: block;
+    font-size: 11px;
+    line-height: 20px;
+    padding: 0 0 0 35px;
+    text-align: left;
+    text-decoration: none;
+}
+
+#filepicker table a.folder {
+    background: transparent url("/htvcenter/base/img/filepicker_icons.gif") no-repeat scroll 0 -20px;
+}
+
+#filepicker table a.file {
+    background: transparent url("/htvcenter/base/img/filepicker_icons.gif") no-repeat scroll 0 0;
+    color: black;
+}
+
+.functionbox-capation-box {
+    background: #494949 none repeat scroll 0 0;
+    border-bottom: 5px solid #39aacb;
+    padding: 5px;
+    text-align: left;
+    color: white;
+}
+
+span.editvolumesm {
+    border: 0 none;
+    color: white;
+    display: inline-block;
+    height: 24px;
+    line-height: 24px;
+    overflow: hidden;
+    padding: 2px;
+    text-align: center;
+    text-decoration: none;
+    width: 24px;
+    background-color: #5fa2dd !important;
+    cursor: pointer;
+}
+
+.editvolumesm i {
+    position: relative;
+    top: -2px;
+}
+

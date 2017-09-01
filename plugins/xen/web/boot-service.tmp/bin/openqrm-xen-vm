@@ -1,0 +1,1812 @@
+#!/bin/bash
+# this script automatically manages xen
+#
+# htvcenter Enterprise developed by htvcenter Enterprise GmbH.
+#
+# All source code and content (c) Copyright 2012, htvcenter Enterprise GmbH unless specifically noted otherwise.
+#
+# This source code is released under the htvcenter Enterprise Server and Client License, unless otherwise agreed with htvcenter Enterprise GmbH.
+# The latest version of this license can be found here: http://htvcenter-enterprise.com/license
+#
+# By using this software, you acknowledge having read this license and agree to be bound thereby.
+#
+#           http://htvcenter-enterprise.com
+#
+# Copyright 2012, htvcenter Enterprise GmbH <info@htvcenter-enterprise.com>
+#
+htvcenter_SERVER_BASE_DIR=$(dirname $0)/../../../..
+htvcenter_SERVER_BASE_DIR=$(pushd $htvcenter_SERVER_BASE_DIR > /dev/null && echo $PWD && popd > /dev/null)
+. $htvcenter_SERVER_BASE_DIR/htvcenter/include/htvcenter-functions
+# unblock starting command queue early for non-blocking + ui commands
+XEN_COMMAND=$1
+if [ "$XEN_COMMAND" == "update" ] || [ "$XEN_COMMAND" == "clone" ] || [ "$XEN_COMMAND" == "post_vm_list" ] || [ "$XEN_COMMAND" == "post_vm_config" ] || [ "$XEN_COMMAND" == "list" ] || [ "$XEN_COMMAND" == "post_bridge_config" ] || [ "$XEN_COMMAND" == "iso" ] || [ "$XEN_COMMAND" == "create_vm_config" ] || [ "$XEN_COMMAND" == "remove_vm_config" ] || [ "$XEN_COMMAND" == "restart_vm_client" ]; then
+	htvcenter_unblock_starting_queue $@
+	NON_BLOCKING=true
+fi
+
+export htvcenter_SOURCE_DIR="$htvcenter_SERVER_BASE_DIR/htvcenter/"
+. $htvcenter_SERVER_BASE_DIR/htvcenter/include/htvcenter-package-functions
+. $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/xen/include/htvcenter-plugin-xen-functions
+. $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/xen/etc/htvcenter-plugin-xen.conf
+if [ -f $htvcenter_SERVER_BASE_DIR/htvcenter/etc/htvcenter-server.conf ]; then
+	. $htvcenter_SERVER_BASE_DIR/htvcenter/etc/htvcenter-server.conf
+	. $htvcenter_SERVER_BASE_DIR/htvcenter/include/htvcenter-server-functions
+	htvcenter_server_get_config
+	htvcenter_SERVER_IP=$htvcenter_SERVER_IP_ADDRESS
+	htvcenter_INTERFACE=$htvcenter_SERVER_INTERFACE
+	resource_id=0
+	resource_ip=$htvcenter_SERVER_IP_ADDRESS
+	resource_htvcenterserver=$htvcenter_SERVER_IP_ADDRESS
+	htvcenter_web_protocol=$htvcenter_WEB_PROTOCOL
+elif [ -f $htvcenter_RESOURCE_PARAMETER_FILE ]; then
+	. $htvcenter_RESOURCE_PARAMETER_FILE
+	htvcenter_SERVER_IP=$resource_htvcenterserver
+	htvcenter_INTERFACE=`ifconfig | grep -i $resource_mac | grep :oq | cut -d':' -f1`
+
+fi
+htvcenter_POSTENCODE="$htvcenter_SERVER_BASE_DIR/htvcenter/sbin/htvcenter-postencode"
+# the directory to keep the vm files for vms created by htvcenter
+htvcenter_VM_DIR="/var/lib/xen/htvcenter/"
+VM_XEN_CONFIG=/var/run/xen-vm-config.conf
+XEN_REMOVE_MAX_WAIT=30
+XEN_CMDLINE_UTIL="xl"
+
+# which directory to use for the xen vms -> set by the plugin config file
+if [ -d "$htvcenter_PLUGIN_XEN_VM_CONFIG_DIR" ]; then
+	mkdir -p $htvcenter_PLUGIN_XEN_VM_CONFIG_DIR
+fi
+export LANG=C
+# define wget to use with https
+if [ "$htvcenter_web_protocol" == "https" ]; then
+	WGET_NO_CERT_CHECK="--no-check-certificate"
+fi
+
+
+# let only root run this script
+WHOAMI=`whoami`
+if [ "$WHOAMI" != "root" ]; then
+	echo "ERROR: Please run this script as root!"
+	exit 6
+fi
+# check interface
+if [ "$htvcenter_INTERFACE" == "" ]; then
+	# we are doing a local boot and do not have an ethX:oq network device
+	htvcenter_INTERFACE=`ifconfig | grep $resource_mac | cut -d':' -f1 | grep ^eth | awk {' print $1 '}`
+	if [ "$htvcenter_INTERFACE" == "" ]; then
+		if [ "$NON_BLOCKING" != "true" ]; then
+			htvcenter_unblock_starting_queue $@
+		fi
+		echo "ERROR: Could not find out which network interface to use"
+		exit 1
+	fi
+fi
+
+# make sure required deps are installed
+if ! check_xen_deps; then
+	if [ "$NON_BLOCKING" != "true" ]; then
+		htvcenter_unblock_starting_queue $@
+	fi
+	exit 1
+fi
+
+
+
+function xen_usage() {
+	echo "Usage : $0 start/stop/reboot/remove/list <-n vm-name>"
+	echo "        $0 create/update <-n vm-name> <-m mac-address> <-r memory> [-d disk-size] [-s swap-size] [ -c cpu-number] [ -y xen-vm-local|xen-vm-net]"
+	echo "        $0 restart_by_mac/start_by_mac <-m vm-mac> <-d root-disk>"
+	echo "        $0 stop_by_mac <-m vm-mac>"
+	echo "        $0 migrate <-n vm-name> <-i ip-address> <-t live/regular>"
+	echo "        $0 setboot <-m mac-address> <-b local/net>"
+	echo "        $0 post_vm_list <-u username> <-p password>"
+	echo "        $0 post_vm_config <-n vm-name> <-u username> <-p password>"
+	echo "        $0 create_vm_config <-n vm-name>"
+	echo "        $0 clone <-n vm-name> <-w vm-clone-name> <-m vm-clone-mac>"
+	echo "        $0 remove_vm_config <-n vm-name>"
+	echo "        $0 restart_vm_client <-n vm-name>"
+	echo "        $0 update_vm_ram <-r memory> <-n vm-name>"
+	echo "        $0 update_vm_cpu <-c cpu-number> <-n vm-name>"
+	echo "        $0 add_vm_nic <-x nic-number> <-m mac-address> <-n vm-name>"
+	echo "        $0 remove_vm_nic <-x nic-number> <-n vm-name>"
+	echo "        $0 add_vm_disk <-x disk-number> <-d disk-size> <-n vm-name>"
+	echo "        $0 remove_vm_disk <-x disk-number> <-n vm-name>"
+	echo "        $0 fence <-m mac-address>"
+	echo "        $0 iso <-q path> <-u username> <-p password>"
+	echo ""
+	echo "Optional parameters:"
+	echo "             [--htvcenter-ui-user <username>]"
+	echo "             [--htvcenter-internal-cmd <true/false>]"
+	echo "             [--htvcenter-cmd-mode <regular/background/fork>]"
+	exit 1
+}
+
+
+
+function get_disk_name() {
+	local component=$1
+	case "$component" in
+		1)
+			echo "hda"
+			;;
+		2)
+			echo "hdb"
+			;;
+		3)
+			echo "hdc"
+			;;
+		4)
+			echo "hdd"
+			;;
+	esac
+}
+
+function xen_generate_vm_config() {
+	VM_NAME=$1
+	VM_BASE_DIR=$htvcenter_VM_DIR/$VM_NAME
+	# source the components config
+	vm_kernel=`cat $VM_BASE_DIR/kernel 2>/dev/null`
+	vm_builder=`cat $VM_BASE_DIR/builder 2>/dev/null`
+	vm_memory=`cat $VM_BASE_DIR/memory 2>/dev/null`
+	vm_vcpu=`cat $VM_BASE_DIR/vcpu 2>/dev/null`
+	vm_device_model=`cat $VM_BASE_DIR/device_model 2>/dev/null`
+	vm_name=`cat $VM_BASE_DIR/name 2>/dev/null`
+	vm_mac1=`cat $VM_BASE_DIR/mac1 2>/dev/null`
+	vm_bridge1=`cat $VM_BASE_DIR/bridge1 2>/dev/null`
+	vm_mac2=`cat $VM_BASE_DIR/mac2 2>/dev/null`
+	vm_bridge2=`cat $VM_BASE_DIR/bridge2 2>/dev/null`
+	vm_mac3=`cat $VM_BASE_DIR/mac3 2>/dev/null`
+	vm_bridge3=`cat $VM_BASE_DIR/bridge3 2>/dev/null`
+	vm_mac4=`cat $VM_BASE_DIR/mac4 2>/dev/null`
+	vm_bridge4=`cat $VM_BASE_DIR/bridge4 2>/dev/null`
+	vm_mac5=`cat $VM_BASE_DIR/mac5 2>/dev/null`
+	vm_bridge5=`cat $VM_BASE_DIR/bridge5 2>/dev/null`
+	vm_boot=`cat $VM_BASE_DIR/boot 2>/dev/null`
+	vm_root=`cat $VM_BASE_DIR/root 2>/dev/null`
+	vm_swap=`cat $VM_BASE_DIR/swap 2>/dev/null`
+	vm_swapsize=`cat $VM_BASE_DIR/swapsize 2>/dev/null`
+	vm_disk1=`cat $VM_BASE_DIR/disk1 2>/dev/null`
+	vm_disksize1=`cat $VM_BASE_DIR/disksize1 2>/dev/null`
+	vm_disk2=`cat $VM_BASE_DIR/disk2 2>/dev/null`
+	vm_disksize2=`cat $VM_BASE_DIR/disksize2 2>/dev/null`
+	vm_disk3=`cat $VM_BASE_DIR/disk3 2>/dev/null`
+	vm_disksize3=`cat $VM_BASE_DIR/disksize3 2>/dev/null`
+	vm_vnc=`cat $VM_BASE_DIR/vnc 2>/dev/null`
+	vm_vncviewer=`cat $VM_BASE_DIR/vncviewer 2>/dev/null`
+	vm_vnc_display=`cat $VM_BASE_DIR/vncdisplay 2>/dev/null`
+	vm_sdl=`cat $VM_BASE_DIR/sdl 2>/dev/null`
+	vm_cdrom=`cat $VM_BASE_DIR/cdrom 2>/dev/null`
+
+	> $htvcenter_PLUGIN_XEN_VM_CONFIG_DIR/$VM_NAME.cfg
+	cat >> $htvcenter_PLUGIN_XEN_VM_CONFIG_DIR/$VM_NAME.cfg << EOF
+kernel = "$vm_kernel"
+builder = "$vm_builder"
+memory = "$vm_memory"
+device_model="$vm_device_model"
+name = "$vm_name"
+boot="$vm_boot"
+vcpu="$vm_vcpu"
+vnc=$vm_vnc
+vncviewer=$vm_vncviewer
+vncdisplay=$vm_vnc_display
+vnclisten="$htvcenter_PLUGIN_XEN_VM_VNC_LISTEN"
+sdl=$vm_sdl
+EOF
+
+
+	# boot nic
+	VM_NIC_CONF="$VM_DISK_CONF \"mac=$vm_mac1, bridge=$vm_bridge1\","
+	# additional nics
+	if [ "$vm_mac2" != "" ]; then
+		VM_NIC_CONF="$VM_NIC_CONF \"mac=$vm_mac2, bridge=$vm_bridge2\","
+	fi
+	if [ "$vm_mac3" != "" ]; then
+		VM_NIC_CONF="$VM_NIC_CONF \"mac=$vm_mac3, bridge=$vm_bridge3\","
+	fi
+	if [ "$vm_mac4" != "" ]; then
+		VM_NIC_CONF="$VM_NIC_CONF \"mac=$vm_mac4, bridge=$vm_bridge4\","
+	fi
+	if [ "$vm_mac5" != "" ]; then
+		VM_NIC_CONF="$VM_NIC_CONF \"mac=$vm_mac5, bridge=$vm_bridge5\","
+	fi
+	cat >> $htvcenter_PLUGIN_XEN_VM_CONFIG_DIR/$VM_NAME.cfg << EOF
+vif = [ $VM_NIC_CONF ]
+EOF
+
+	# add disk + swap
+	ADD_DISK=false
+	if [ "$vm_disk1" != "" ]; then
+		VM_DISK_CONF="$VM_DISK_CONF \"$vm_disk1\","
+		ADD_DISK=true
+	fi
+	if [ "$vm_disk2" != "" ]; then
+		VM_DISK_CONF="$VM_DISK_CONF \"$vm_disk2\","
+		ADD_DISK=true
+	fi
+	if [ "$vm_disk3" != "" ]; then
+		VM_DISK_CONF="$VM_DISK_CONF \"$vm_disk3\","
+		ADD_DISK=true
+	fi
+	if [ "$vm_swap" != "" ]; then
+		VM_DISK_CONF="$VM_DISK_CONF \"$vm_swap\","
+		ADD_DISK=true
+	fi
+	if [ "$vm_cdrom" != "" ]; then
+		VM_DISK_CONF="$VM_DISK_CONF \"$vm_cdrom\","
+		ADD_DISK=true
+	fi
+
+	if [ "$ADD_DISK" == "true" ]; then
+		cat >> $htvcenter_PLUGIN_XEN_VM_CONFIG_DIR/$VM_NAME.cfg << EOF
+disk = [ $VM_DISK_CONF ]
+EOF
+	fi
+
+}
+
+
+function xen_gen_mac() {
+    CMAC=`dd if=/dev/urandom bs=1 count=5 2>/dev/null | od -tx1 | head -1 | cut -d' ' -f2- | awk '{ print $1":"$2":"$3":"$4":"$5 }' | tr "[:upper:]" "[:lower:]"`
+    CMAC="00:"$CMAC
+    echo $CMAC
+}
+
+function get_vm_type() {
+	local VM=$1
+	if [ "$XEN_VM_TYPE" == "" ]; then
+		if [ -f "$htvcenter_VM_DIR/$VM/vm_type" ]; then
+			XEN_VM_TYPE=`cat $htvcenter_VM_DIR/$VM/vm_type`
+		else
+			XEN_VM_TYPE="xen-vm-local"
+		fi
+	fi
+	echo "$XEN_VM_TYPE"
+}
+
+
+
+FULL_COMMANDLINE="$0 $@"
+XEN_COMMAND=$1
+shift
+
+while [ $# -ne 0 ]; do
+	case "$1" in
+		-n)
+			XEN_VM_NAME=$2
+			shift
+			;;
+		-m)
+			XEN_VM_MAC=$2
+			shift
+			;;
+		-m1)
+			XEN_VM_MAC2=$2
+			shift
+			;;
+		-m2)
+			XEN_VM_MAC3=$2
+			shift
+			;;
+		-m3)
+			XEN_VM_MAC4=$2
+			shift
+			;;
+		-m4)
+			XEN_VM_MAC5=$2
+			shift
+			;;
+		-z)
+			XEN_VM_BRIDGE=$2
+			shift
+			;;
+		-z1)
+			XEN_VM_BRIDGE2=$2
+			shift
+			;;
+		-z2)
+			XEN_VM_BRIDGE3=$2
+			shift
+			;;
+		-z3)
+			XEN_VM_BRIDGE4=$2
+			shift
+			;;
+		-z4)
+			XEN_VM_BRIDGE5=$2
+			shift
+			;;
+		-i)
+			XEN_VM_IP=$2
+			shift
+			;;
+		-r)
+			XEN_VM_RAM=$2
+			shift
+			;;
+		-c)
+			XEN_VM_CPU=$2
+			shift
+			;;
+		-d)
+			XEN_VM_DISK=$2
+			shift
+			;;
+		-s)
+			XEN_VM_SWAP=$2
+			shift
+			;;
+		-t)
+			XEN_MIGRATION_TYPE=$2
+			shift
+			;;
+		-u)
+			XEN_htvcenter_USERNAME=$2
+			shift
+			;;
+		-p)
+			XEN_htvcenter_PASSWORD=$2
+			shift
+			;;
+		-x)
+			XEN_VM_COMPONENT_NUMBER=$2
+			shift
+			;;
+		-b)
+			XEN_VM_BOOT=$2
+			shift
+			;;
+		-iso)
+			XEN_VM_BOOT_ISO=$2
+			shift
+			;;
+		-w)
+			XEN_VM_CLONE_NAME=$2
+			shift
+			;;
+		-q)
+			XEN_HOST_PATH=$2
+			shift
+			;;
+		-y)
+			XEN_VM_TYPE=$2
+			shift
+			;;
+		--htvcenter-ui-user)
+			htvcenter_UI_USER=$2
+			shift
+			;;
+		--htvcenter-internal-cmd)
+			htvcenter_INTERNAL_CMD=$2
+			shift
+			;;
+		--htvcenter-cmd-mode)
+			htvcenter_CMD_MODE=$2
+			shift
+			;;
+
+		*)
+			if [ "$NON_BLOCKING" != "true" ]; then
+				htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			fi
+			echo "ERROR: Free commandline arguments are not allowed"
+			xen_usage
+			exit 6
+			;;
+	esac
+	shift
+done
+
+
+
+
+# main
+if [ "$XEN_COMMAND" == "" ]; then
+	htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+	xen_usage
+fi
+
+if [ "$XEN_COMMAND" == "post_vm_list" ]; then
+		if [ "$XEN_htvcenter_USERNAME" == "" ]; then
+			xen_usage
+		fi
+		if [ "$XEN_htvcenter_PASSWORD" == "" ]; then
+			xen_usage
+		fi
+else
+
+	if [ "$XEN_COMMAND" != "list" ] && [ "$XEN_COMMAND" != "setboot" ] && [ "$XEN_COMMAND" != "start_by_mac" ] && [ "$XEN_COMMAND" != "restart_by_mac" ] && [ "$XEN_COMMAND" != "stop_by_mac" ] && [ "$XEN_COMMAND" != "post_bridge_config" ] && [ "$XEN_COMMAND" != "fence" ] && [ "$XEN_COMMAND" != "iso" ]; then
+		if [ "$XEN_VM_NAME" == "" ]; then
+			if [ "$NON_BLOCKING" != "true" ]; then
+				htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			fi
+			xen_usage
+		fi
+	fi
+fi
+if [ "$htvcenter_UI_USER" != "" ]; then
+	htvcenter_UI_USER_PARAMETER=" --htvcenter-ui-user $htvcenter_UI_USER"
+fi
+
+
+case "$XEN_COMMAND" in
+
+	create)
+		if [ "$XEN_VM_MAC" == "" ]; then
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			xen_usage
+		fi
+		if [ "$XEN_VM_RAM" == "" ]; then
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			xen_usage
+		fi
+
+		LOCK_TIME=`htvcenter_lock_queue aquire xen`
+		trap "htvcenter_lock_queue release xen $LOCK_TIME" EXIT
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+
+		# default vm type
+		if [ "$XEN_VM_TYPE" == "" ]; then
+			XEN_VM_TYPE="xen-vm-local"
+		fi
+		echo "Creating Xen VM $XEN_VM_NAME -> /etc/xen/$XEN_VM_NAME.cfg"
+		# find the hvmloader
+		HVM_LOADER=`find /usr/lib/xen* /usr/lib64/xen* -name hvmloader 2>/dev/null | head -n1`
+		if [ "$HVM_LOADER" == "" ]; then
+			htvcenter_post_event 0 "create" 3 "htvcenter-xen" "Could not find the hvmloader on this Xen Host. Please make sure to install it!"
+
+			htvcenter_lock_queue release xen $LOCK_TIME
+			trap '' EXIT
+
+			exit 1
+		fi
+		XEN_VM_BASE_DIR=$htvcenter_VM_DIR/$XEN_VM_NAME
+		if [ -f $XEN_VM_BASE_DIR/name ]; then
+			htvcenter_post_event 0 "create" 3 "htvcenter-xen" "Xen VM $XEN_VM_NAME already exist on this Host. Not creating new VM!"
+
+			htvcenter_lock_queue release xen $LOCK_TIME
+			trap '' EXIT
+
+			exit 1
+		fi
+
+
+		mkdir -p $XEN_VM_BASE_DIR
+		echo "$XEN_VM_NAME" > $XEN_VM_BASE_DIR/name
+		echo "$HVM_LOADER" > $XEN_VM_BASE_DIR/kernel
+		echo "$XEN_VM_RAM" > $XEN_VM_BASE_DIR/memory
+		echo "hvm" > $XEN_VM_BASE_DIR/builder
+		echo "$XEN_VM_TYPE" > $XEN_VM_BASE_DIR/vm_type
+		# nic1
+		echo "$XEN_VM_MAC" > $XEN_VM_BASE_DIR/mac1
+		# external or internal bridge
+		if [ "$XEN_VM_BRIDGE" != "" ]; then
+			echo "$XEN_VM_BRIDGE" > $XEN_VM_BASE_DIR/bridge1
+		else
+			echo "$htvcenter_PLUGIN_XEN_INTERNAL_BRIDGE" > $XEN_VM_BASE_DIR/bridge1
+		fi
+		echo "1" > $XEN_VM_BASE_DIR/vnc
+		echo "1" > $XEN_VM_BASE_DIR/vncviewer
+		echo "0" > $XEN_VM_BASE_DIR/sdl
+
+		# one cpu by default
+		if [ "$XEN_VM_CPU" == "" ]; then
+			XEN_VM_CPU=1
+		fi
+		echo "$XEN_VM_CPU" > $XEN_VM_BASE_DIR/vcpu
+
+		# find the next free vncdisplay
+		for VNCD in `find $htvcenter_VM_DIR/* -name vncdisplay 2>/dev/null`; do
+				NVNCD=`cat $VNCD`
+				VNCD_LIST="$VNCD_LIST $NVNCD"
+
+		done
+		for TVNCD in `echo $VNCD_LIST | sort`; do
+				:
+		done
+		NEW_VNCD=$(( TVNCD + 1 ))
+		echo "$NEW_VNCD" > $XEN_VM_BASE_DIR/vncdisplay
+		# store the vnc infos for the cloud
+		if [ -d "$htvcenter_SERVER_BASE_DIR/htvcenter/web/action/cloud-conf/" ]; then
+			echo "$resource_ip:$NEW_VNCD" > $htvcenter_SERVER_BASE_DIR/htvcenter/web/action/cloud-conf/$XEN_VM_MAC.vnc
+			chmod 777 $htvcenter_SERVER_BASE_DIR/htvcenter/web/action/cloud-conf/$XEN_VM_MAC.vnc
+		fi
+
+		# empty disk + swap
+		echo "" > $XEN_VM_BASE_DIR/disk1
+		echo "" > $XEN_VM_BASE_DIR/disksize1
+		echo "" > $XEN_VM_BASE_DIR/disk2
+		echo "" > $XEN_VM_BASE_DIR/disksize2
+		echo "" > $XEN_VM_BASE_DIR/disk3
+		echo "" > $XEN_VM_BASE_DIR/disksize3
+		echo "" > $XEN_VM_BASE_DIR/swap
+		echo "" > $XEN_VM_BASE_DIR/swapsize
+
+		# nic1
+		if [ "$XEN_VM_MAC2" != "" ]; then
+			echo "-> Creating additional nic $XEN_VM_MAC2"
+			echo "$XEN_VM_MAC2" > $XEN_VM_BASE_DIR/mac2
+			if [ "$XEN_VM_BRIDGE2" != "" ]; then
+				echo "$XEN_VM_BRIDGE2" > $XEN_VM_BASE_DIR/bridge2
+			else
+				echo "$htvcenter_PLUGIN_XEN_EXTERNAL_BRIDGE" > $XEN_VM_BASE_DIR/bridge2
+			fi
+		fi
+		# nic2
+		if [ "$XEN_VM_MAC3" != "" ]; then
+			echo "-> Creating additional nic $XEN_VM_MAC3"
+			echo "$XEN_VM_MAC3" > $XEN_VM_BASE_DIR/mac3
+			if [ "$XEN_VM_BRIDGE3" != "" ]; then
+				echo "$XEN_VM_BRIDGE3" > $XEN_VM_BASE_DIR/bridge3
+			else
+				echo "$htvcenter_PLUGIN_XEN_EXTERNAL_BRIDGE" > $XEN_VM_BASE_DIR/bridge3
+			fi
+		fi
+		# nic3
+		if [ "$XEN_VM_MAC4" != "" ]; then
+			echo "-> Creating additional nic $XEN_VM_MAC4"
+			echo "$XEN_VM_MAC4" > $XEN_VM_BASE_DIR/mac4
+			if [ "$XEN_VM_BRIDGE4" != "" ]; then
+				echo "$XEN_VM_BRIDGE4" > $XEN_VM_BASE_DIR/bridge4
+			else
+				echo "$htvcenter_PLUGIN_XEN_EXTERNAL_BRIDGE" > $XEN_VM_BASE_DIR/bridge4
+			fi
+		fi
+		# nic4
+		if [ "$XEN_VM_MAC5" != "" ]; then
+			echo "-> Creating additional nic $XEN_VM_MAC5"
+			echo "$XEN_VM_MAC5" > $XEN_VM_BASE_DIR/mac5
+			if [ "$XEN_VM_BRIDGE5" != "" ]; then
+				echo "$XEN_VM_BRIDGE5" > $XEN_VM_BASE_DIR/bridge5
+			else
+				echo "$htvcenter_PLUGIN_XEN_EXTERNAL_BRIDGE" > $XEN_VM_BASE_DIR/bridge5
+			fi
+		fi
+
+		# a cdrom/iso
+		echo "" > $XEN_VM_BASE_DIR/cdrom
+		if [ "$XEN_VM_BOOT" == "" ]; then
+			XEN_VM_BOOT=net
+		fi
+		case "$XEN_VM_BOOT" in
+			local)
+				echo "c" > $XEN_VM_BASE_DIR/boot
+				;;
+			net)
+				echo "n" > $XEN_VM_BASE_DIR/boot
+				;;
+			network)
+				echo "n" > $XEN_VM_BASE_DIR/boot
+				;;
+			cdrom)
+				echo "d" > $XEN_VM_BASE_DIR/boot
+				echo "phy:/dev/cdrom,hdd:cdrom,r" > $XEN_VM_BASE_DIR/cdrom
+				;;
+			iso)
+				echo "d" > $XEN_VM_BASE_DIR/boot
+				echo "file:$XEN_VM_BOOT_ISO,hdd:cdrom,r" > $XEN_VM_BASE_DIR/cdrom
+				;;
+		esac
+
+		# creating the cfg
+		xen_generate_vm_config $XEN_VM_NAME
+		rm -f $VM_XEN_CONFIG
+		if [ "$XEN_VM_TYPE" == "xen-vm-local" ]; then
+			# start monitor for the fake idle resource
+			kill `ps ax | grep htvcenter-xen-monitord | grep -v grep | grep -i $XEN_VM_MAC | awk {' print $1 '}` 2>/dev/null
+			$RUNSCREEN -dmS $XEN_VM_MAC $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/xen/sbin/htvcenter-xen-monitord $XEN_VM_MAC
+		else
+			if $RUNSCREEN -dmS $XEN_VM_MAC $XEN_CMDLINE_UTIL create -f $htvcenter_PLUGIN_XEN_VM_CONFIG_DIR/$XEN_VM_NAME.cfg; then
+				htvcenter_post_event 0 "create" 5 "htvcenter-xen" "Created and started Xen VM $XEN_VM_NAME"
+			else
+				htvcenter_post_event 0 "create" 3 "htvcenter-xen" "Could not create Xen VM $XEN_VM_NAME -> $htvcenter_PLUGIN_XEN_VM_CONFIG_DIR/$XEN_VM_NAME.cfg"
+
+				htvcenter_lock_queue release xen $LOCK_TIME
+				trap '' EXIT
+
+				exit 1
+			fi
+		fi
+		touch $htvcenter_VM_DIR/$XEN_VM_NAME/autostart.$resource_id
+
+		htvcenter_lock_queue release xen $LOCK_TIME
+		trap '' EXIT
+		;;
+
+
+	update)
+		if [ "$XEN_VM_MAC" == "" ]; then
+			xen_usage
+		fi
+		if [ "$XEN_VM_RAM" == "" ]; then
+			xen_usage
+		fi
+		XEN_VM_BASE_DIR=$htvcenter_VM_DIR/$XEN_VM_NAME
+		if [ ! -f $XEN_VM_BASE_DIR/name ]; then
+			htvcenter_post_event 0 "create" 3 "htvcenter-xen" "Xen VM $XEN_VM_NAME does not exist on this Host. Not updating the VM!"
+			exit 1
+		fi
+		if [ "$XEN_VM_CPU" == "" ]; then
+			XEN_VM_CPU=1
+		fi
+		# get vm type
+		XEN_VM_TYPE=`get_vm_type $XEN_VM_NAME`
+
+		# nic0
+		if [ "$XEN_VM_BRIDGE" != "" ]; then
+			XEN_VM_BRIDGE_CONFIG="-m $XEN_VM_MAC -z $XEN_VM_BRIDGE"
+		fi
+		# nic1
+		if [ "$XEN_VM_MAC2" != "" ]; then
+			XEN_VM_NET_CONFIG2="-m1 $XEN_VM_MAC2"
+			if [ "$XEN_VM_BRIDGE2" != "" ]; then
+				XEN_VM_BRIDGE_CONFIG2="-z1 $XEN_VM_BRIDGE2"
+			fi
+		fi
+		# nic2
+		if [ "$XEN_VM_MAC3" != "" ]; then
+			XEN_VM_NET_CONFIG3="-m2 $XEN_VM_MAC3"
+			if [ "$XEN_VM_BRIDGE3" != "" ]; then
+				XEN_VM_BRIDGE_CONFIG3="-z2 $XEN_VM_BRIDGE3"
+			fi
+		fi
+		# nic3
+		if [ "$XEN_VM_MAC4" != "" ]; then
+			XEN_VM_NET_CONFIG4="-m3 $XEN_VM_MAC4"
+			if [ "$XEN_VM_BRIDGE4" != "" ]; then
+				XEN_VM_BRIDGE_CONFIG4="-z3 $XEN_VM_BRIDGE4"
+			fi
+		fi
+		# nic4
+		if [ "$XEN_VM_MAC5" != "" ]; then
+			XEN_VM_NET_CONFIG5="-m4 $XEN_VM_MAC5"
+			if [ "$XEN_VM_BRIDGE5" != "" ]; then
+				XEN_VM_BRIDGE_CONFIG5="-z4 $XEN_VM_BRIDGE5"
+			fi
+		fi
+		XEN_VM_NET_CONFIG="$XEN_VM_BRIDGE_CONFIG $XEN_VM_BRIDGE_CONFIG2 $XEN_VM_BRIDGE_CONFIG3 $XEN_VM_BRIDGE_CONFIG4 $XEN_VM_BRIDGE_CONFIG5 $XEN_VM_NET_CONFIG2 $XEN_VM_NET_CONFIG3 $XEN_VM_NET_CONFIG4 $XEN_VM_NET_CONFIG5"
+
+		if [ "$XEN_VM_BOOT" == "" ]; then
+			XEN_VM_BOOT=net
+		fi
+		case "$XEN_VM_BOOT" in
+			local)
+				XEN_VM_BOOT_CONFIG="-b local"
+				;;
+			net)
+				XEN_VM_BOOT_CONFIG="-b net"
+				;;
+			network)
+				XEN_VM_BOOT_CONFIG="-b net"
+				;;
+			cdrom)
+				XEN_VM_BOOT_CONFIG="-b cdrom"
+				;;
+			iso)
+				XEN_VM_BOOT_CONFIG="-b iso -iso $XEN_VM_BOOT_ISO"
+				;;
+		esac
+
+		# no lock for update since remove + create are locking
+
+		# save the disk files, we want to update everything else
+		XEN_VM_DISK_TMP_DIR=`mktemp -d /tmp/xen-vm-disk-$XEN_VM_NAME.XXXXXX`
+		cp -f $XEN_VM_BASE_DIR/disk[0-9] $XEN_VM_DISK_TMP_DIR/
+		# delete
+		$0 remove -n $XEN_VM_NAME
+		# re-create
+		$0 create -n $XEN_VM_NAME -c $XEN_VM_CPU -r $XEN_VM_RAM $XEN_VM_NET_CONFIG $XEN_VM_BOOT_CONFIG -y $XEN_VM_TYPE
+		cp -f $XEN_VM_DISK_TMP_DIR/disk[0-9] $XEN_VM_BASE_DIR/
+		rm -f $XEN_VM_DISK_TMP_DIR/disk*
+		rmdir $XEN_VM_DISK_TMP_DIR
+		htvcenter_post_event 0 "update" 5 "htvcenter-xen-vm" "Updated XEN VM $XEN_VM_NAME."
+		;;
+
+
+	clone)
+		if [ "$XEN_VM_CLONE_NAME" == "" ]; then
+			xen_usage
+		fi
+		if [ "$XEN_VM_MAC" == "" ]; then
+			xen_usage
+		fi
+		if [ ! -f $htvcenter_VM_DIR/$XEN_VM_NAME/name ]; then
+			htvcenter_post_event 0 "create" 3 "htvcenter-xen" "Xen VM $XEN_VM_NAME does not exist on this Host. Not cloning the VM!"
+			exit 1
+		fi
+		if [ -f $htvcenter_VM_DIR/$XEN_VM_CLONE_NAME/name ]; then
+			htvcenter_post_event 0 "create" 3 "htvcenter-xen" "Xen VM $XEN_VM_CLONE_NAME already exist on this Host. Not cloning the VM!"
+			exit 1
+		fi
+		# read origin vm values
+		VM_BASE_DIR=$htvcenter_VM_DIR/$XEN_VM_NAME
+		XEN_VM_RAM=`cat $VM_BASE_DIR/memory 2>/dev/null`
+		XEN_VM_CPU=`cat $VM_BASE_DIR/vcpu 2>/dev/null`
+		XEN_VM_MAC2=`cat $VM_BASE_DIR/mac2 2>/dev/null`
+		XEN_VM_MAC3=`cat $VM_BASE_DIR/mac3 2>/dev/null`
+		XEN_VM_MAC4=`cat $VM_BASE_DIR/mac4 2>/dev/null`
+		XEN_VM_MAC5=`cat $VM_BASE_DIR/mac5 2>/dev/null`
+		XEN_VM_BRIDGE1=`cat $VM_BASE_DIR/bridge1 2>/dev/null`
+		XEN_VM_BRIDGE2=`cat $VM_BASE_DIR/bridge2 2>/dev/null`
+		XEN_VM_BRIDGE3=`cat $VM_BASE_DIR/bridge3 2>/dev/null`
+		XEN_VM_BRIDGE4=`cat $VM_BASE_DIR/bridge4 2>/dev/null`
+		XEN_VM_BRIDGE5=`cat $VM_BASE_DIR/bridge5 2>/dev/null`
+		XEN_VM_BOOT=`cat $VM_BASE_DIR/boot 2>/dev/null`
+		XEN_VM_CDROM=`cat $VM_BASE_DIR/cdrom 2>/dev/null`
+		XEN_VM_TYPE=`get_vm_type $XEN_VM_NAME`
+		# nic0
+		XEN_VM_NET_CONFIG1="-m $XEN_VM_MAC -z $XEN_VM_BRIDGE1"
+		# nic1
+		if [ "$XEN_VM_MAC2" != "" ]; then
+			XEN_VM_MAC2=`xen_gen_mac`
+			XEN_VM_NET_CONFIG2="-m1 $XEN_VM_MAC2 -z1 $XEN_VM_BRIDGE2"
+		fi
+		# nic2
+		if [ "$XEN_VM_MAC3" != "" ]; then
+			XEN_VM_MAC3=`xen_gen_mac`
+			XEN_VM_NET_CONFIG3="-m2 $XEN_VM_MAC3 -z2 $XEN_VM_BRIDGE3"
+		fi
+		# nic3
+		if [ "$XEN_VM_MAC4" != "" ]; then
+			XEN_VM_MAC4=`xen_gen_mac`
+			XEN_VM_NET_CONFIG4="-m3 $XEN_VM_MAC4 -z3 $XEN_VM_BRIDGE4"
+		fi
+		# nic4
+		if [ "$XEN_VM_MAC5" != "" ]; then
+			XEN_VM_MAC5=`xen_gen_mac`
+			XEN_VM_NET_CONFIG5="-m4 $XEN_VM_MAC5 -z4 $XEN_VM_BRIDGE5"
+		fi
+		XEN_VM_NET_CONFIG="$XEN_VM_NET_CONFIG1 $XEN_VM_NET_CONFIG2 $XEN_VM_NET_CONFIG3 $XEN_VM_NET_CONFIG4 $XEN_VM_NET_CONFIG5"
+		# boot
+		case "XEN_VM_BOOT" in
+			c)
+				XEN_VM_BOOT_CONFIG="-b local"
+				;;
+			n)
+				XEN_VM_BOOT_CONFIG="-b net"
+				;;
+			d)
+				if echo $XEN_VM_CDROM | grep ^phy 1>/dev/null; then
+					XEN_VM_BOOT_CONFIG="-b cdrom"
+				else
+					ISO_IMG=`echo $XEN_VM_CDROM | cut -d ':' -f2 | cut -d ',' -f1` 
+					XEN_VM_BOOT_CONFIG="-b cdrom -iso $ISO_IMG"
+				fi
+				;;
+		esac
+
+		# create the new VM from clone
+		$0 create -n $XEN_VM_CLONE_NAME -c $XEN_VM_CPU -r $XEN_VM_RAM $XEN_VM_NET_CONFIG $XEN_VM_BOOT_CONFIG -y $XEN_VM_TYPE
+		htvcenter_post_event 0 "clone" 5 "htvcenter-xen-vm" "Cloned XEN VM $XEN_VM_NAME to $XEN_VM_CLONE_NAME."
+		;;
+
+
+
+	start)
+		LOCK_TIME=`htvcenter_lock_queue aquire xen`
+		trap "htvcenter_lock_queue release xen $LOCK_TIME" EXIT
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+
+		echo "Starting Xen VM $XEN_VM_NAME"
+		rm -f $VM_XEN_CONFIG
+
+		if [ "$XEN_VM_TYPE" == "xen-vm-local" ]; then
+			# only start real when we have a root disk
+			XEN_VM_ROOT_DISK=`cat $htvcenter_VM_DIR/$XEN_VM_NAME/disk1 2>/dev/null`
+			XEN_VM_MAC=`cat $htvcenter_VM_DIR/$XEN_VM_NAME/mac1 2>/dev/null`
+			if [ "$XEN_VM_ROOT_DISK" != "" ]; then
+				# lvol or blockfile ?
+				if echo $XEN_VM_ROOT_DISK | grep ^/dev 1>/dev/null; then
+					# get the lvm device
+					XEN_VM_DISK=`echo $XEN_VM_ROOT_DISK | cut -d':' -f2 | cut -d',' -f1`
+					if [ ! -e "$XEN_VM_DISK" ]; then
+						# activate the lvol
+						pvscan >/dev/null
+						vgscan >/dev/null
+						lvscan >/dev/null
+						lvchange -ay -y $XEN_VM_DISK
+						if [ ! -e "$XEN_VM_DISK" ]; then
+							vgchange --refresh > /dev/null 2>&1
+							lvchange -ay -y $XEN_VM_DISK
+						fi
+					fi
+					# activate the lvol
+					lvchange -ay -y $XEN_VM_DISK
+				fi
+				# creating the cfg
+				xen_generate_vm_config $XEN_VM_NAME
+				SCREEN_NAME=`date +%T%x | sed -e "s/://g" | sed -e "s#/##g"`
+				if $RUNSCREEN -dmS $SCREEN_NAME $XEN_CMDLINE_UTIL create -f $htvcenter_PLUGIN_XEN_VM_CONFIG_DIR/$XEN_VM_NAME.cfg; then
+					htvcenter_post_event 0 "start" 5 "htvcenter-xen" "Started Xen VM $XEN_VM_NAME"
+				else
+					htvcenter_post_event 0 "start" 3 "htvcenter-xen" "Error starting Xen VM $XEN_VM_NAME"
+
+					htvcenter_lock_queue release xen $LOCK_TIME
+					trap '' EXIT
+
+					exit 1
+				fi
+			fi
+			# and start the monitord
+			kill `ps ax | grep htvcenter-xen-monitord | grep -v grep | grep -i $XEN_VM_MAC | awk {' print $1 '}` 2>/dev/null
+			$RUNSCREEN -dmS $XEN_VM_MAC $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/xen/sbin/htvcenter-xen-monitord $XEN_VM_MAC
+		else
+			if $RUNSCREEN -dmS $XEN_VM_MAC $XEN_CMDLINE_UTIL create -f $htvcenter_PLUGIN_XEN_VM_CONFIG_DIR/$XEN_VM_NAME.cfg; then
+				htvcenter_post_event 0 "start" 5 "htvcenter-xen" "Started Xen VM $XEN_VM_NAME"
+			else
+				htvcenter_post_event 0 "start" 3 "htvcenter-xen" "Error starting Xen VM $XEN_VM_NAME -> $htvcenter_PLUGIN_XEN_VM_CONFIG_DIR/$XEN_VM_NAME.cfg"
+
+				htvcenter_lock_queue release xen $LOCK_TIME
+				trap '' EXIT
+
+				exit 1
+			fi
+		fi
+		touch $htvcenter_VM_DIR/$XEN_VM_NAME/autostart.$resource_id
+
+		htvcenter_lock_queue release xen $LOCK_TIME
+		trap '' EXIT
+		;;
+
+
+	start_by_mac)
+		if [ "$XEN_VM_MAC" == "" ]; then
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			xen_usage
+		fi
+
+		LOCK_TIME=`htvcenter_lock_queue aquire xen`
+		trap "htvcenter_lock_queue release xen $LOCK_TIME" EXIT
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+
+		echo "Starting Xen VM $XEN_VM_MAC"
+		rm -f $VM_XEN_CONFIG
+		XEN_VM_NAME=`grep -rHi $XEN_VM_MAC $htvcenter_VM_DIR/*/mac1 2>/dev/null | cut -d':' -f1  | head -n1 2>/dev/null` 2>/dev/null
+		XEN_VM_NAME=`dirname $XEN_VM_NAME` 2>/dev/null
+		XEN_VM_NAME=`basename $XEN_VM_NAME` 2>/dev/null
+		if [ "$XEN_VM_NAME" == "" ]; then
+			echo "NOTICE: Could not find XEN VM $XEN_VM_MAC on this host" | logger
+
+			htvcenter_lock_queue release xen $LOCK_TIME
+			trap '' EXIT
+
+			exit 1
+		fi
+		if [ "$XEN_VM_TYPE" == "xen-vm-local" ]; then
+			echo "Starting Xen VM $XEN_VM_MAC -> $XEN_VM_NAME on LVM volume $XEN_VM_DISK" | logger
+			# add disk disk parameter
+			# start only if we have a root-disk
+			if [ "$XEN_VM_DISK" != "" ]; then
+				if [ "$XEN_VM_DISK" != "noop" ]; then
+					# lvol or blockfile ?
+					if echo $XEN_VM_DISK | grep ^/dev 1>/dev/null; then
+						if [ ! -e "$XEN_VM_DISK" ]; then
+							# activate the lvol
+							pvscan >/dev/null
+							vgscan >/dev/null
+							lvscan >/dev/null
+							lvchange -ay -y $XEN_VM_DISK
+							if [ ! -e "$XEN_VM_DISK" ]; then
+								vgchange --refresh > /dev/null 2>&1
+								lvchange -ay -y $XEN_VM_DISK
+							fi
+						fi
+						lvchange -ay -y $XEN_VM_DISK
+						echo "phy:$XEN_VM_DISK,hda,w" > $htvcenter_VM_DIR/$XEN_VM_NAME/disk1
+					else
+						echo "file:$XEN_VM_DISK,hda,w" > $htvcenter_VM_DIR/$XEN_VM_NAME/disk1
+					fi
+				fi
+				# creating the cfg
+				xen_generate_vm_config $XEN_VM_NAME
+				# :) start + boot local
+				SCREEN_NAME=`date +%T%x | sed -e "s/://g" | sed -e "s#/##g"`
+				# make sure it is stopped
+				$XEN_CMDLINE_UTIL destroy -f $XEN_VM_NAME 2>/dev/null
+				if $RUNSCREEN -dmS $SCREEN_NAME $XEN_CMDLINE_UTIL create -f $htvcenter_PLUGIN_XEN_VM_CONFIG_DIR/$XEN_VM_NAME.cfg; then
+					htvcenter_post_event 0 "create" 5 "htvcenter-xen" "Started Xen VM $XEN_VM_NAME -> $htvcenter_PLUGIN_XEN_VM_CONFIG_DIR/$XEN_VM_NAME.cfg"
+				else
+					htvcenter_post_event 0 "create" 3 "htvcenter-xen" "Could not start Xen VM $XEN_VM_NAME -> $htvcenter_PLUGIN_XEN_VM_CONFIG_DIR/$XEN_VM_NAME.cfg"
+
+					htvcenter_lock_queue release xen $LOCK_TIME
+					trap '' EXIT
+
+					exit 1
+				fi
+			else
+				echo "" > $htvcenter_VM_DIR/$XEN_VM_NAME/disk1
+				# creating the cfg
+				xen_generate_vm_config $XEN_VM_NAME
+			fi
+			# start the vm monitord / make sure it is stopped before
+			kill `ps ax | grep htvcenter-xen-monitord | grep -v grep | grep -i $XEN_VM_MAC | awk {' print $1 '}` 2>/dev/null
+			$RUNSCREEN -dmS $XEN_VM_MAC $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/xen/sbin/htvcenter-xen-monitord $XEN_VM_MAC
+		else
+			if $RUNSCREEN -dmS $XEN_VM_MAC $XEN_CMDLINE_UTIL create -f $htvcenter_PLUGIN_XEN_VM_CONFIG_DIR/$XEN_VM_NAME.cfg; then
+				htvcenter_post_event 0 "start" 5 "htvcenter-xen" "Started Xen VM $XEN_VM_NAME"
+			else
+				htvcenter_post_event 0 "start" 3 "htvcenter-xen" "Error starting Xen VM $XEN_VM_NAME -> $htvcenter_PLUGIN_XEN_VM_CONFIG_DIR/$XEN_VM_NAME.cfg"
+
+				htvcenter_lock_queue release xen $LOCK_TIME
+				trap '' EXIT
+
+				exit 1
+			fi
+
+		fi
+		touch $htvcenter_VM_DIR/$XEN_VM_NAME/autostart.$resource_id
+
+		htvcenter_lock_queue release xen $LOCK_TIME
+		trap '' EXIT
+		;;
+
+
+	stop)
+		LOCK_TIME=`htvcenter_lock_queue aquire xen`
+		trap "htvcenter_lock_queue release xen $LOCK_TIME" EXIT
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+
+		XEN_VM_MAC=`cat $htvcenter_VM_DIR/$XEN_VM_NAME/mac1 2>/dev/null`
+		echo "Stopping Xen VM $XEN_VM_NAME / $XEN_VM_MAC"
+		rm -f $VM_XEN_CONFIG
+		if ! $XEN_CMDLINE_UTIL shutdown $XEN_VM_NAME; then
+			$XEN_CMDLINE_UTIL destroy $XEN_VM_NAME
+		fi
+		kill `ps ax | grep htvcenter-xen-monitord | grep -v grep | grep -i $XEN_VM_MAC | awk {' print $1 '}` 2>/dev/null
+		htvcenter_post_event 0 "stop" 5 "htvcenter-xen" "Stopped Xen VM $XEN_VM_NAME"
+		rm -f $htvcenter_VM_DIR/$XEN_VM_NAME/autostart.$resource_id
+
+		htvcenter_lock_queue release xen $LOCK_TIME
+		trap '' EXIT
+		;;
+
+
+	stop_by_mac)
+		if [ "$XEN_VM_MAC" == "" ]; then
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			xen_usage
+		fi
+		LOCK_TIME=`htvcenter_lock_queue aquire xen`
+		trap "htvcenter_lock_queue release xen $LOCK_TIME" EXIT
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+
+		XEN_VM_NAME=`grep -rHi $XEN_VM_MAC $htvcenter_VM_DIR/*/mac1 2>/dev/null | cut -d':' -f1 | head -n1 2>/dev/null` 2>/dev/null
+		XEN_VM_NAME=`dirname $XEN_VM_NAME` 2>/dev/null
+		XEN_VM_NAME=`basename $XEN_VM_NAME` 2>/dev/null
+		if [ "$XEN_VM_NAME" == "" ]; then
+			echo "NOTICE: Could not find XEN VM $XEN_VM_MAC on this host" | logger
+
+			htvcenter_lock_queue release xen $LOCK_TIME
+			trap '' EXIT
+
+			exit 1
+		fi
+		echo "Stopping Xen VM $XEN_VM_NAME / $XEN_VM_MAC" | logger
+		rm -f $VM_XEN_CONFIG
+		if ! $XEN_CMDLINE_UTIL shutdown $XEN_VM_NAME; then
+			$XEN_CMDLINE_UTIL destroy $XEN_VM_NAME
+		fi
+		# kill the status monitor
+		kill `ps ax | grep htvcenter-xen-monitord | grep -v grep | grep -i $XEN_VM_MAC | awk {' print $1 '}` 2>/dev/null
+		rm -f $htvcenter_VM_DIR/$XEN_VM_NAME/autostart.$resource_id
+
+		htvcenter_lock_queue release xen $LOCK_TIME
+		trap '' EXIT
+		;;
+
+
+	restart_by_mac)
+		if [ "$XEN_VM_MAC" == "" ]; then
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			xen_usage
+		fi
+
+		LOCK_TIME=`htvcenter_lock_queue aquire xen`
+		trap "htvcenter_lock_queue release xen $LOCK_TIME" EXIT
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+
+		XEN_VM_NAME=`grep -rHi $XEN_VM_MAC $htvcenter_VM_DIR/*/mac1 2>/dev/null | cut -d':' -f1 | head -n1 2>/dev/null` 2>/dev/null
+		XEN_VM_NAME=`dirname $XEN_VM_NAME` 2>/dev/null
+		XEN_VM_NAME=`basename $XEN_VM_NAME` 2>/dev/null
+		if [ "$XEN_VM_NAME" == "" ]; then
+			echo "NOTICE: Could not find XEN VM $XEN_VM_MAC on this host" | logger
+
+			htvcenter_lock_queue release xen $LOCK_TIME
+			trap '' EXIT
+
+			exit 1
+		fi
+		if [ "$XEN_VM_DISK" == "noop" ]; then
+			htvcenter_lock_queue release xen $LOCK_TIME
+			trap '' EXIT
+
+			exit 0
+		fi
+		echo "Restarting Xen VM $XEN_VM_MAC -> $XEN_VM_NAME" | logger
+		rm -f $VM_XEN_CONFIG
+		if ! $XEN_CMDLINE_UTIL shutdown $XEN_VM_NAME; then
+			$XEN_CMDLINE_UTIL destroy $XEN_VM_NAME
+		fi
+		# add disk disk parameter if disk param is not set to noop
+		if [ "$XEN_VM_DISK" == "" ]; then
+			echo "" > $htvcenter_VM_DIR/$XEN_VM_NAME/disk1
+			# creating the cfg
+			xen_generate_vm_config $XEN_VM_NAME
+		elif [ "$XEN_VM_DISK" != "noop" ]; then
+			# lvol or blockfile ?
+			if echo $XEN_VM_DISK | grep ^/dev 1>/dev/null; then
+				if [ ! -e "$XEN_VM_DISK" ]; then
+					# activate the lvol
+					pvscan >/dev/null
+					vgscan >/dev/null
+					lvscan >/dev/null
+					lvchange -ay -y $XEN_VM_DISK
+					if [ ! -e "$XEN_VM_DISK" ]; then
+						vgchange --refresh > /dev/null 2>&1
+						lvchange -ay -y $XEN_VM_DISK
+					fi
+				fi
+				lvchange -ay -y $XEN_VM_DISK
+				echo "phy:$XEN_VM_DISK,hda,w" > $htvcenter_VM_DIR/$XEN_VM_NAME/disk1
+			else
+				echo "file:$XEN_VM_DISK,hda,w" > $htvcenter_VM_DIR/$XEN_VM_NAME/disk1
+			fi
+			# creating the cfg
+			xen_generate_vm_config $XEN_VM_NAME
+		fi
+		# stop the vm monitor
+		kill `ps ax | grep htvcenter-xen-monitord | grep -v grep | grep -i $XEN_VM_MAC | awk {' print $1 '}` 2>/dev/null
+		# start only if we have a root-disk
+		XEN_VM_CURRENT_DISK=`cat $htvcenter_VM_DIR/$XEN_VM_NAME/disk1 2>/dev/null`
+		if [ "$XEN_VM_CURRENT_DISK" != "" ]; then
+			# :) start + boot local
+			SCREEN_NAME=`date +%T%x | sed -e "s/://g" | sed -e "s#/##g"`
+			if $RUNSCREEN -dmS $SCREEN_NAME $XEN_CMDLINE_UTIL create -f $htvcenter_PLUGIN_XEN_VM_CONFIG_DIR/$XEN_VM_NAME.cfg; then
+				htvcenter_post_event 0 "restart_by_mac" 5 "htvcenter-xen" "Created and started Xen VM $XEN_VM_NAME -> $htvcenter_PLUGIN_XEN_VM_CONFIG_DIR/$XEN_VM_NAME.cfg"
+			else
+				htvcenter_post_event 0 "restart_by_mac" 3 "htvcenter-xen" "Could not create Xen VM $XEN_VM_NAME -> $htvcenter_PLUGIN_XEN_VM_CONFIG_DIR/$XEN_VM_NAME.cfg"
+
+				htvcenter_lock_queue release xen $LOCK_TIME
+				trap '' EXIT
+
+				exit 1
+			fi
+		fi
+		# start the vm monitord
+		kill `ps ax | grep htvcenter-xen-monitord | grep -v grep | grep -i $XEN_VM_MAC | awk {' print $1 '}` 2>/dev/null
+		$RUNSCREEN -dmS $XEN_VM_MAC $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/xen/sbin/htvcenter-xen-monitord $XEN_VM_MAC
+		touch $htvcenter_VM_DIR/$XEN_VM_NAME/autostart.$resource_id
+
+		htvcenter_lock_queue release xen $LOCK_TIME
+		trap '' EXIT
+		;;
+
+
+	reboot)
+		LOCK_TIME=`htvcenter_lock_queue aquire xen`
+		trap "htvcenter_lock_queue release xen $LOCK_TIME" EXIT
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+
+		echo "Rebooting Xen VM $XEN_VM_NAME"
+		# creating the cfg
+		xen_generate_vm_config $XEN_VM_NAME
+		rm -f $VM_XEN_CONFIG
+		XEN_VM_ROOT_DISK=`cat $htvcenter_VM_DIR/$XEN_VM_NAME/disk1 2>/dev/null`
+		XEN_VM_MAC=`cat $htvcenter_VM_DIR/$XEN_VM_NAME/mac1 2>/dev/null`
+		if [ "$XEN_VM_ROOT_DISK" != "" ]; then
+			if $XEN_CMDLINE_UTIL reboot $XEN_VM_NAME; then
+				htvcenter_post_event 0 "reboot" 5 "htvcenter-xen" "Rebooted Xen VM $XEN_VM_NAME"
+			else
+				htvcenter_post_event 0 "reboot" 3 "htvcenter-xen" "Could not reboot Xen VM $XEN_VM_NAME"
+
+				htvcenter_lock_queue release xen $LOCK_TIME
+				trap '' EXIT
+
+				exit 1
+			fi
+		fi
+		# restart the vm monitord
+		kill `ps ax | grep htvcenter-xen-monitord | grep -v grep | grep -i $XEN_VM_MAC | awk {' print $1 '}` 2>/dev/null
+		$RUNSCREEN -dmS $XEN_VM_MAC $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/xen/sbin/htvcenter-xen-monitord $XEN_VM_MAC
+		touch $htvcenter_VM_DIR/$XEN_VM_NAME/autostart.$resource_id
+
+		htvcenter_lock_queue release xen $LOCK_TIME
+		trap '' EXIT
+		;;
+
+	remove)
+		LOCK_TIME=`htvcenter_lock_queue aquire xen`
+		trap "htvcenter_lock_queue release xen $LOCK_TIME" EXIT
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+
+		echo "Deleting Xen VM $XEN_VM_NAME"
+		rm -f $VM_XEN_CONFIG
+		XEN_VM_MAC=`cat $htvcenter_VM_DIR/$XEN_VM_NAME/mac1 2>/dev/null`
+		$XEN_CMDLINE_UTIL destroy $XEN_VM_NAME 1>/dev/null 2>&1
+		rm -f $htvcenter_PLUGIN_XEN_VM_CONFIG_DIR/$XEN_VM_NAME.*
+		rm -rf $htvcenter_VM_DIR/$XEN_VM_NAME
+		# we have to wait here because when having a shared config dir
+		# nfs can still have files in use/lock
+		XEN_REMOVE_WAIT=0
+		while (:); do
+			if [ -d "$htvcenter_VM_DIR/$XEN_VM_NAME" ]; then
+				htvcenter_post_event 0 "remove" 5 "htvcenter-xen-vm" "Delete Xen VM $XEN_VM_NAME failed, retrying."
+			else
+				htvcenter_post_event 0 "remove" 5 "htvcenter-xen-vm" "Delete Xen VM $XEN_VM_NAME success."
+				break
+			fi
+			if [ "$XEN_REMOVE_WAIT" == "$XEN_REMOVE_MAX_WAIT" ]; then
+				htvcenter_post_event 0 "remove" 3 "htvcenter-xen-vm" "Delete Xen VM $XEN_VM_NAME failed, giving up!"
+				break
+			fi
+			XEN_REMOVE_WAIT=$(( XEN_REMOVE_WAIT + 1 ))
+			rm -rf $htvcenter_VM_DIR/$XEN_VM_NAME
+			sleep 1
+		done
+		# stop the vm monitord
+		kill `ps ax | grep htvcenter-xen-monitord | grep -v grep | grep -i $XEN_VM_MAC | awk {' print $1 '}` 2>/dev/null
+
+		htvcenter_lock_queue release xen $LOCK_TIME
+		trap '' EXIT
+		;;
+
+	list)
+		echo "Listing Xen vms"
+		$XEN_CMDLINE_UTIL list
+		;;
+	create_vm_config)
+		if [ "$XEN_VM_NAME" == "" ]; then
+			xen_usage
+		fi
+		xen_log create_vm_config "Creating vm config for $XEN_VM_NAME"
+		# creating the cfg
+		xen_generate_vm_config $XEN_VM_NAME
+                # activate lvol if we have a disk parameter
+		XEN_VM_ROOT_DISK=`cat $htvcenter_VM_DIR/$XEN_VM_NAME/disk1 2>/dev/null`
+		if [ "$XEN_VM_ROOT_DISK" != "" ]; then
+			# get the lvm device
+			XEN_VM_DISK=`echo $XEN_VM_ROOT_DISK | cut -d':' -f2 | cut -d',' -f1`
+			if echo $XEN_VM_DISK | grep ^/dev 1>/dev/null; then
+				if [ ! -e "$XEN_VM_DISK" ]; then
+					# activate the lvol
+					pvscan >/dev/null
+					vgscan >/dev/null
+					lvscan >/dev/null
+					lvchange -ay -y $XEN_VM_DISK
+					if [ ! -e "$XEN_VM_DISK" ]; then
+						vgchange --refresh > /dev/null 2>&1
+						lvchange -ay -y $XEN_VM_DISK
+					fi
+				fi
+			fi
+			xen_log create_vm_config "Activating logical volume $XEN_VM_DISK for VM $XEN_VM_NAME"
+			# lvol or blockfile ?
+			if echo $XEN_VM_DISK | grep ^/dev 1>/dev/null; then
+				lvchange -ay -y $XEN_VM_DISK
+			fi
+		fi
+		;;
+
+	remove_vm_config)
+		if [ "$XEN_VM_NAME" == "" ]; then
+			xen_usage
+		fi
+		echo "Removing vm config for $XEN_VM_NAME" | logger
+		# creating the cfg
+		rm -f $htvcenter_PLUGIN_XEN_VM_CONFIG_DIR/$XEN_VM_NAME.*
+		rm -f $htvcenter_VM_DIR/$XEN_VM_NAME/autostart.$resource_id
+		;;
+
+	restart_vm_client)
+		if [ "$XEN_VM_NAME" == "" ]; then
+			xen_usage
+		fi
+		echo "Removing vm config for $XEN_VM_NAME" | logger
+		XEN_VM_MAC=`cat $htvcenter_VM_DIR/$XEN_VM_NAME/mac1 2>/dev/null`
+		# restart the vm monitord
+		kill `ps ax | grep htvcenter-xen-monitord | grep -v grep | grep -i $XEN_VM_MAC | awk {' print $1 '}` 2>/dev/null
+		$RUNSCREEN -dmS $XEN_VM_MAC $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/xen/sbin/htvcenter-xen-monitord $XEN_VM_MAC
+		touch $htvcenter_VM_DIR/$XEN_VM_NAME/autostart.$resource_id
+		;;
+
+	post_vm_list)
+
+		VM_LIST_TMP=$resource_id.vm_list
+		> $VM_LIST_TMP
+		if [ ! -d $htvcenter_PLUGIN_XEN_VM_CONFIG_DIR ]; then
+			mkdir -p $htvcenter_PLUGIN_XEN_VM_CONFIG_DIR
+		fi
+		# create processlist
+		ps ax > $resource_id.process_list
+		for cfg in `ls $htvcenter_PLUGIN_XEN_VM_CONFIG_DIR/*.cfg 2>/dev/null`; do
+			VML_NAME=`basename $cfg | sed -e 's#.cfg$##g'`
+			XEN_VM_BASE_DIR=$htvcenter_VM_DIR/$VML_NAME
+			# running ?
+			if ps ax | grep qemu | grep xen | grep -w $VML_NAME > /dev/null; then
+				VM_ACTIVE=1
+			elif $XEN_CMDLINE_UTIL list |grep -w $VML_NAME > /dev/null; then
+				VM_ACTIVE=1
+			else
+				VM_ACTIVE=0
+			fi
+
+			if [ -f $XEN_VM_BASE_DIR/memory ]; then
+				VM_MEMORY=`cat $XEN_VM_BASE_DIR/memory`
+				VM_MAC1=`cat $XEN_VM_BASE_DIR/mac1`
+				# check again if the monitord is running
+				if ps ax | grep htvcenter-xen-monitord | grep -i $VM_MAC1 >/dev/null; then
+					VM_ACTIVE=1
+				fi
+				VM_CPUS=`cat $XEN_VM_BASE_DIR/vcpu`
+				VM_BRIDGE1=`cat $XEN_VM_BASE_DIR/bridge1`
+			else
+				VM_MEMORY=`cat $htvcenter_PLUGIN_XEN_VM_CONFIG_DIR/$VML_NAME.cfg | grep ^memory | cut -d'=' -f2 | sed -e "s/ //g" | sed -e "s/\"//g"`
+				VM_CPUS=`cat $htvcenter_PLUGIN_XEN_VM_CONFIG_DIR/$VML_NAME.cfg | grep ^vcpu | cut -d'=' -f2 | sed -e "s/ //g" | sed -e "s/\"//g"`
+				VM_MAC1=`cat $htvcenter_PLUGIN_XEN_VM_CONFIG_DIR/$VML_NAME.cfg | grep ^vif | grep mac | sed -e "s/.*mac=[[:space:]]*\([0-9a-fA-F:]\+\).*/\1/g"`
+				VM_BRIDGE1=`cat $htvcenter_PLUGIN_XEN_VM_CONFIG_DIR/$VML_NAME.cfg | grep ^vif | grep mac | sed -e "s/.*bridge=[[:space:]]*\([[:alnum:]]\+\).*/\1/g"`
+			fi
+			VM_VNC=`$XEN_CMDLINE_UTIL list -l $VML_NAME 2>/dev/null | grep -A 10 vnc | grep display | cut -d':' -f 2 | sed -e "s/,//g" | awk '{ print $1 }'`
+			if [ "$VM_VNC" == "" ]; then
+				VM_VNC="n.a."
+			fi
+			echo "$VM_ACTIVE""@""$VML_NAME""@""$VM_MAC1""@""$VM_CPUS""@""$VM_MEMORY""@""$VM_VNC""@" >> $VM_LIST_TMP
+		done
+		if ! wget -q $WGET_NO_CERT_CHECK -O /dev/null --http-user=$XEN_htvcenter_USERNAME --http-password=$XEN_htvcenter_PASSWORD  --post-file=`$htvcenter_POSTENCODE $VM_LIST_TMP` $htvcenter_web_protocol://$htvcenter_SERVER_IP/htvcenter/base/plugins/xen/xen-action.php?xen_server_command=get_xen; then
+			htvcenter_post_event 0 "post_vm_list" 2 "htvcenter-xen-vm" "Could not post VM list to the htvcenter-server at $htvcenter_SERVER_IP!"
+		fi
+		rm -f $resource_id.process_list
+		rm -f $VM_LIST_TMP
+		rm -f $VM_LIST_TMP.post
+		;;
+
+	post_vm_config)
+		if [ "$XEN_VM_NAME" == "" ]; then
+			xen_usage
+		fi
+		echo "Posting vm config for $XEN_VM_NAME to the htvcenter-server"
+		VM_CONFIG_TMP=$resource_id.$XEN_VM_NAME.vm_config
+		VM_BASE_DIR=$htvcenter_VM_DIR/$XEN_VM_NAME
+		vm_memory=`cat $VM_BASE_DIR/memory 2>/dev/null`
+		vm_cpu=`cat $VM_BASE_DIR/vcpu 2>/dev/null`
+		vm_mac1=`cat $VM_BASE_DIR/mac1 2>/dev/null`
+		vm_bridge1=`cat $VM_BASE_DIR/bridge1 2>/dev/null`
+		vm_mac2=`cat $VM_BASE_DIR/mac2 2>/dev/null`
+		vm_bridge2=`cat $VM_BASE_DIR/bridge2 2>/dev/null`
+		vm_mac3=`cat $VM_BASE_DIR/mac3 2>/dev/null`
+		vm_bridge3=`cat $VM_BASE_DIR/bridge3 2>/dev/null`
+		vm_mac4=`cat $VM_BASE_DIR/mac4 2>/dev/null`
+		vm_bridge4=`cat $VM_BASE_DIR/bridge4 2>/dev/null`
+		vm_mac5=`cat $VM_BASE_DIR/mac5 2>/dev/null`
+		vm_bridge5=`cat $VM_BASE_DIR/bridge5 2>/dev/null`
+		vm_swap=`cat $VM_BASE_DIR/swap 2>/dev/null`
+		vm_swapsize=`cat $VM_BASE_DIR/swapsize 2>/dev/null`
+		vm_disk1=`cat $VM_BASE_DIR/disk1 2>/dev/null`
+		vm_disksize1=`cat $VM_BASE_DIR/disksize1 2>/dev/null`
+		vm_disk2=`cat $VM_BASE_DIR/disk2 2>/dev/null`
+		vm_disksize2=`cat $VM_BASE_DIR/disksize2 2>/dev/null`
+		vm_disk3=`cat $VM_BASE_DIR/disk3 2>/dev/null`
+		vm_disksize3=`cat $VM_BASE_DIR/disksize3 2>/dev/null`
+		vm_vnc_display=`cat $VM_BASE_DIR/vncdisplay`
+		vm_cdrom=`cat $VM_BASE_DIR/cdrom 2>/dev/null`
+		vm_boot=`cat $VM_BASE_DIR/boot 2>/dev/null`
+
+		# gather vnc display
+		vm_vnc_display=`$XEN_CMDLINE_UTIL list -l $XEN_VM_NAME 2>/dev/null | grep -A 10 vnc | grep display | cut -d':' -f 2 | sed -e "s/,//g" | awk '{ print $1 }'`
+		if [ "$vm_vnc_display" == "" ]; then
+			vm_vnc_display=`cat $VM_BASE_DIR/vncdisplay`
+		fi
+
+		# made the boot device readable
+		XEN_VM_BOOT_STR="local"
+		case "$vm_boot" in
+			d)
+				XEN_VM_BOOT_STR="cdrom"
+				;;
+			c)
+				XEN_VM_BOOT_STR="local"
+				;;
+			n)
+				XEN_VM_BOOT_STR="network"
+				;;
+		esac
+		XEN_VM_TYPE=`get_vm_type $XEN_VM_NAME`
+
+		echo "htvcenter_XEN_VM_RAM=\"$vm_memory\"" > $VM_CONFIG_TMP
+		echo "htvcenter_XEN_VM_CPU=\"$vm_cpu\"" >> $VM_CONFIG_TMP
+		echo "htvcenter_XEN_VM_NET_1=\"$vm_bridge1\"" >> $VM_CONFIG_TMP
+		echo "htvcenter_XEN_VM_MAC_1=\"$vm_mac1\"" >> $VM_CONFIG_TMP
+		echo "htvcenter_XEN_VM_NET_2=\"$vm_bridge2\"" >> $VM_CONFIG_TMP
+		echo "htvcenter_XEN_VM_MAC_2=\"$vm_mac2\"" >> $VM_CONFIG_TMP
+		echo "htvcenter_XEN_VM_NET_3=\"$vm_bridge3\"" >> $VM_CONFIG_TMP
+		echo "htvcenter_XEN_VM_MAC_3=\"$vm_mac3\"" >> $VM_CONFIG_TMP
+		echo "htvcenter_XEN_VM_NET_4=\"$vm_bridge4\"" >> $VM_CONFIG_TMP
+		echo "htvcenter_XEN_VM_MAC_4=\"$vm_mac4\"" >> $VM_CONFIG_TMP
+		echo "htvcenter_XEN_VM_NET_5=\"$vm_bridge5\"" >> $VM_CONFIG_TMP
+		echo "htvcenter_XEN_VM_MAC_5=\"$vm_mac5\"" >> $VM_CONFIG_TMP
+		echo "htvcenter_XEN_VM_SWAP=\"$vm_swap\"" >> $VM_CONFIG_TMP
+		echo "htvcenter_XEN_VM_SWAPSIZE=\"$vm_swapsize\"" >> $VM_CONFIG_TMP
+		echo "htvcenter_XEN_VM_DISK_1=\"$vm_disk1\"" >> $VM_CONFIG_TMP
+		echo "htvcenter_XEN_VM_DISK_SIZE_1=\"$vm_disksize1\"" >> $VM_CONFIG_TMP
+		echo "htvcenter_XEN_VM_DISK_2=\"$vm_disk2\"" >> $VM_CONFIG_TMP
+		echo "htvcenter_XEN_VM_DISK_SIZE_2=\"$vm_disksize2\"" >> $VM_CONFIG_TMP
+		echo "htvcenter_XEN_VM_DISK_3=\"$vm_disk3\"" >> $VM_CONFIG_TMP
+		echo "htvcenter_XEN_VM_DISK_SIZE_3=\"$vm_disksize3\"" >> $VM_CONFIG_TMP
+		echo "htvcenter_XEN_VM_VNC=\"$vm_vnc_display\"" >> $VM_CONFIG_TMP
+		echo "htvcenter_XEN_VM_CDROM=\"$vm_cdrom\"" >> $VM_CONFIG_TMP
+		echo "htvcenter_XEN_VM_BOOT=\"$XEN_VM_BOOT_STR\"" >> $VM_CONFIG_TMP
+		echo "htvcenter_XEN_VM_TYPE=\"$XEN_VM_TYPE\"" >> $VM_CONFIG_TMP
+		if ! wget -q $WGET_NO_CERT_CHECK -O /dev/null --http-user=$XEN_htvcenter_USERNAME --http-password=$XEN_htvcenter_PASSWORD  --post-file=`$htvcenter_POSTENCODE $VM_CONFIG_TMP` $htvcenter_web_protocol://$htvcenter_SERVER_IP/htvcenter/base/plugins/xen/xen-action.php?xen_server_command=get_xen_config; then
+			echo "ERROR: Could not post vm config to the htvcenter-server at $htvcenter_SERVER_IP!"
+			echo "ERROR: Could not post vm config to the htvcenter-server at $htvcenter_SERVER_IP!" | logger
+		fi
+		rm -f $VM_CONFIG_TMP
+		rm -f $VM_CONFIG_TMP.post
+		;;
+
+
+	post_bridge_config)
+		echo "Posting bridge config  to the htvcenter-server"
+		BRIDGE_CONFIG_TMP=$resource_id.bridge_config
+		echo -n "htvcenter_XEN_BRIDGES=\"" > $BRIDGE_CONFIG_TMP
+		for BRIDGE in `brctl show | tail -n+2 | awk '{ print $1 }'`; do
+			echo -n "$BRIDGE"":" >> $BRIDGE_CONFIG_TMP
+		done
+		echo -n "\"" >> $BRIDGE_CONFIG_TMP
+		if ! wget -q $WGET_NO_CERT_CHECK -O /dev/null --http-user=$XEN_htvcenter_USERNAME --http-password=$XEN_htvcenter_PASSWORD  --post-file=`$htvcenter_POSTENCODE $BRIDGE_CONFIG_TMP` $htvcenter_web_protocol://$htvcenter_SERVER_IP/htvcenter/base/plugins/xen/xen-action.php?xen_server_command=get_bridge_config; then
+			htvcenter_post_event 0 "post_bridge_config" 2 "htvcenter-xen-vm" "Could not post bridge config to the htvcenter-server at $htvcenter_SERVER_IP!"
+		fi
+		rm -f $BRIDGE_CONFIG_TMP
+		rm -f $BRIDGE_CONFIG_TMP.post
+		;;
+
+
+	update_vm_ram)
+		if [ "$XEN_VM_NAME" == "" ]; then
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			xen_usage
+		fi
+		if [ "$XEN_VM_RAM" == "" ]; then
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			xen_usage
+		fi
+
+		LOCK_TIME=`htvcenter_lock_queue aquire xen`
+		trap "htvcenter_lock_queue release xen $LOCK_TIME" EXIT
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+
+		echo "Updating XEN VM $XEN_VM_NAME with $XEN_VM_RAM Memory"
+		VM_BASE_DIR=$htvcenter_VM_DIR/$XEN_VM_NAME
+		echo "$XEN_VM_RAM" > $VM_BASE_DIR/memory
+		# creating the cfg
+		xen_generate_vm_config $XEN_VM_NAME
+		if [ "$XEN_htvcenter_USERNAME" != "" ] && [ "$XEN_htvcenter_PASSWORD" != "" ]; then
+			$0 post_vm_config -n $XEN_VM_NAME -u $XEN_htvcenter_USERNAME -p $XEN_htvcenter_PASSWORD
+		fi
+
+		htvcenter_lock_queue release xen $LOCK_TIME
+		trap '' EXIT
+		;;
+
+	update_vm_cpu)
+		if [ "$XEN_VM_NAME" == "" ]; then
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			xen_usage
+		fi
+		if [ "$XEN_VM_CPU" == "" ]; then
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			xen_usage
+		fi
+
+		LOCK_TIME=`htvcenter_lock_queue aquire xen`
+		trap "htvcenter_lock_queue release xen $LOCK_TIME" EXIT
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+
+		echo "Updating XEN VM $XEN_VM_NAME with $XEN_VM_CPU CPUs"
+		VM_BASE_DIR=$htvcenter_VM_DIR/$XEN_VM_NAME
+		echo "$XEN_VM_CPU" > $VM_BASE_DIR/vcpu
+		# creating the cfg
+		xen_generate_vm_config $XEN_VM_NAME
+		if [ "$XEN_htvcenter_USERNAME" != "" ] && [ "$XEN_htvcenter_PASSWORD" != "" ]; then
+			$0 post_vm_config -n $XEN_VM_NAME -u $XEN_htvcenter_USERNAME -p $XEN_htvcenter_PASSWORD
+		fi
+
+		htvcenter_lock_queue release xen $LOCK_TIME
+		trap '' EXIT
+		;;
+
+
+	add_vm_nic)
+		if [ "$XEN_VM_NAME" == "" ]; then
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			xen_usage
+		fi
+		if [ "$XEN_VM_MAC" == "" ]; then
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			xen_usage
+		fi
+		if [ "$XEN_VM_COMPONENT_NUMBER" == "" ]; then
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			xen_usage
+		fi
+
+		LOCK_TIME=`htvcenter_lock_queue aquire xen`
+		trap "htvcenter_lock_queue release xen $LOCK_TIME" EXIT
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+
+		if [ "$XEN_VM_BRIDGE" == "" ]; then
+			XEN_VM_BRIDGE=$htvcenter_PLUGIN_XEN_EXTERNAL_BRIDGE
+		fi
+		echo "Adding nic $XEN_VM_COMPONENT_NUMBER mac-address $XEN_VM_MAC / $XEN_VM_BRIDGE to XEN VM $XEN_VM_NAME"
+		VM_BASE_DIR=$htvcenter_VM_DIR/$XEN_VM_NAME
+		echo "$XEN_VM_MAC" > $VM_BASE_DIR/mac$XEN_VM_COMPONENT_NUMBER
+		echo "$XEN_VM_BRIDGE" > $VM_BASE_DIR/bridge$XEN_VM_COMPONENT_NUMBER
+		# creating the cfg
+		xen_generate_vm_config $XEN_VM_NAME
+		if [ "$XEN_htvcenter_USERNAME" != "" ] && [ "$XEN_htvcenter_PASSWORD" != "" ]; then
+			$0 post_vm_config -n $XEN_VM_NAME -u $XEN_htvcenter_USERNAME -p $XEN_htvcenter_PASSWORD
+		fi
+
+		htvcenter_lock_queue release xen $LOCK_TIME
+		trap '' EXIT
+		;;
+
+	remove_vm_nic)
+		if [ "$XEN_VM_NAME" == "" ]; then
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			xen_usage
+		fi
+		if [ "$XEN_VM_COMPONENT_NUMBER" == "" ]; then
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			xen_usage
+		fi
+
+		LOCK_TIME=`htvcenter_lock_queue aquire xen`
+		trap "htvcenter_lock_queue release xen $LOCK_TIME" EXIT
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+
+		echo "Removing nic $XEN_VM_COMPONENT_NUMBER from XEN VM $XEN_VM_NAME"
+		VM_BASE_DIR=$htvcenter_VM_DIR/$XEN_VM_NAME
+		> $VM_BASE_DIR/mac$XEN_VM_COMPONENT_NUMBER
+		> $VM_BASE_DIR/bridge$XEN_VM_COMPONENT_NUMBER
+		# creating the cfg
+		xen_generate_vm_config $XEN_VM_NAME
+		if [ "$XEN_htvcenter_USERNAME" != "" ] && [ "$XEN_htvcenter_PASSWORD" != "" ]; then
+			$0 post_vm_config -n $XEN_VM_NAME -u $XEN_htvcenter_USERNAME -p $XEN_htvcenter_PASSWORD
+		fi
+
+		htvcenter_lock_queue release xen $LOCK_TIME
+		trap '' EXIT
+		;;
+
+
+	add_vm_disk)
+		if [ "$XEN_VM_NAME" == "" ]; then
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			xen_usage
+		fi
+		if [ "$XEN_VM_DISK" == "" ]; then
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			xen_usage
+		fi
+		if [ "$XEN_VM_COMPONENT_NUMBER" == "" ]; then
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			xen_usage
+		fi
+
+		LOCK_TIME=`htvcenter_lock_queue aquire xen`
+		trap "htvcenter_lock_queue release xen $LOCK_TIME" EXIT
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+
+		DISK_NAME=`get_disk_name $XEN_VM_COMPONENT_NUMBER`
+		echo "Adding disk $XEN_VM_COMPONENT_NUMBER size $XEN_VM_DISK to XEN VM $XEN_VM_NAME"
+		VM_BASE_DIR=$htvcenter_VM_DIR/$XEN_VM_NAME
+		dd if=/dev/zero of=$htvcenter_VM_DIR/$XEN_VM_NAME/disk$XEN_VM_COMPONENT_NUMBER.img bs=1M seek=$XEN_VM_DISK count=1
+		mkfs.ext3 -F $htvcenter_VM_DIR/$XEN_VM_NAME/disk$XEN_VM_COMPONENT_NUMBER.img
+		echo "file:$htvcenter_VM_DIR/$XEN_VM_NAME/disk$XEN_VM_COMPONENT_NUMBER.img,ioemu:$DISK_NAME,w" > $VM_BASE_DIR/disk$XEN_VM_COMPONENT_NUMBER
+		echo "$XEN_VM_DISK" > $VM_BASE_DIR/disksize$XEN_VM_COMPONENT_NUMBER
+		# creating the cfg
+		xen_generate_vm_config $XEN_VM_NAME
+		if [ "$XEN_htvcenter_USERNAME" != "" ] && [ "$XEN_htvcenter_PASSWORD" != "" ]; then
+			$0 post_vm_config -n $XEN_VM_NAME -u $XEN_htvcenter_USERNAME -p $XEN_htvcenter_PASSWORD
+		fi
+
+		htvcenter_lock_queue release xen $LOCK_TIME
+		trap '' EXIT
+		;;
+
+	remove_vm_disk)
+		if [ "$XEN_VM_NAME" == "" ]; then
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			xen_usage
+		fi
+		if [ "$XEN_VM_COMPONENT_NUMBER" == "" ]; then
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			xen_usage
+		fi
+
+		LOCK_TIME=`htvcenter_lock_queue aquire xen`
+		trap "htvcenter_lock_queue release xen $LOCK_TIME" EXIT
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+
+		echo "Removing disk $XEN_VM_COMPONENT_NUMBER from XEN VM $XEN_VM_NAME"
+		VM_BASE_DIR=$htvcenter_VM_DIR/$XEN_VM_NAME
+		> $VM_BASE_DIR/disk$XEN_VM_COMPONENT_NUMBER
+		> $VM_BASE_DIR/disksize$XEN_VM_COMPONENT_NUMBER
+		rm -f $htvcenter_VM_DIR/$XEN_VM_NAME/disk$XEN_VM_COMPONENT_NUMBER.img
+		# creating the cfg
+		xen_generate_vm_config $XEN_VM_NAME
+		if [ "$XEN_htvcenter_USERNAME" != "" ] && [ "$XEN_htvcenter_PASSWORD" != "" ]; then
+			$0 post_vm_config -n $XEN_VM_NAME -u $XEN_htvcenter_USERNAME -p $XEN_htvcenter_PASSWORD
+		fi
+
+		htvcenter_lock_queue release xen $LOCK_TIME
+		trap '' EXIT
+		;;
+
+	setboot)
+		unset XEN_VM_NAME
+		if [ "$XEN_VM_MAC" == "" ]; then
+			echo "htvcenter Xen-plugin: ERROR during setboot. No mac-address given" | logger
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			xen_usage
+		fi
+		if [ "$XEN_VM_BOOT" == "" ]; then
+			echo "htvcenter Xen-plugin: ERROR during setboot. No boot param given" | logger
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			xen_usage
+		fi
+
+		LOCK_TIME=`htvcenter_lock_queue aquire xen`
+		trap "htvcenter_lock_queue release xen $LOCK_TIME" EXIT
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+
+		echo "Setting vm with mac $XEN_VM_MAC to boot from $XEN_VM_BOOT"
+		echo "htvcenter Xen-plugin: Setting vm with mac $XEN_VM_MAC to boot from $XEN_VM_BOOT" | logger
+		XEN_VM_NAME=`grep -rHi $XEN_VM_MAC $htvcenter_VM_DIR/*/mac1 2>/dev/null | cut -d':' -f1 | head -n1 2>/dev/null` 2>/dev/null
+		XEN_VM_NAME=`dirname $XEN_VM_NAME` 2>/dev/null
+		XEN_VM_NAME=`basename $XEN_VM_NAME` 2>/dev/null
+		if [ "$XEN_VM_NAME" == "" ]; then
+			echo "NOTICE: Could not find XEN VM $XEN_VM_MAC on this host" | logger
+
+			htvcenter_lock_queue release xen $LOCK_TIME
+			trap '' EXIT
+
+			exit 1
+		fi
+		case "$XEN_VM_BOOT" in
+			local)
+				echo "c" > $htvcenter_VM_DIR/$XEN_VM_NAME/boot
+				;;
+			net)
+				echo "n" > $htvcenter_VM_DIR/$XEN_VM_NAME/boot
+				;;
+			network)
+				echo "n" > $htvcenter_VM_DIR/$XEN_VM_NAME/boot
+				;;
+			cdrom)
+				echo "d" > $htvcenter_VM_DIR/$XEN_VM_NAME/boot
+				echo "phy:/dev/cdrom,hdd:cdrom,r" > $htvcenter_VM_DIR/$XEN_VM_NAME/cdrom
+				;;
+			iso)
+				echo "d" > $htvcenter_VM_DIR/$XEN_VM_NAME/boot
+				echo "file:$XEN_VM_BOOT_ISO,hdd:cdrom,r" > $htvcenter_VM_DIR/$XEN_VM_NAME/cdrom
+				;;
+		esac
+		# hard restart it to apply its configuration
+		# we do it here because the htvcenter server engine does not
+		# know anything about the vm name to restart it later
+		if $XEN_CMDLINE_UTIL destroy $XEN_VM_NAME; then
+			htvcenter_post_event 0 "setboot" 5 "htvcenter-xen" "Forced stop for re-starting Xen VM $XEN_VM_NAME"
+		else
+			htvcenter_post_event 0 "setboot" 3 "htvcenter-xen" "Could not force stop Xen VM $XEN_VM_NAME. Trying to continue .."
+		fi
+		# creating the cfg
+		xen_generate_vm_config $XEN_VM_NAME
+		# start it
+		SCREEN_NAME=`date +%T%x | sed -e "s/://g" | sed -e "s#/##g"`
+		if $RUNSCREEN -dmS $SCREEN_NAME $XEN_CMDLINE_UTIL create -f $htvcenter_PLUGIN_XEN_VM_CONFIG_DIR/$XEN_VM_NAME.cfg; then
+		   htvcenter_post_event 0 "setboot" 5 "htvcenter-xen" "Re-started Xen VM $XEN_VM_NAME -> $htvcenter_PLUGIN_XEN_VM_CONFIG_DIR/$XEN_VM_NAME.cfg"
+		else
+			htvcenter_post_event 0 "setboot" 3 "htvcenter-xen" "Could not re-start Xen VM $XEN_VM_NAME -> $htvcenter_PLUGIN_XEN_VM_CONFIG_DIR/$XEN_VM_NAME.cfg"
+			echo "htvcenter Xen-plugin: ERROR: Could not re-start Xen VM $XEN_VM_NAME -> $htvcenter_PLUGIN_XEN_VM_CONFIG_DIR/$XEN_VM_NAME.cfg" | logger
+
+			htvcenter_lock_queue release xen $LOCK_TIME
+			trap '' EXIT
+
+			exit 1
+		fi
+
+		htvcenter_lock_queue release xen $LOCK_TIME
+		trap '' EXIT
+		exit 0
+		;;
+
+	setboot_by_name)
+		if [ "$XEN_VM_NAME" == "" ]; then
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			xen_usage
+		fi
+		if [ "$XEN_VM_BOOT" == "" ]; then
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			xen_usage
+		fi
+
+		LOCK_TIME=`htvcenter_lock_queue aquire xen`
+		trap "htvcenter_lock_queue release xen $LOCK_TIME" EXIT
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+
+		echo "Setting VM $XEN_VM_NAME to boot from $XEN_VM_BOOT"
+		case "$XEN_VM_BOOT" in
+			local)
+				echo "c" > $htvcenter_VM_DIR/$XEN_VM_NAME/boot
+				;;
+			net)
+				echo "n" > $htvcenter_VM_DIR/$XEN_VM_NAME/boot
+				;;
+			network)
+				echo "n" > $htvcenter_VM_DIR/$XEN_VM_NAME/boot
+				;;
+			cdrom)
+				echo "d" > $htvcenter_VM_DIR/$XEN_VM_NAME/boot
+				echo "phy:/dev/cdrom,hdd:cdrom,r" > $htvcenter_VM_DIR/$XEN_VM_NAME/cdrom
+				;;
+			iso)
+				echo "d" > $htvcenter_VM_DIR/$XEN_VM_NAME/boot
+				echo "file:$XEN_VM_BOOT_ISO,hdd:cdrom,r" > $htvcenter_VM_DIR/$XEN_VM_NAME/cdrom
+				;;
+		esac
+		# no restart here, this is from the vm config
+		if [ "$XEN_htvcenter_USERNAME" != "" ] && [ "$XEN_htvcenter_PASSWORD" != "" ]; then
+			$0 post_vm_config -n $XEN_VM_NAME -u $XEN_htvcenter_USERNAME -p $XEN_htvcenter_PASSWORD
+		fi
+
+		htvcenter_lock_queue release xen $LOCK_TIME
+		trap '' EXIT
+		;;
+
+	fence)
+		unset XEN_VM_NAME
+		if [ "$XEN_VM_MAC" == "" ]; then
+			echo "htvcenter Xen-plugin: ERROR during fence. No mac-address given" | logger
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			xen_usage
+		fi
+
+		LOCK_TIME=`htvcenter_lock_queue aquire xen`
+		trap "htvcenter_lock_queue release xen $LOCK_TIME" EXIT
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+
+		echo "Fencing vm with mac $XEN_VM_MAC to boot from $XEN_VM_BOOT"
+		XEN_VM_NAME=`grep -rHi $XEN_VM_MAC $htvcenter_VM_DIR/*/mac1 2>/dev/null | cut -d':' -f1 | head -n1 2>/dev/null` 2>/dev/null
+		XEN_VM_NAME=`dirname $XEN_VM_NAME` 2>/dev/null
+		XEN_VM_NAME=`basename $XEN_VM_NAME` 2>/dev/null
+		if [ "$XEN_VM_NAME" == "" ]; then
+			echo "NOTICE: Could not find XEN VM $XEN_VM_MAC on this host" | logger
+
+			htvcenter_lock_queue release xen $LOCK_TIME
+			trap '' EXIT
+
+			exit 1
+		fi
+		# stop hard
+		if $XEN_CMDLINE_UTIL destroy $XEN_VM_NAME; then
+			htvcenter_post_event 0 "fence" 5 "htvcenter-xen" "Forced stop for fencing Xen VM $XEN_VM_NAME"
+		else
+			htvcenter_post_event 0 "fence" 3 "htvcenter-xen" "Could not force stop Xen VM $XEN_VM_NAME. Trying to continue .."
+		fi
+
+		htvcenter_lock_queue release xen $LOCK_TIME
+		trap '' EXIT
+		exit 0
+		;;
+
+	migrate)
+		echo "Migrating Xen VM $XEN_VM_NAME to $XEN_VM_IP ($XEN_MIGRATION_TYPE)"
+		# give some time to create the config on the destination host
+		sleep 10
+
+		LOCK_TIME=`htvcenter_lock_queue aquire xen`
+		trap "htvcenter_lock_queue release xen $LOCK_TIME" EXIT
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+
+		if [ "$XEN_MIGRATION_TYPE" == "live" ]; then
+			if $XEN_CMDLINE_UTIL migrate $XEN_VM_NAME $XEN_VM_IP -l; then
+				htvcenter_post_event 0 "migrate" 5 "htvcenter-xen" "Migrated Xen VM $XEN_VM_NAME to $XEN_VM_IP"
+			else
+				htvcenter_post_event 0 "migrate" 3 "htvcenter-xen" "Could not migrate Xen VM $XEN_VM_NAME to $XEN_VM_IP"
+
+				htvcenter_lock_queue release xen $LOCK_TIME
+				trap '' EXIT
+
+				exit 1
+			fi
+		else
+			if $XEN_CMDLINE_UTIL migrate $XEN_VM_NAME $XEN_VM_IP; then
+				htvcenter_post_event 0 "migrate" 5 "htvcenter-xen" "Migrated Xen VM $XEN_VM_NAME to $XEN_VM_IP"
+			else
+				htvcenter_post_event 0 "migrate" 3 "htvcenter-xen" "Could not migrate Xen VM $XEN_VM_NAME to $XEN_VM_IP"
+
+				htvcenter_lock_queue release xen $LOCK_TIME
+				trap '' EXIT
+
+				exit 1
+			fi
+		fi
+		# remove VM configuration in /etc/xen/
+		rm -f $htvcenter_PLUGIN_XEN_VM_CONFIG_DIR/$XEN_VM_NAME.*
+		rm -f $htvcenter_VM_DIR/$XEN_VM_NAME/autostart.$resource_id
+		# post updated vm list to htvcenter
+		if [ "$XEN_htvcenter_USERNAME" != "" ] && [ "$XEN_htvcenter_PASSWORD" != "" ]; then
+			$0 post_vm_list -u $XEN_htvcenter_USERNAME -p $XEN_htvcenter_PASSWORD
+		fi
+		# posting success to htvcenter
+		if [ "$XEN_htvcenter_USERNAME" != "" ] && [ "$XEN_htvcenter_PASSWORD" != "" ]; then
+			echo "success" > $XEN_VM_NAME.vm_migrated_successfully
+			if ! wget -q $WGET_NO_CERT_CHECK -O /dev/null --http-user=$XEN_htvcenter_USERNAME --http-password=$XEN_htvcenter_PASSWORD  --post-file=`$htvcenter_POSTENCODE $XEN_VM_NAME.vm_migrated_successfully` $htvcenter_web_protocol://$htvcenter_SERVER_IP/htvcenter/base/plugins/xen/xen-action.php?xen_server_command=get_vm_migration; then
+				htvcenter_post_event 0 "migrate" 2 "htvcenter-xen" "Could not post VM $XEN_VM_NAME migration status the htvcenter-server at $htvcenter_SERVER_IP!"
+			fi
+			rm -f $XEN_VM_NAME.vm_migrated_successfully
+			rm -f $XEN_VM_NAME.vm_migrated_successfully.post
+		fi
+
+		htvcenter_lock_queue release xen $LOCK_TIME
+		trap '' EXIT
+		;;
+
+
+
+	iso)
+		if [ "$XEN_HOST_PATH" == "" ]; then
+			xen_usage
+		fi
+		# validate path
+		XEN_HOST_PATH=`echo "$XEN_HOST_PATH" | cut -d';' -f1`
+		XEN_HOST_PATH=`echo "$XEN_HOST_PATH" | cut -d'&' -f1`
+		XEN_HOST_PATH=`echo "$XEN_HOST_PATH" | cut -d' ' -f1`
+		XEN_HOST_PATH=`echo "$XEN_HOST_PATH" | cut -d'$' -f1`
+		if [ ! -d "$XEN_HOST_PATH" ]; then
+			htvcenter_post_event 0 "iso" 2 "htvcenter-xen-vm" "No such directory $XEN_HOST_PATH !"
+			exit 1
+		fi
+		# if we are not running on htvcenter itself we check for linuxcoe export
+		LINUXCOE_ENABLED=false
+		if [ -f $htvcenter_RESOURCE_PARAMETER_FILE ]; then
+			if [ ! -d "$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/linuxcoe" ]; then
+				LINUXCOE_ENABLED=true
+			fi
+		fi
+		if [ "$LINUXCOE_ENABLED" == "true" ]; then
+			if ! grep ^$htvcenter_SERVER_IP:/linuxcoe /proc/mounts 1>/dev/null 2>&1; then
+				mkdir -p /linuxcoe-iso
+				if ! mount -t nfs $htvcenter_SERVER_IP:/linuxcoe /linuxcoe-iso; then
+					htvcenter_post_event 0 "iso" 2 "htvcenter-xen-vm" "Could not mount ISO repository $htvcenter_SERVER_IP:/linuxcoe!"
+				fi
+			fi
+			if ! grep ^$htvcenter_SERVER_IP:/linuxcoe /etc/fstab 1>/dev/null 2>&1; then
+				echo "$htvcenter_SERVER_IP:/linuxcoe    /linuxcoe-iso      nfs    defaults        1 1" >> /etc/fstab
+			fi
+		fi
+		PICK_ISO_CONFIG_TMP=$resource_id.pick_iso_config
+		echo "P@$XEN_HOST_PATH" > $PICK_ISO_CONFIG_TMP
+		for DIR_CONTENT in `ls -f $XEN_HOST_PATH`; do
+		    if [ -d "$XEN_HOST_PATH"/"$DIR_CONTENT" ]; then
+			echo "D@$DIR_CONTENT" >> $PICK_ISO_CONFIG_TMP
+		    elif [ -f "$XEN_HOST_PATH"/"$DIR_CONTENT" ]; then
+			echo "F@$DIR_CONTENT" >> $PICK_ISO_CONFIG_TMP
+		    fi
+		done
+		if ! wget -q $WGET_NO_CERT_CHECK -O /dev/null --http-user=$XEN_htvcenter_USERNAME --http-password=$XEN_htvcenter_PASSWORD  --post-file=`$htvcenter_POSTENCODE $PICK_ISO_CONFIG_TMP` $htvcenter_web_protocol://$htvcenter_SERVER_IP/htvcenter/base/plugins/xen/xen-action.php?xen_server_command=get_pick_iso_config; then
+			htvcenter_post_event 0 "iso" 2 "htvcenter-xen-vm" "Could not post pick_iso_config to the htvcenter-server at $htvcenter_SERVER_IP!"
+		fi
+		rm -f $PICK_ISO_CONFIG_TMP
+		rm -f $PICK_ISO_CONFIG_TMP.post
+		;;
+
+
+
+	*)
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+		xen_usage
+		;;
+
+
+esac
+

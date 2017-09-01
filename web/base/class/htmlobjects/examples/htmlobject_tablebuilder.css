@@ -1,0 +1,120 @@
+/* Table */
+.htmlobject_table {
+	width: 800px;
+	border-collapse:collapse;
+	border: none 0px;
+	margin: 0px;
+	padding: 0px;
+	font-size: 11px;
+	margin: 0 0 0 20px;
+}
+.htmlobject_table a {
+	color: blue;
+}
+.htmlobject_table .htmlobject_td,
+.htmlobject_table .htmlobject_th
+{
+	border: 1px solid gray;
+	padding: 5px;
+	margin: 0px;
+	font-weight: normal;
+	text-align: left;
+	white-space: nowrap;
+	vertical-align: top;
+}
+.htmlobject_table .htmlobject_th.action {
+	text-align: center;
+}
+.htmlobject_table .htmlobject_tr.odd{
+	background: transparent;
+}
+.htmlobject_table .htmlobject_tr.odd.tr_click{
+	background: #cccccc;
+}
+.htmlobject_table .htmlobject_tr.odd.tr_hover{
+	background: #dddddd;
+}
+.htmlobject_table .htmlobject_tr.even{
+	background: transparent;
+}
+.htmlobject_table .htmlobject_tr.even.tr_click{
+	background: #cccccc;
+}
+.htmlobject_table .htmlobject_tr.even.tr_hover{
+	background: #dddddd;
+}
+.htmlobject_table .htmlobject_td.actions,
+.htmlobject_table .htmlobject_td.pageturn_bottom {
+	text-align: right;
+	border: 0px none;
+}
+.htmlobject_table .htmlobject_td.actions {
+	padding: 10px 5px 0 0;
+}
+.htmlobject_table .htmlobject_td.actions .selecttable {
+	padding: 0 10px 0 0;
+}
+.htmlobject_table .htmlobject_td.identifier
+{
+	width:20px;
+	text-align: center;
+}
+.htmlobject_table .htmlobject_td.identifier input
+{
+	border: 0px none;
+	background: transparent;
+	margin: 0;
+}
+.htmlobject_table .actiontable input {
+	margin: 2px;
+	padding: 2px;
+}
+
+/* page_turn */
+.htmlobject_table .htmlobject_td.pageturn_head,
+.htmlobject_table .htmlobject_td.actions {
+	text-align: right;
+	border: 0px none;
+}
+
+.htmlobject_table .htmlobject_td.pageturn_head .pageturn_table,
+.htmlobject_table .htmlobject_td.pageturn_bottom .pageturn_table {
+	margin: 0 0 0 auto;
+	font-size: inherit;
+}
+
+
+.htmlobject_table .htmlobject_td.pageturn_head .sort_box {
+	float: left;
+}
+.htmlobject_table .htmlobject_td.pageturn_head .pageturn_wrapper,
+.htmlobject_table .htmlobject_td.pageturn_head .pageturn_box {
+	float: right;
+}
+.htmlobject_table .htmlobject_td.pageturn_bottom .pageturn_box .pageturn_table {
+	margin: 0 auto;
+}
+
+
+.htmlobject_table .pageturn_box a
+{
+	border: 1px solid #000;
+	background: #eee;
+	display: block;
+	width: 24px;
+	height: 20px;
+	text-align: center;
+	text-decoration: none;
+	line-height: 18px;
+	font-size: 11px;
+	font-weight: normal;
+	margin: 1px;
+	color: #000;
+	float: left;
+}
+.htmlobject_table .pageturn_middle {
+	width: 120px;
+	text-align: center;
+}
+
+

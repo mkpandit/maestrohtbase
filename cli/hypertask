@@ -1,0 +1,30 @@
+#!/usr/bin/python
+
+import os
+import sys
+import programs_checks
+import CLI
+import parameters_managements
+
+from constants import *
+
+if __name__ == "__main__":
+	"Main HyperTask Function"
+	
+	if not os.geteuid() == 0:
+		sys.exit(en_string['ONLY_ROOT'])
+	try:
+		if not programs_checks.check_programs():
+			sys.exit(finish['SYSTEM_PROGRAMS_NOT_FOUND'])
+		parameters_size = len(sys.argv) - 1
+		if parameters_size == 0:
+			CLI.cli()
+		else:
+			if sys.argv[1] == 'help' or sys.argv[1] == '-h' or  sys.argv[1] == '-help':
+				print help_pages['hypertask']
+				sys.exit(finish['FINISH_OK'])
+			else:
+				parameters_managements.check_parameters(sys.argv[1:])
+	except (KeyboardInterrupt):
+		print "\nbye..."
+		sys.exit(finish['SYSTEM_FINISH'])

@@ -1,0 +1,110 @@
+.htmlobject_table .appliance {
+	width: 350px;
+}
+.htmlobject_table .action {
+	width: 120px;
+	text-align: right;
+}
+
+#puppet_groups .htmlobject_box .left {
+	float: right;
+	text-align: left;
+	width: 600px;
+}
+#puppet_groups .htmlobject_box .right {
+	width: 30px;
+	float: right;
+	padding: 4px 0 0 0;
+}
+#buttons {
+	margin: 10px 0 0 0;
+}
+
+div.node-class div.htmlobject_box,
+div.personalize-node div.htmlobject_box {
+	margin: 0px 0px 20px 0px;
+}
+
+div.node-class div.htmlobject_box div.left,
+div.personalize-node div.htmlobject_box div.left {
+	width: 20%;
+	float: left;
+}
+
+div.node-class div.htmlobject_box div.right,
+div.personalize-node div.htmlobject_box div.right {
+	width: 60%;
+	float: left;
+}
+
+div.node-class div#buttons,
+div.personalize-node div#buttons{
+	margin: 0px 0px 0px 23%;
+}
+
+div.node-class-list,
+div.personalize-node-list {
+	width: 100%;
+	padding: 25px 0px 0px 20px;
+}
+
+div.node-class-list table
+div.personalize-node-list table {
+	border: 0px;
+	width: 100%;
+}
+
+div.personalize-node-list table td{
+	
+}
+
+div#node_class_tab,
+div#personalize_node_tab {
+	text-align: right;
+	margin: 1% 1% 0 0;
+}
+
+div#node_class_tab ul,
+div#personalize_node_tab ul{
+	list-style-type: none;
+}
+
+div#node_class_tab ul li,
+div#personalize_node_tab ul li{
+	list-style-type: none;
+	display: inline;
+	padding: 0 0 0 1%;
+}
+
+div#node_class_tab ul li a,
+div#personalize_node_tab ul li a{
+	text-decoration: underline;
+}
+
+a.add-node {
+	display: block;
+	float: right;
+	margin: 0 1% 1% 0;
+}
+
+div.personalize-node-edit div.htmlobject_box {
+	margin: 0px 0px 1% 0px;
+}
+
+div.personalize-node-edit div.htmlobject_box div.left{
+	width: 20%;
+	float: left;
+}
+
+div.personalize-node-edit div.htmlobject_box div.right{
+	width: 65%;
+	float: left;
+}
+
+div.personalize-node-edit div#buttons{
+	margin: 0px 0px 0px 23%;
+}
+
+div.status-message {
+	margin: 2% 0 0 23%;
+}

@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<Virtual-Machines>
+         <Virtual-Machine>
+            <Name>Essbase1</Name>
+           	<Host>HTBASESRV7.htbase.com</Host>
+	        <Datacenter>ha-datacenter</Datacenter>
+           	<Guest-Id>windows7Server64Guest</Guest-Id>
+           	<Datastore>HTFS</Datastore>
+           	<Disksize>102400000</Disksize>
+           	<Memory>16384</Memory>
+           	<Number-of-Processor>8</Number-of-Processor>
+           	<Nic-Network>VM Network</Nic-Network>
+           	<Nic-Poweron>0</Nic-Poweron>
+         </Virtual-Machine>
+</Virtual-Machines>

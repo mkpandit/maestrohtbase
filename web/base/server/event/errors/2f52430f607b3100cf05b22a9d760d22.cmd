@@ -1,0 +1,1 @@
+dbclient -K 10 -y -i /usr/share/htvcenter/etc/dropbear/dropbear_rsa_host_key -p 1667 root@192.168.0.235 "/usr/share/htvcenter/bin/htvcenter-cmd /usr/share/htvcenter/plugins/kvm/bin/htvcenter-kvm-vm create -n manishtest123 -y kvm-vm-local -m 00:fa:bc:e7:ff:0b -r 256 -c 1 -b local  -m1 00:e7:c5:c1:fa:64  -v m4FDdpEYACxb -u htvcenter -p htvcenter"

@@ -1,0 +1,852 @@
+#!/bin/bash
+# this script automatically manages nfs and iscsi on lvm
+#
+#
+# htvcenter Enterprise developed by htvcenter Enterprise GmbH.
+#
+# All source code and content (c) Copyright 2012, htvcenter Enterprise GmbH unless specifically noted otherwise.
+#
+# This source code is released under the htvcenter Enterprise Server and Client License, unless otherwise agreed with htvcenter Enterprise GmbH.
+# The latest version of this license can be found here: http://htvcenter-enterprise.com/license
+#
+# By using this software, you acknowledge having read this license and agree to be bound thereby.
+#
+#           http://htvcenter-enterprise.com
+#
+# Copyright 2012, htvcenter Enterprise GmbH <info@htvcenter-enterprise.com>
+#
+htvcenter_SERVER_BASE_DIR=$(dirname $0)/../../../..
+htvcenter_SERVER_BASE_DIR=$(pushd $htvcenter_SERVER_BASE_DIR > /dev/null && echo $PWD && popd > /dev/null)
+. $htvcenter_SERVER_BASE_DIR/htvcenter/include/htvcenter-functions
+# unblock starting command queue early for non-blocking + ui commands
+XEN_COMMAND=$1
+if [ "$XEN_COMMAND" == "post_lv" ] || [ "$XEN_COMMAND" == "post_vg" ] || [ "$XEN_COMMAND" == "post_identifier" ] || [ "$XEN_COMMAND" == "list" ] || [ "$XEN_COMMAND" == "auth" ] || [ "$XEN_COMMAND" == "post_sync_progress" ] || [ "$XEN_COMMAND" == "post_sync_finished" ]; then
+	htvcenter_unblock_starting_queue $@
+	NON_BLOCKING=true
+fi
+
+export htvcenter_SOURCE_DIR="$htvcenter_SERVER_BASE_DIR/htvcenter/"
+. $htvcenter_SERVER_BASE_DIR/htvcenter/include/htvcenter-package-functions
+. $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/xen/etc/htvcenter-plugin-xen.conf
+. $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/xen/include/htvcenter-plugin-xen-functions
+htvcenter_POSTENCODE="$htvcenter_SERVER_BASE_DIR/htvcenter/sbin/htvcenter-postencode"
+if [ -f $htvcenter_RESOURCE_PARAMETER_FILE ]; then
+	. $htvcenter_RESOURCE_PARAMETER_FILE
+	htvcenter_SERVER_IP=$resource_htvcenterserver
+	htvcenter_EXEC_PORT=$resource_execdport
+elif [ -f $htvcenter_SERVER_BASE_DIR/htvcenter/etc/htvcenter-server.conf ]; then
+	. $htvcenter_SERVER_BASE_DIR/htvcenter/etc/htvcenter-server.conf
+	. $htvcenter_SERVER_BASE_DIR/htvcenter/include/htvcenter-server-functions
+	htvcenter_server_get_config
+	htvcenter_SERVER_IP=$htvcenter_SERVER_IP_ADDRESS
+	resource_id=0
+	resource_htvcenterserver=$htvcenter_SERVER_IP_ADDRESS
+	htvcenter_web_protocol=$htvcenter_WEB_PROTOCOL
+fi
+export LANG=C
+LINEBR='
+'
+# how long to wait for the volume authentication, each loop is 5 secs
+MAX_VOLUME_AUTHENTICATION_LOOP=1500
+export MAX_VOLUME_AUTHENTICATION_LOOP
+# set default deployment type to lvm
+htvcenter_PLUGIN_XEN_FILE_BACKEND="false"
+# dir for progress stats
+SYNC_PROGRESS_DIR="$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/xen/lock"
+if [ ! -d "$SYNC_PROGRESS_DIR" ]; then
+	mkdir -p $SYNC_PROGRESS_DIR
+fi
+
+# define wget to use with https
+if [ "$htvcenter_web_protocol" == "https" ]; then
+	WGET_NO_CERT_CHECK="--no-check-certificate"
+fi
+
+# using the resource_id as the shelf-id
+AOE_SHELF=$resource_id
+export AOE_SHELF
+
+# let only root run this script
+WHOAMI=`whoami`
+if [ "$WHOAMI" != "root" ]; then
+	echo "ERROR: Please run this script as root!"
+	exit 6
+fi
+
+# make sure required deps are installed
+if ! check_xen_deps; then
+	if [ "$NON_BLOCKING" != "true" ]; then
+		htvcenter_unblock_starting_queue $@
+	fi
+	exit 1
+fi
+
+
+function xen_usage() {
+	echo "Usage : $0 add/remove/snap/list/resize/clone <-n image-name> <-v volume-group> [-t <xen-bf-deployment/xen-lvm-deployment>]"
+	echo "             [-m size in MB]"
+	echo "             [-s image-snapshot-name]"
+	echo "        $0 auth <-r image-rootdevice> <-i authidentifier> [-t <xen-bf-deployment/xen-lvm-deployment>]"
+	echo "        $0 post_vg <-u username> <-p password> [-t <xen-bf-deployment/xen-lvm-deployment>]"
+	echo "        $0 post_lv <-u username> <-p password> <-v volume-group> [-t <xen-bf-deployment/xen-lvm-deployment>]"
+	echo "        $0 post_identifier <-u username> <-p password> [-t <xen-bf-deployment/xen-lvm-deployment>]"
+	echo ""
+	echo "Optional parameters:"
+	echo "             [--htvcenter-ui-user <username>]"
+	echo "             [--htvcenter-internal-cmd <true/false>]"
+	echo "             [--htvcenter-cmd-mode <regular/background/fork>]"
+	exit 1
+}
+
+function xen_get_backend_dir() {
+	local STORAGE_LOC_NAME=$1
+	for FILE_BACKEND in `echo $htvcenter_PLUGIN_XEN_FILE_BACKEND_DIRECTORIES`; do
+		BACKEND_LOCATION_NAME=`echo $FILE_BACKEND | cut -d':' -f1`
+		if [ "$BACKEND_LOCATION_NAME" == "$STORAGE_LOC_NAME" ]; then
+			FILE_BACKEND_DIR=`echo $FILE_BACKEND | cut -d':' -f2`
+			break
+		fi
+	done
+	if [ "$FILE_BACKEND_DIR" == "" ]; then
+		echo $STORAGE_LOC_NAME
+	else
+		echo $FILE_BACKEND_DIR
+	fi
+}
+
+
+function xen_get_image_type() {
+	local FILE_PATH=$1
+	local FILE_TYPE=""
+	FILE_TYPE_STR=`file $FILE_PATH`
+	if echo $FILE_TYPE_STR | grep -w "backing file" 1>/dev/null; then
+		# snap
+		FILE_TYPE="snapshot"
+	elif echo $FILE_TYPE_STR | grep -w "User-mode" 1>/dev/null; then
+		# cow
+		FILE_TYPE="cow"
+	elif echo $FILE_TYPE_STR | grep -w "QEMU QCOW Image (v1)" 1>/dev/null; then
+		# qcow
+		FILE_TYPE="qcow"
+	elif echo $FILE_TYPE_STR | grep -w "QEMU QCOW Image (v2)" 1>/dev/null; then
+		# qcow2
+		FILE_TYPE="qcow2"
+	else
+		FILE_TYPE="raw"
+	fi
+	echo $FILE_TYPE
+}
+
+function xen_resize_fs() {
+	local LVM_VOLUME=$1
+	local VOLUME_SIZE=$2
+	LVM_VOLUME_NAME=`basename $LVM_VOLUME`
+	FIRST_PARTITION=`kpartx -av $LVM_VOLUME | awk '{ print $3 }' | head -n1`
+	sleep 1
+	if [ "$FIRST_PARTITION" != "" ] && [ -e /dev/mapper/$FIRST_PARTITION ]; then
+			PARTITION_TYPE=`fdisk -l $LVM_VOLUME | grep ^$LVM_VOLUME | head -n1 | sed -e "s#\*##g" | awk '{ print $5 }'`
+			case "$PARTITION_TYPE" in
+					83)
+						htvcenter_post_event 0 "$LVM_VOLUME" 9 "htvcenter-xen" "Resizing Linux filesystem of volume $LVM_VOLUME to $VOLUME_SIZE MB."
+						e2fsck -y /dev/mapper/$FIRST_PARTITION
+						if resize2fs -f -p /dev/mapper/$FIRST_PARTITION $VOLUME_SIZE""M; then
+							htvcenter_post_event 0 "$LVM_VOLUME" 10 "htvcenter-xen" "Resizing Linux filesystem of volume $LVM_VOLUME to $VOLUME_SIZE MB."
+							htvcenter_post_event 0 "snap" 5 "htvcenter-xen" "Successfully resized volume $LVM_VOLUME to $VOLUME_SIZE MB."
+						else
+							htvcenter_post_event 0 "$LVM_VOLUME" 10 "htvcenter-xen" "Resizing Linux filesystem of volume $LVM_VOLUME to $VOLUME_SIZE MB."
+							if ! e2fsck -fy /dev/mapper/$FIRST_PARTITION; then
+								htvcenter_post_event 0 "snap" 2 "htvcenter-xen" "Errors during resizing volume $LVM_VOLUME."
+							fi
+						fi
+						;;
+					7)
+						htvcenter_post_event 0 "$LVM_VOLUME" 9 "htvcenter-xen" "Resizing Windows filesystem of volume $LVM_VOLUME to $VOLUME_SIZE MB."
+						if ntfsresize -s $VOLUME_SIZE""M -b -f /dev/mapper/$FIRST_PARTITION; then
+							htvcenter_post_event 0 "$LVM_VOLUME" 10 "htvcenter-xen" "Resizing Windows filesystem of volume $LVM_VOLUME to $VOLUME_SIZE MB."
+							htvcenter_post_event 0 "snap" 5 "htvcenter-xen" "Successfully resized volume $LVM_VOLUME to $VOLUME_SIZE MB."
+						else
+							htvcenter_post_event 0 "$LVM_VOLUME" 10 "htvcenter-xen" "Resizing Windows filesystem of volume $LVM_VOLUME to $VOLUME_SIZE MB."
+							htvcenter_post_event 0 "snap" 2 "htvcenter-xen" "Errors during resizing volume $LVM_VOLUME."
+						fi
+						;;
+					*)
+						htvcenter_post_event 0 "snap" 2 "htvcenter-xen" "Could not find out filesystem type of volume $LVM_VOLUME. Not resizing."
+						;;
+			esac
+	fi
+	sleep 1
+	kpartx -d $LVM_VOLUME
+	sleep 1
+	kpartx -dv $LVM_VOLUME
+}
+
+
+FULL_COMMANDLINE="$0 $@"
+XEN_COMMAND=$1
+shift
+
+while [ $# -ne 0 ]; do
+	case "$1" in
+		-n)
+			XEN_IMAGE_NAME=$2
+			shift
+			;;
+		-m)
+			XEN_IMAGE_SIZE=$2
+			shift
+			;;
+		-s)
+			XEN_IMAGE_SNAPSHOT_NAME=$2
+			shift
+			;;
+		-i)
+			XEN_IMAGE_AUTH=$2
+			shift
+			;;
+		-r)
+			XEN_IMAGE_ROOTDEVICE=$2
+			shift
+			;;
+		-u)
+			XEN_htvcenter_USERNAME=$2
+			shift
+			;;
+		-p)
+			XEN_htvcenter_PASSWORD=$2
+			shift
+			;;
+		-v)
+			XEN_SERVER_VOLUME_LOCATION=$2
+			shift
+			;;
+		-t)
+			XEN_DEPLOYMENT_TYPE=$2
+			shift
+			;;
+		--htvcenter-ui-user)
+			htvcenter_UI_USER=$2
+			shift
+			;;
+		--htvcenter-internal-cmd)
+			htvcenter_INTERNAL_CMD=$2
+			shift
+			;;
+		--htvcenter-cmd-mode)
+			htvcenter_CMD_MODE=$2
+			shift
+			;;
+
+		*)
+			if [ "$NON_BLOCKING" != "true" ]; then
+				htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			fi
+			echo "ERROR: Free commandline arguments are not allowed"
+			xen_usage
+			exit 6
+			;;
+	esac
+	shift
+done
+
+
+
+
+# main
+if [ "$XEN_COMMAND" == "" ]; then
+	htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+	xen_usage
+fi
+
+if [ "$XEN_COMMAND" == "post_lv" ] || [ "$XEN_COMMAND" == "post_vg" ] || [ "$XEN_COMMAND" == "post_identifier" ]; then
+		if [ "$XEN_htvcenter_USERNAME" == "" ]; then
+			xen_usage
+		fi
+		if [ "$XEN_htvcenter_PASSWORD" == "" ]; then
+			xen_usage
+		fi
+		if [ "$XEN_COMMAND" == "post_lv" ]; then
+			if [ "$XEN_SERVER_VOLUME_LOCATION" == "" ]; then
+				xen_usage
+			fi
+		fi
+
+else
+
+	if [ "$XEN_COMMAND" != "list" ] && [ "$XEN_COMMAND" != "auth" ]; then
+		if [ "$XEN_IMAGE_NAME" == "" ]; then
+			if [ "$NON_BLOCKING" != "true" ]; then
+				htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			fi
+			xen_usage
+		fi
+		if [ "$XEN_SERVER_VOLUME_LOCATION" == "" ]; then
+			if [ "$NON_BLOCKING" != "true" ]; then
+				htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			fi
+			xen_usage
+		fi
+	fi
+fi
+# set type
+if [ "$XEN_DEPLOYMENT_TYPE" == "xen-bf-deployment" ]; then
+	htvcenter_PLUGIN_XEN_FILE_BACKEND="true"
+fi
+# load required lvm modules if needed
+if [ "$htvcenter_PLUGIN_XEN_FILE_BACKEND" != "true" ]; then
+	if ! grep dm_mod /proc/modules 1>/dev/null; then
+		modprobe dm-mod 1>/dev/null 2>&1
+		modprobe dm-snapshot 1>/dev/null 2>&1
+	fi
+fi
+if [ "$XEN_COMMAND" != "list" ] && [ "$XEN_COMMAND" != "post_vg" ] && [ "$XEN_COMMAND" != "post_identifier" ] && [ "$XEN_COMMAND" != "auth" ]; then
+	if [ "$htvcenter_PLUGIN_XEN_FILE_BACKEND" != "true" ]; then
+		# check if volume group exists
+		if ! vgs --unbuffered $XEN_SERVER_VOLUME_LOCATION 1>/dev/null 2>&1; then
+			if [ "$NON_BLOCKING" != "true" ]; then
+				htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			fi
+			echo "ERROR: Could not find volume-group $XEN_SERVER_VOLUME_LOCATION on the storage-server"
+			exit 1
+		fi
+	fi
+fi
+
+if [ "$htvcenter_UI_USER" != "" ]; then
+	htvcenter_UI_USER_PARAMETER=" --htvcenter-ui-user $htvcenter_UI_USER"
+fi
+
+
+case "$XEN_COMMAND" in
+
+	add)
+		LOCK_TIME=`htvcenter_lock_queue aquire xen`
+		trap "htvcenter_lock_queue release xen $LOCK_TIME" EXIT
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+
+		if [ "$XEN_IMAGE_SIZE" == "" ]; then
+			XEN_IMAGE_SIZE=$DEFAULT_IMAGE_SIZE
+			echo "Using default size of $DEFAULT_IMAGE_SIZE MB!"
+		fi
+		export XEN_IMAGE_SIZE
+		if [ "$htvcenter_PLUGIN_XEN_FILE_BACKEND" == "true" ]; then
+			# check if already exists
+			FILE_BACKEND_DIR=`xen_get_backend_dir $XEN_SERVER_VOLUME_LOCATION`
+			if [ -e "$FILE_BACKEND_DIR/$XEN_IMAGE_NAME" ]; then
+				htvcenter_post_event 0 "add" 3 "htvcenter-xen" "Volume $XEN_IMAGE_NAME already exists"
+
+				htvcenter_lock_queue release xen $LOCK_TIME
+				trap '' EXIT
+
+				exit 1
+			fi
+			echo "Creating local blockfile $XEN_IMAGE_NAME size $XEN_IMAGE_SIZE MB using location $XEN_SERVER_VOLUME_LOCATION"
+			if [ ! -d "$FILE_BACKEND_DIR" ]; then
+				mkdir -p $FILE_BACKEND_DIR
+			fi
+			dd if=/dev/zero of=$FILE_BACKEND_DIR/$XEN_IMAGE_NAME bs=1MB seek=$XEN_IMAGE_SIZE count=0
+		else
+			# check if already exists
+			if [ -e /dev/$XEN_SERVER_VOLUME_LOCATION/$XEN_IMAGE_NAME ]; then
+				htvcenter_post_event 0 "add" 3 "htvcenter-lvm-manager" "Volume $XEN_IMAGE_NAME already exists."
+
+				htvcenter_lock_queue release xen $LOCK_TIME
+				trap '' EXIT
+
+				exit 1
+			fi
+			echo "Creating volume $XEN_IMAGE_NAME size $XEN_IMAGE_SIZE MB using volume group $XEN_SERVER_VOLUME_LOCATION"
+			lvcreate -L$XEN_IMAGE_SIZE"M" -n$XEN_IMAGE_NAME $XEN_SERVER_VOLUME_LOCATION
+		fi
+
+		htvcenter_lock_queue release xen $LOCK_TIME
+		trap '' EXIT
+
+		# in case we have a username + password post the updated list to the htvcenter-server
+		if [ "$XEN_htvcenter_USERNAME" != "" ] && [ "$XEN_htvcenter_PASSWORD" != "" ]; then
+			$0 post_lv -u $XEN_htvcenter_USERNAME -p $XEN_htvcenter_PASSWORD -v $XEN_SERVER_VOLUME_LOCATION -t $XEN_DEPLOYMENT_TYPE
+		fi
+
+		;;
+
+	remove)
+		LOCK_TIME=`htvcenter_lock_queue aquire xen`
+		trap "htvcenter_lock_queue release xen $LOCK_TIME" EXIT
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+
+		if [ "$htvcenter_PLUGIN_XEN_FILE_BACKEND" == "true" ]; then
+			FILE_BACKEND_DIR=`xen_get_backend_dir $XEN_SERVER_VOLUME_LOCATION`
+			if [ ! -e "$FILE_BACKEND_DIR/$XEN_IMAGE_NAME" ]; then
+				htvcenter_post_event 0 "remove" 5 "htvcenter-xen" "Volume $FILE_BACKEND_DIR/$XEN_IMAGE_NAME does not exists!"
+
+				htvcenter_lock_queue release xen $LOCK_TIME
+				trap '' EXIT
+
+				exit 1
+			fi
+			/bin/rm -f $FILE_BACKEND_DIR/$XEN_IMAGE_NAME
+		else
+			# check that no snapshots existing with this volume as the origin
+			if lvs | awk '{ print $5 }' | grep -w $XEN_IMAGE_NAME 1>/dev/null; then
+				htvcenter_post_event 0 "remove" 3 "htvcenter-xen" "Snapshot exist from volume /dev/$XEN_SERVER_VOLUME_LOCATION/$XEN_IMAGE_NAME. Not removing!"
+
+				htvcenter_lock_queue release xen $LOCK_TIME
+				trap '' EXIT
+
+				exit 1
+			fi
+			echo -n "Removing volume $XEN_IMAGE_NAME on volume group $XEN_SERVER_VOLUME_LOCATION"
+			lvchange -a n -y /dev/$XEN_SERVER_VOLUME_LOCATION/$XEN_IMAGE_NAME
+			lvremove -f /dev/$XEN_SERVER_VOLUME_LOCATION/$XEN_IMAGE_NAME
+		fi
+
+		htvcenter_lock_queue release xen $LOCK_TIME
+		trap '' EXIT
+
+		# in case we have a username + password post the updated list to the htvcenter-server
+		if [ "$XEN_htvcenter_USERNAME" != "" ] && [ "$XEN_htvcenter_PASSWORD" != "" ]; then
+			$0 post_lv -u $XEN_htvcenter_USERNAME -p $XEN_htvcenter_PASSWORD -v $XEN_SERVER_VOLUME_LOCATION -t $XEN_DEPLOYMENT_TYPE
+		fi
+
+		;;
+
+	snap)
+		if [ "$XEN_IMAGE_SNAPSHOT_NAME" == "" ]; then
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			echo "ERROR: Please give a name for the snapshot using the -s cmdline parmeter"
+			xen_usage
+		fi
+
+		LOCK_TIME=`htvcenter_lock_queue aquire xen`
+		trap "htvcenter_lock_queue release xen $LOCK_TIME" EXIT
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+
+		if [ "$XEN_IMAGE_SIZE" == "" ]; then
+			XEN_IMAGE_SIZE=$DEFAULT_IMAGE_SIZE
+			echo "Using default size of $DEFAULT_IMAGE_SIZE MB!"
+		fi
+		export XEN_IMAGE_SIZE
+		if [ "$htvcenter_PLUGIN_XEN_FILE_BACKEND" == "true" ]; then
+			# check that source fs-images exist
+			# notice : here the xen-volume-location comes from the cloud-hook and uses the dirname of the rootfs-ident
+			FILE_BACKEND_DIR=`xen_get_backend_dir $XEN_SERVER_VOLUME_LOCATION`
+			if [ ! -e "$FILE_BACKEND_DIR/$XEN_IMAGE_NAME" ]; then
+				htvcenter_post_event 0 "snap" 2 "htvcenter-xen" "Could not find $FILE_BACKEND_DIR/$XEN_IMAGE_NAME on the storage-server!"
+
+				htvcenter_lock_queue release xen $LOCK_TIME
+				trap '' EXIT
+
+				exit 1
+			fi
+			touch $SYNC_PROGRESS_DIR/$XEN_IMAGE_SNAPSHOT_NAME
+			# we copy to a tmp name first, then move
+			# copying will take some time, as soon as we moved the auth-hook will succeed
+			# but not before copying has finished
+			/bin/cp -f $FILE_BACKEND_DIR/$XEN_IMAGE_NAME $FILE_BACKEND_DIR/$XEN_IMAGE_SNAPSHOT_NAME.snap
+			/bin/mv -f $FILE_BACKEND_DIR/$XEN_IMAGE_SNAPSHOT_NAME.snap $FILE_BACKEND_DIR/$XEN_IMAGE_SNAPSHOT_NAME
+			rm -f $SYNC_PROGRESS_DIR/$XEN_IMAGE_SNAPSHOT_NAME
+
+			htvcenter_lock_queue release xen $LOCK_TIME
+			trap '' EXIT
+
+		else
+			# check that source fs-images exist
+			if ! `lvdisplay /dev/$XEN_SERVER_VOLUME_LOCATION/$XEN_IMAGE_NAME 1>/dev/null`; then
+				echo "ERROR: Could not find /dev/$XEN_SERVER_VOLUME_LOCATION/$XEN_IMAGE_NAME on the storage-server"
+
+				htvcenter_lock_queue release xen $LOCK_TIME
+				trap '' EXIT
+
+				exit 1
+			fi
+			echo -n "Creating snapshot size $XEN_IMAGE_SIZE from volume $XEN_IMAGE_NAME -> $XEN_IMAGE_SNAPSHOT_NAME"
+			touch $SYNC_PROGRESS_DIR/$XEN_IMAGE_SNAPSHOT_NAME
+			lvchange -ay -y /dev/$XEN_SERVER_VOLUME_LOCATION/$XEN_IMAGE_NAME
+			lvcreate --size $XEN_IMAGE_SIZE"M" --snapshot --name $XEN_IMAGE_SNAPSHOT_NAME /dev/$XEN_SERVER_VOLUME_LOCATION/$XEN_IMAGE_NAME
+
+			htvcenter_lock_queue release xen $LOCK_TIME
+			trap '' EXIT
+
+			if [ "$htvcenter_PLUGIN_XEN_RESIZE_SNAPSHOTS_FILESYSTEM" == "true" ]; then
+				# find the rootfs and resize it
+				xen_resize_fs /dev/$XEN_VOLUME_LOCATION/$XEN_IMAGE_SNAPSHOT_NAME $XEN_IMAGE_SIZE
+			fi
+			rm -f $SYNC_PROGRESS_DIR/$XEN_IMAGE_SNAPSHOT_NAME
+		fi
+
+		# in case we have a username + password post the updated list to the htvcenter-server
+		if [ "$XEN_htvcenter_USERNAME" != "" ] && [ "$XEN_htvcenter_PASSWORD" != "" ]; then
+			$0 post_lv -u $XEN_htvcenter_USERNAME -p $XEN_htvcenter_PASSWORD -v $XEN_SERVER_VOLUME_LOCATION -t $XEN_DEPLOYMENT_TYPE
+		fi
+		;;
+
+	auth)
+		echo "Authenticating $XEN_IMAGE_TYPE image $XEN_IMAGE_ROOTDEVICE to $XEN_IMAGE_AUTH"
+		# this is just for starting auth, make sure the device is there, otherwise wait
+		if [ "$XEN_htvcenter_USERNAME" != "" ] && [ "$XEN_htvcenter_PASSWORD" != "" ] && [ "$XEN_IMAGE_NAME" != "" ]; then
+			MAX_AUTH_LOOP=0
+			while (true); do
+				if [ "$htvcenter_PLUGIN_XEN_FILE_BACKEND" != "true" ]; then
+					lvchange -ay -y $XEN_IMAGE_ROOTDEVICE
+				fi
+				if [ -e "$XEN_IMAGE_ROOTDEVICE" ]; then
+					# fs resize active ?
+					if [ ! -f "$SYNC_PROGRESS_DIR/$XEN_IMAGE_NAME" ]; then
+						break
+					fi
+				fi
+				sleep 5
+				if [ "$MAX_AUTH_LOOP" == "$MAX_VOLUME_AUTHENTICATION_LOOP" ]; then
+					xen_log auth "ERROR: Volume $XEN_IMAGE_TYPE image $XEN_IMAGE_ROOTDEVICE does not exists, Cannot auth to $XEN_IMAGE_AUTH"
+					exit 1
+				fi
+				MAX_AUTH_LOOP=$(( MAX_AUTH_LOOP + 1 ))
+			done
+			# if we have an image name send back to htvcenter that storage auth finished to remvoe the storage-auth-blocker
+			if ! wget -q $WGET_NO_CERT_CHECK -O /dev/null --http-user=$XEN_htvcenter_USERNAME --http-password=$XEN_htvcenter_PASSWORD "$htvcenter_web_protocol://$htvcenter_SERVER_IP/htvcenter/base/plugins/xen/xen-action.php?xen_command=auth_finished&xen_image_name=$XEN_IMAGE_NAME"; then
+				xen_log auth "ERROR: Could not remove the storage-auth-blocker from the htvcenter-server at $htvcenter_SERVER_IP!"
+			fi
+		fi
+		;;
+
+	list)
+		lvm lvs
+		;;
+	post_vg)
+		echo "Posting current volume group status to the htvcenter-server"
+		STORAGE_STATUS_TMP=$resource_id.vg.stat
+		#> $STORAGE_STATUS_TMP
+		if [ "$htvcenter_PLUGIN_XEN_FILE_BACKEND" == "true" ]; then
+			for FILE_BACKEND in `echo $htvcenter_PLUGIN_XEN_FILE_BACKEND_DIRECTORIES`; do
+				BACKEND_LOCATION_NAME=`echo $FILE_BACKEND | cut -d':' -f1`
+				FILE_BACKEND_DIR=`echo $FILE_BACKEND | cut -d':' -f2`
+				if [ ! -d "$FILE_BACKEND_DIR" ]; then
+					mkdir -p $FILE_BACKEND_DIR
+				fi
+				BACKEN_DIR_AVAIL_SPACE=`df --block-size MB -P $FILE_BACKEND_DIR | grep -v Used | awk '{ print $2 }'`
+				BACKEN_DIR_FREE_SPACE=`df --block-size MB -P $FILE_BACKEND_DIR | grep -v Used | awk '{ print $4 }'`
+				echo "$BACKEND_LOCATION_NAME@$FILE_BACKEND_DIR@-@-@-@"$BACKEN_DIR_AVAIL_SPACE"@"$BACKEN_DIR_FREE_SPACE"" >> $STORAGE_STATUS_TMP
+			done
+		else
+			vgs --units m | grep -v VFree | sed -e "s/ \{1,\}//" > $STORAGE_STATUS_TMP
+			sed -i -e "s/ \{1,\}/@/g" $STORAGE_STATUS_TMP
+		fi
+		if ! wget -q $WGET_NO_CERT_CHECK -O /dev/null --http-user=$XEN_htvcenter_USERNAME --http-password=$XEN_htvcenter_PASSWORD  --post-file=`$htvcenter_POSTENCODE $STORAGE_STATUS_TMP` $htvcenter_web_protocol://$htvcenter_SERVER_IP/htvcenter/base/plugins/xen/xen-action.php?xen_command=get; then
+			echo "ERROR: Could not post the volume group status to the htvcenter-server at $resource_htvcenterserver!"
+			echo "ERROR: Could not post the volume group status to the htvcenter-server at $resource_htvcenterserver!" | logger
+		fi
+		rm -f $STORAGE_STATUS_TMP $STORAGE_STATUS_TMP.post
+		;;
+	post_lv)
+		STORAGE_STATUS_TMP=$resource_id.$XEN_SERVER_VOLUME_LOCATION.lv.stat
+		> $STORAGE_STATUS_TMP
+		if [ "$htvcenter_PLUGIN_XEN_FILE_BACKEND" == "true" ]; then
+			FILE_BACKEND_DIR=`xen_get_backend_dir $XEN_SERVER_VOLUME_LOCATION`
+			if [ -d "$FILE_BACKEND_DIR" ]; then
+				for FILE_BACKEND in `ls $FILE_BACKEND_DIR/*`; do
+					VOLUME_FILENAME=`basename $FILE_BACKEND`
+					VOLUME_FILE_SIZE=`ls -l $FILE_BACKEND | awk '{ print $5 }'`
+					VOLUME_ORIGIN="x"
+					if [ -f "$SYNC_PROGRESS_DIR/$XEN_SERVER_VOLUME_LOCATION-$VOLUME_FILENAME.clone_in_progress" ]; then
+					    echo "xen-bf-deployment@$VOLUME_FILENAME@$FILE_BACKEND@file@clone_in_progress@x@x@" >> $STORAGE_STATUS_TMP
+					else
+						FT=`xen_get_image_type $FILE_BACKEND`
+						if [ "$FT" == "snapshot" ]; then
+							VOLUME_ORIGIN=`file $FILE_BACKEND | sed -e "s/.*(path //g" | cut -d')' -f1`
+						fi
+					    echo "xen-bf-deployment@$VOLUME_FILENAME@$FILE_BACKEND@$FT@$VOLUME_FILE_SIZE@$VOLUME_ORIGIN@x@" >> $STORAGE_STATUS_TMP
+					fi
+				done
+			fi
+		else
+			lvs $XEN_SERVER_VOLUME_LOCATION --noheadings --units m -o lv_name,vg_name,lv_attr,lv_size,origin | sed -e "s/ \{1,\}//" > $STORAGE_STATUS_TMP.tmp
+			for LVOL in `cat $STORAGE_STATUS_TMP.tmp | awk {' print $1 '}`; do
+				# check for clone-in-progress
+				if [ -f "$SYNC_PROGRESS_DIR/$XEN_SERVER_VOLUME_LOCATION-$LVOL.clone_in_progress" ]; then
+				    echo "xen-lvm-deployment@$LVOL@$XEN_SERVER_VOLUME_LOCATION@-@clone_in_progress@@@" >> $STORAGE_STATUS_TMP
+				else
+				    echo -n "xen-lvm-deployment " >> $STORAGE_STATUS_TMP
+					grep -w ^$LVOL $STORAGE_STATUS_TMP.tmp >> $STORAGE_STATUS_TMP
+				fi
+			done
+		fi
+		sed -i -e "s/ \{1,\}/@/g" $STORAGE_STATUS_TMP
+		if ! wget -q $WGET_NO_CERT_CHECK -O /dev/null --http-user=$XEN_htvcenter_USERNAME --http-password=$XEN_htvcenter_PASSWORD  --post-file=`$htvcenter_POSTENCODE $STORAGE_STATUS_TMP` $htvcenter_web_protocol://$htvcenter_SERVER_IP/htvcenter/base/plugins/xen/xen-action.php?xen_command=get; then
+			htvcenter_post_event 0 "post_lv" 2 "htvcenter-xen" "Could not post the volume status to the htvcenter-server at $htvcenter_SERVER_IP!"
+		fi
+		rm -f $STORAGE_STATUS_TMP $STORAGE_STATUS_TMP.post $STORAGE_STATUS_TMP.tmp
+		;;
+	post_identifier)
+		echo "Posting current $XEN_IMAGE_TYPE volume identifier to the htvcenter-server"
+		if [ "$htvcenter_PLUGIN_XEN_FILE_BACKEND" == "true" ]; then
+			STORAGE_STATUS_TMP=$resource_id.lv.xen-bf-deployment.ident
+			> $STORAGE_STATUS_TMP
+			for FILE_BACKEND in `echo $htvcenter_PLUGIN_XEN_FILE_BACKEND_DIRECTORIES`; do
+				BACKEND_LOCATION_NAME=`echo $FILE_BACKEND | cut -d':' -f1`
+				FILE_BACKEND_DIR=`echo $FILE_BACKEND | cut -d':' -f2`
+				if [ -d "$FILE_BACKEND_DIR" ]; then
+					for FILE_BACKEND in `ls $FILE_BACKEND_DIR/*`; do
+						BACKEND_FILENAME=`basename $FILE_BACKEND`
+						echo "$BACKEND_LOCATION_NAME - $BACKEND_FILENAME:$FILE_BACKEND" >> $STORAGE_STATUS_TMP
+					done
+				fi
+			done
+		else
+			STORAGE_STATUS_TMP=$resource_id.lv.xen-lvm-deployment.ident
+			> $STORAGE_STATUS_TMP
+			for LVOL in `htvcenter_get_lvm_volume_paths`; do
+				LVOL_SHORT=`basename $LVOL`
+				IMAGE_NAME=$LVOL_SHORT
+				VOLUME_GROUP=`echo $LVOL | cut -d'/' -f3`
+				echo "$IMAGE_NAME:/dev/$VOLUME_GROUP/$IMAGE_NAME"
+				echo "$IMAGE_NAME:/dev/$VOLUME_GROUP/$IMAGE_NAME" >> $STORAGE_STATUS_TMP
+			done
+		fi
+		if ! wget -q $WGET_NO_CERT_CHECK -O /dev/null --http-user=$XEN_htvcenter_USERNAME --http-password=$XEN_htvcenter_PASSWORD  --post-file=`$htvcenter_POSTENCODE $STORAGE_STATUS_TMP` $htvcenter_web_protocol://$htvcenter_SERVER_IP/htvcenter/base/plugins/xen/xen-action.php?xen_command=get_ident; then
+			echo "ERROR: Could not post the logic volume status to the htvcenter-server at $resource_htvcenterserver!"
+			echo "ERROR: Could not post the logic volume status to the htvcenter-server at $resource_htvcenterserver!" | logger
+		fi
+		rm -f $STORAGE_STATUS_TMP $STORAGE_STATUS_TMP.post
+		;;
+
+
+	resize)
+		if [ "$XEN_IMAGE_SIZE" == "" ]; then
+			XEN_IMAGE_SIZE=$DEFAULT_IMAGE_SIZE
+			echo "Using default size of $DEFAULT_IMAGE_SIZE MB!"
+		fi
+		export XEN_IMAGE_SIZE
+		if [ "$htvcenter_PLUGIN_XEN_FILE_BACKEND" == "true" ]; then
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			htvcenter_post_event 0 "resize" 2 "htvcenter-xen" "Resize is not supported for local blockfile backends!"
+		else
+
+			LOCK_TIME=`htvcenter_lock_queue aquire xen`
+			trap "htvcenter_lock_queue release xen $LOCK_TIME" EXIT
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+
+			echo "Resizing volume $XEN_IMAGE_NAME + size $XEN_IMAGE_SIZE MB using volume group $XEN_SERVER_VOLUME_LOCATION"
+			touch $SYNC_PROGRESS_DIR/$XEN_IMAGE_NAME
+			lvchange -ay -y /dev/$XEN_SERVER_VOLUME_LOCATION/$XEN_IMAGE_NAME
+			lvresize --size +$XEN_IMAGE_SIZE"M" /dev/$XEN_SERVER_VOLUME_LOCATION/$XEN_IMAGE_NAME 2>&1 | logger
+
+			htvcenter_lock_queue release xen $LOCK_TIME
+			trap '' EXIT
+
+			if [ "$htvcenter_PLUGIN_XEN_RESIZE_SNAPSHOTS_FILESYSTEM" == "true" ]; then
+				# find the rootfs and resize it
+				xen_resize_fs /dev/$XEN_VOLUME_LOCATION/$XEN_IMAGE_NAME $XEN_IMAGE_SIZE
+			fi
+			rm -f $SYNC_PROGRESS_DIR/$XEN_IMAGE_NAME
+		fi
+		# in case we have a username + password post the updated list to the htvcenter-server
+		if [ "$XEN_htvcenter_USERNAME" != "" ] && [ "$XEN_htvcenter_PASSWORD" != "" ]; then
+			$0 post_lv -u $XEN_htvcenter_USERNAME -p $XEN_htvcenter_PASSWORD -v $XEN_SERVER_VOLUME_LOCATION -t $XEN_DEPLOYMENT_TYPE
+		fi
+
+		;;
+
+
+	clone)
+		# cloning is similar to snapshots but since lvm cannot (yet) create snapshots
+		# from snapshots we have to dd the origin (which may be a snapshot) to a
+		# new lvol.
+		if [ "$XEN_IMAGE_SNAPSHOT_NAME" == "" ]; then
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			echo "ERROR: Please give a name for the clone using the -s cmdline parmeter"
+			xen_usage
+		fi
+
+		LOCK_TIME=`htvcenter_lock_queue aquire xen`
+		trap "htvcenter_lock_queue release xen $LOCK_TIME" EXIT
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+
+		if [ "$XEN_IMAGE_SIZE" == "" ]; then
+			XEN_IMAGE_SIZE=$DEFAULT_IMAGE_SIZE
+			echo "Using default size of $DEFAULT_IMAGE_SIZE MB!"
+		fi
+		export XEN_IMAGE_SIZE
+		echo "Cloning volume $XEN_IMAGE_NAME to $XEN_IMAGE_SNAPSHOT_NAME size $XEN_IMAGE_SIZE MB volume group $XEN_SERVER_VOLUME_LOCATION"
+		if [ "$htvcenter_PLUGIN_XEN_FILE_BACKEND" == "true" ]; then
+			# check that source fs-images exist
+			# notice : here the xen-volume-location comes from the cloud-hook and uses the dirname of the rootfs-ident
+			#FILE_BACKEND_DIR=`xen_get_backend_dir $XEN_SERVER_VOLUME_LOCATION`
+			#if [ ! -e "$FILE_BACKEND_DIR/$XEN_IMAGE_NAME" ]; then
+			#	htvcenter_post_event 0 "snap" 2 "htvcenter-xen" "Could not find $FILE_BACKEND_DIR/$XEN_IMAGE_NAME on the storage-server!"
+			#	exit 1
+			#fi
+			# no locking for copying
+			# we copy to a tmp name first, then move
+			# copying will take some time, as soon as we moved the auth-hook will succeed
+			# but not before copying has finished
+			#/bin/cp -f $FILE_BACKEND_DIR/$XEN_IMAGE_NAME $FILE_BACKEND_DIR/$XEN_IMAGE_SNAPSHOT_NAME.clone
+			#/bin/mv -f $FILE_BACKEND_DIR/$XEN_IMAGE_SNAPSHOT_NAME.clone $FILE_BACKEND_DIR/$XEN_IMAGE_SNAPSHOT_NAME
+
+			FILE_BACKEND_DIR=`xen_get_backend_dir $XEN_SERVER_VOLUME_LOCATION`
+			if [ ! -e "$FILE_BACKEND_DIR/$XEN_IMAGE_NAME" ]; then
+				htvcenter_post_event 0 "snap" 2 "htvcenter-xen" "Could not find $FILE_BACKEND_DIR/$XEN_IMAGE_NAME on the storage-server!"
+
+				htvcenter_lock_queue release xen $LOCK_TIME
+				trap '' EXIT
+
+			fi
+			# create locks for origin + snapshot
+			touch "$SYNC_PROGRESS_DIR/$XEN_SERVER_VOLUME_LOCATION-$XEN_IMAGE_NAME.sync_in_progress.$XEN_IMAGE_SNAPSHOT_NAME"
+			touch "$SYNC_PROGRESS_DIR/$XEN_SERVER_VOLUME_LOCATION-$XEN_IMAGE_SNAPSHOT_NAME.clone_in_progress"
+			touch $SYNC_PROGRESS_DIR/$XEN_IMAGE_SNAPSHOT_NAME
+			# no plugin lock for copying
+			# we copy to a tmp name first, then move
+			# copying will take some time, as soon as we moved the auth-hook will succeed
+			# but not before copying has finished
+			# create long-term-action start event
+			htvcenter_post_event 0 "$XEN_IMAGE_SNAPSHOT_NAME" 9 "xen" "Started to clone $XEN_IMAGE_SNAPSHOT_NAME from $XEN_IMAGE_NAME"
+			# post exports early, we show the progress in the ui
+			if [ "$XEN_htvcenter_USERNAME" != "" ] && [ "$XEN_htvcenter_PASSWORD" != "" ]; then
+			    $0 post_sync_progress -n $XEN_IMAGE_SNAPSHOT_NAME -v $FILE_BACKEND_DIR -t xen-bf-deployment -u $XEN_htvcenter_USERNAME -p $XEN_htvcenter_PASSWORD &
+			fi
+
+			htvcenter_lock_queue release xen $LOCK_TIME
+			trap '' EXIT
+
+			# delay start syncing
+			sleep 10
+			if ! /bin/cp -f $FILE_BACKEND_DIR/$XEN_IMAGE_NAME $FILE_BACKEND_DIR/$XEN_IMAGE_SNAPSHOT_NAME; then
+				rm -f $SYNC_PROGRESS_DIR/$XEN_IMAGE_SNAPSHOT_NAME
+			    htvcenter_post_event 0 "clone" 2 "htvcenter-xen" "Could not copy target logical volume $XEN_IMAGE_NAME!"
+			    rm -f "$SYNC_PROGRESS_DIR/$XEN_SERVER_VOLUME_LOCATION-$XEN_IMAGE_NAME.sync_in_progress.$XEN_IMAGE_SNAPSHOT_NAME"
+			    rm -f "$SYNC_PROGRESS_DIR/$XEN_SERVER_VOLUME_LOCATION-$XEN_IMAGE_SNAPSHOT_NAME.clone_in_progress"
+			    htvcenter_post_event 0 "$XEN_IMAGE_SNAPSHOT_NAME" 10 "xen" "Finished to clone $XEN_IMAGE_SNAPSHOT_NAME"
+			    exit 1
+			fi
+			rm -f "$SYNC_PROGRESS_DIR/$XEN_SERVER_VOLUME_LOCATION-$XEN_IMAGE_NAME.sync_in_progress.$XEN_IMAGE_SNAPSHOT_NAME"
+			rm -f "$SYNC_PROGRESS_DIR/$XEN_SERVER_VOLUME_LOCATION-$XEN_IMAGE_SNAPSHOT_NAME.clone_in_progress"
+			# stop sync-progress monitor and send sync-finished to htvcenter
+			$0 post_sync_finished -n $XEN_IMAGE_SNAPSHOT_NAME -v $FILE_BACKEND_DIR -t xen-bf-deployment -u $XEN_htvcenter_USERNAME -p $XEN_htvcenter_PASSWORD
+			rm -f $SYNC_PROGRESS_DIR/$XEN_IMAGE_SNAPSHOT_NAME
+		else
+			ORIGIN_SIZE=""
+			ORIGIN_VOLUME="/dev/$XEN_SERVER_VOLUME_LOCATION/$XEN_IMAGE_NAME"
+			# if source volume is a snapshot find out the size of the origin
+			VOLUME_IS_SNAPSHOT=`lvs --noheadings -o origin $ORIGIN_VOLUME | awk '{ print $1 }'`
+			if [ "$VOLUME_IS_SNAPSHOT" != "" ]; then
+				ORIGIN_VOLUME="/dev/$XEN_SERVER_VOLUME_LOCATION/$VOLUME_IS_SNAPSHOT"
+			fi
+			ORIGIN_SIZE=`lvs --noheadings -o lv_size --units m --nosuffix $ORIGIN_VOLUME | awk '{ print $1 }' | cut -d'.' -f1`
+			if [ "$ORIGIN_SIZE" != "" ]; then
+				XEN_IMAGE_SIZE=$ORIGIN_SIZE
+			fi
+			touch $SYNC_PROGRESS_DIR/$XEN_IMAGE_SNAPSHOT_NAME
+			if ! lvcreate -L$XEN_IMAGE_SIZE"M" -n$XEN_IMAGE_SNAPSHOT_NAME $XEN_SERVER_VOLUME_LOCATION; then
+				rm -f $SYNC_PROGRESS_DIR/$XEN_IMAGE_SNAPSHOT_NAME
+				echo "ERROR: Cloud not create target volume $XEN_IMAGE_SNAPSHOT_NAME !"
+				echo "ERROR: Cloud not create target volume $XEN_IMAGE_SNAPSHOT_NAME !" | logger
+
+				htvcenter_lock_queue release xen $LOCK_TIME
+				trap '' EXIT
+
+				exit 1
+			fi
+			htvcenter_lock_queue release xen $LOCK_TIME
+			trap '' EXIT
+
+			# copy content
+			lvchange -ay -y /dev/$XEN_SERVER_VOLUME_LOCATION/$XEN_IMAGE_NAME
+			# create locks for origin + snapshot
+			touch "$SYNC_PROGRESS_DIR/$XEN_SERVER_VOLUME_LOCATION-$XEN_IMAGE_NAME.sync_in_progress.$XEN_IMAGE_SNAPSHOT_NAME"
+			touch "$SYNC_PROGRESS_DIR/$XEN_SERVER_VOLUME_LOCATION-$XEN_IMAGE_SNAPSHOT_NAME.clone_in_progress"
+			# create long-term-action start event
+			htvcenter_post_event 0 "$XEN_IMAGE_SNAPSHOT_NAME" 9 "xen" "Started to clone $XEN_IMAGE_SNAPSHOT_NAME from $XEN_IMAGE_NAME"
+			# start post sync
+			if [ "$XEN_htvcenter_USERNAME" != "" ] && [ "$XEN_htvcenter_PASSWORD" != "" ]; then
+			    $0 post_sync_progress -n $XEN_IMAGE_SNAPSHOT_NAME -v $XEN_SERVER_VOLUME_LOCATION -t xen-lvm-deployment -u $XEN_htvcenter_USERNAME -p $XEN_htvcenter_PASSWORD &
+			fi
+			# delay start copying
+			sleep 10
+			echo "Running : dd if=/dev/$XEN_SERVER_VOLUME_LOCATION/$XEN_IMAGE_NAME of=/dev/$XEN_SERVER_VOLUME_LOCATION/$XEN_IMAGE_SNAPSHOT_NAME bs=1M" | logger
+			if ! nice --20 dd if=/dev/$XEN_SERVER_VOLUME_LOCATION/$XEN_IMAGE_NAME of=/dev/$XEN_SERVER_VOLUME_LOCATION/$XEN_IMAGE_SNAPSHOT_NAME bs=1M; then
+				rm -f $SYNC_PROGRESS_DIR/$XEN_IMAGE_SNAPSHOT_NAME
+			    htvcenter_post_event 0 "clone" 2 "htvcenter-xen" "Could not copy target logical volume $XEN_IMAGE_NAME!"
+			    rm -f "$SYNC_PROGRESS_DIR/$XEN_SERVER_VOLUME_LOCATION-$XEN_IMAGE_NAME.sync_in_progress.$XEN_IMAGE_SNAPSHOT_NAME"
+			    rm -f "$SYNC_PROGRESS_DIR/$XEN_SERVER_VOLUME_LOCATION-$XEN_IMAGE_SNAPSHOT_NAME.clone_in_progress"
+			    htvcenter_post_event 0 "$XEN_IMAGE_SNAPSHOT_NAME" 10 "xen" "Finished to clone $XEN_IMAGE_SNAPSHOT_NAME"
+			    exit 1
+			fi
+			rm -f "$SYNC_PROGRESS_DIR/$XEN_SERVER_VOLUME_LOCATION-$XEN_IMAGE_NAME.sync_in_progress.$XEN_IMAGE_SNAPSHOT_NAME"
+			rm -f "$SYNC_PROGRESS_DIR/$XEN_SERVER_VOLUME_LOCATION-$XEN_IMAGE_SNAPSHOT_NAME.clone_in_progress"
+			rm -f $SYNC_PROGRESS_DIR/$XEN_IMAGE_SNAPSHOT_NAME
+			# stop sync-progress monitor and send sync-finished to htvcenter
+			$0 post_sync_finished -n $XEN_IMAGE_SNAPSHOT_NAME -v $XEN_SERVER_VOLUME_LOCATION -t xen-lvm-deployment -u $XEN_htvcenter_USERNAME -p $XEN_htvcenter_PASSWORD
+		fi
+
+		# create long-term-action finished event
+		htvcenter_post_event 0 "$XEN_IMAGE_SNAPSHOT_NAME" 10 "xen" "Finished to clone $XEN_IMAGE_SNAPSHOT_NAME"
+
+		# here we notify htvcenter that cloning has finished
+		# in case we have a username + password post the updated list to the htvcenter-server
+		# and notify htvcenter that cloning has finished
+		if [ "$XEN_htvcenter_USERNAME" != "" ] && [ "$XEN_htvcenter_PASSWORD" != "" ]; then
+			CLONE_FINISHED="$XEN_IMAGE_SNAPSHOT_NAME.clone"
+			touch $CLONE_FINISHED
+			if ! wget -q $WGET_NO_CERT_CHECK -O /dev/null --http-user=$XEN_htvcenter_USERNAME --http-password=$XEN_htvcenter_PASSWORD  --post-file=`$htvcenter_POSTENCODE $CLONE_FINISHED` $htvcenter_web_protocol://$htvcenter_SERVER_IP/htvcenter/base/plugins/xen/xen-action.php?xen_command=clone_finished; then
+				echo "ERROR: Could not post clone-finished status to the htvcenter-server at $resource_htvcenterserver!"
+				echo "ERROR: Could not post clone-finished status to the htvcenter-server at $resource_htvcenterserver!" | logger
+			fi
+			# post lv
+			$0 post_lv -u $XEN_htvcenter_USERNAME -p $XEN_htvcenter_PASSWORD -v $XEN_SERVER_VOLUME_LOCATION -t $XEN_DEPLOYMENT_TYPE
+		fi
+
+		;;
+
+	post_sync_progress)
+		echo "Posting progress of the sync action for volume $XEN_IMAGE_NAME to the htvcenter-server"
+		STORAGE_STATUS_TMP=$resource_id.lvm.$XEN_IMAGE_NAME.sync_progress
+		# posting also the root-device identifier once
+		VOLUME_ROOT_DEVICE_IDENTIFIER=$resource_id.$XEN_IMAGE_NAME.root_device
+		if [ "$htvcenter_PLUGIN_XEN_FILE_BACKEND" == "true" ]; then
+			FILE_BACKEND_DIR=`xen_get_backend_dir $XEN_SERVER_VOLUME_LOCATION`
+			echo "$FILE_BACKEND_DIR/$XEN_IMAGE_NAME" > $VOLUME_ROOT_DEVICE_IDENTIFIER
+		else
+			echo "/dev/$XEN_SERVER_VOLUME_LOCATION/$XEN_IMAGE_NAME" > $VOLUME_ROOT_DEVICE_IDENTIFIER
+		fi
+		if ! wget -q $WGET_NO_CERT_CHECK -O /dev/null --http-user=$XEN_htvcenter_USERNAME --http-password=$XEN_htvcenter_PASSWORD --post-file=`$htvcenter_POSTENCODE $VOLUME_ROOT_DEVICE_IDENTIFIER` $htvcenter_web_protocol://$htvcenter_SERVER_IP/htvcenter/base/plugins/xen/xen-action.php?xen_command=get_sync_progress; then
+			htvcenter_post_event 0 "post_sync_progress" 2 "htvcenter-xen" "Could not post the root-device ident for volume $XEN_IMAGE_NAME to htvcenter at $htvcenter_SERVER_IP."
+		fi
+		rm -f $VOLUME_ROOT_DEVICE_IDENTIFIER $VOLUME_ROOT_DEVICE_IDENTIFIER.post
+		# sync in progress
+		for SEQ in `seq 0 99`; do
+		    # check if we are finished already
+		    if [ -f "$STORAGE_STATUS_TMP" ]; then
+			CURRENT_PROGRESS=`cat $STORAGE_STATUS_TMP`
+			if [ "$CURRENT_PROGRESS" == "100" ]; then
+			    exit 0
+			fi
+		    fi
+		    echo "$SEQ" > $STORAGE_STATUS_TMP
+		    if ! wget -q $WGET_NO_CERT_CHECK -O /dev/null --http-user=$XEN_htvcenter_USERNAME --http-password=$XEN_htvcenter_PASSWORD --post-file=`$htvcenter_POSTENCODE $STORAGE_STATUS_TMP` $htvcenter_web_protocol://$htvcenter_SERVER_IP/htvcenter/base/plugins/xen/xen-action.php?xen_command=get_sync_progress; then
+			    xen_log "post_sync_progress" "Could not post the sync progress for volume $XEN_IMAGE_NAME to htvcenter at $htvcenter_SERVER_IP."
+		    fi
+		    rm -f $STORAGE_STATUS_TMP $STORAGE_STATUS_TMP.post
+		    sleep 2
+		done
+		;;
+
+
+	post_sync_finished)
+		echo "Posting finished for volume $XEN_IMAGE_NAME to the htvcenter-server"
+		STORAGE_STATUS_TMP=$resource_id.lvm.$XEN_IMAGE_NAME.sync_progress
+		echo "100" > $STORAGE_STATUS_TMP
+		if ! wget -q $WGET_NO_CERT_CHECK -O /dev/null --http-user=$XEN_htvcenter_USERNAME --http-password=$XEN_htvcenter_PASSWORD --post-file=`$htvcenter_POSTENCODE $STORAGE_STATUS_TMP` $htvcenter_web_protocol://$htvcenter_SERVER_IP/htvcenter/base/plugins/xen/xen-action.php?xen_command=get_sync_finished; then
+		    xen_log "post_sync_progress" "Could not post the sync finished for volume $XEN_IMAGE_NAME to htvcenter at $htvcenter_SERVER_IP."
+		fi
+		rm -f $STORAGE_STATUS_TMP $STORAGE_STATUS_TMP.post
+		;;
+
+
+
+	*)
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+		xen_usage
+		;;
+
+
+esac
+

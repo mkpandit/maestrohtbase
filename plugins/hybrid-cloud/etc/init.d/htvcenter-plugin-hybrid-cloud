@@ -1,0 +1,157 @@
+#!/bin/bash
+# init script for the htvcenter hybrid-cloud-plugin
+#
+# htvcenter Enterprise developed by htvcenter Enterprise GmbH.
+#
+# All source code and content (c) Copyright 2014, htvcenter Enterprise GmbH unless specifically noted otherwise.
+#
+# This source code is released under the htvcenter Enterprise Server and Client License, unless otherwise agreed with htvcenter Enterprise GmbH.
+# The latest version of this license can be found here: http://htvcenter-enterprise.com/license
+#
+# By using this software, you acknowledge having read this license and agree to be bound thereby.
+#
+#           http://htvcenter-enterprise.com
+#
+# Copyright 2014, htvcenter Enterprise GmbH <info@htvcenter-enterprise.com>
+#
+
+htvcenter_SERVER_BASE_DIR=$(pushd $(dirname $0)/../../../../.. > /dev/null; echo $PWD; popd > /dev/null)
+. $htvcenter_SERVER_BASE_DIR/htvcenter/etc/htvcenter-server.conf
+. $htvcenter_SERVER_BASE_DIR/htvcenter/include/htvcenter-functions
+. $htvcenter_SERVER_BASE_DIR/htvcenter/include/htvcenter-server-functions
+export htvcenter_SOURCE_DIR="$htvcenter_SERVER_BASE_DIR/htvcenter/"
+. $htvcenter_SERVER_BASE_DIR/htvcenter/include/htvcenter-package-functions
+. $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/hybrid-cloud/include/htvcenter-plugin-hybrid-cloud-functions
+. $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/hybrid-cloud/etc/htvcenter-plugin-hybrid-cloud.conf
+# get the ip config
+htvcenter_server_get_config
+export resource_htvcenterserver=$htvcenter_SERVER_IP_ADDRESS
+export LANG=C
+# define wget to use with https
+if [ "$htvcenter_WEB_PROTOCOL" == "https" ]; then
+	WGET_NO_CERT_CHECK="--no-check-certificate"
+fi
+
+function htvcenter_plugin_hybrid_cloud_start() {
+	echo "Starting the htvcenter hybrid-cloud-plugin"
+	touch $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/hybrid-cloud/.running
+}
+
+
+function htvcenter_plugin_hybrid_cloud_stop() {
+	echo "Stopping the htvcenter hybrid-cloud-plugin"
+	rm -f $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/hybrid-cloud/.running
+}
+
+function htvcenter_plugin_hybrid_cloud_uninstall() {
+	local USERNAME=$1
+	local PASSWORD=$2
+	if [ "$USERNAME" == "" ] && [ "$PASSWORD" == "" ]; then
+		echo -n "hybrid-cloud: Please give a username to uninstall the plugin : "
+		read USERNAME
+		echo
+		echo -n "hybrid-cloud: Please give the password for user $USERNAME : "
+		read PASSWORD
+		echo
+	fi
+	echo "Uninstalling the htvcenter hybrid-cloud-plugin"
+	htvcenter_plugin_hybrid_cloud_stop
+	# removing the table
+	if ! wget -q $WGET_NO_CERT_CHECK -O /dev/null --http-user=$USERNAME --http-password=$PASSWORD "$htvcenter_WEB_PROTOCOL://$resource_htvcenterserver/htvcenter/base/plugins/hybrid-cloud/hybrid-cloud-action.php?hybrid_cloud_command=uninstall"; then
+		hybrid_cloud_log init "ERROR: Could not drop the hybrid-cloud-plugin tables in the database!"
+		return 1
+	fi
+	htvcenter_server_remove_deployment_type $USERNAME $PASSWORD ami-deployment
+	htvcenter_server_remove_virtualization_type $USERNAME $PASSWORD hybrid-cloud
+	htvcenter_server_remove_virtualization_type $USERNAME $PASSWORD hybrid-cloud-vm-local
+
+	rm -f $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/hybrid-cloud
+	rm -f $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/boot-service/boot-service-hybrid-cloud.tgz
+	rm -f $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/boot-service/image.ami-deployment.php
+
+}
+
+function htvcenter_plugin_hybrid_cloud_init() {
+	local USERNAME=$1
+	local PASSWORD=$2
+	if [ "$USERNAME" == "" ] && [ "$PASSWORD" == "" ]; then
+		echo -n "hybrid-cloud: Please give a username to init the plugin : "
+		read USERNAME
+		echo
+		echo -n "hybrid-cloud: Please give the password for user $USERNAME : "
+		read PASSWORD
+		echo
+	fi
+	echo "Initializing the htvcenter hybrid-cloud-plugin"
+	htvcenter_server_add_deployment_type $USERNAME $PASSWORD ami-deployment ami-deployment "AMI deployment Cloud VMs" hybrid-cloud "Cloud AMI Storage"
+	htvcenter_server_add_virtualization_type $USERNAME $PASSWORD hybrid-cloud "Cloud Host"
+	htvcenter_server_add_virtualization_type $USERNAME $PASSWORD hybrid-cloud-vm-local "Cloud VM (localboot)"
+
+	# linking the web dir
+	ln -sf $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/hybrid-cloud/web $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/hybrid-cloud
+	# link the boot-service
+	ln -sf $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/hybrid-cloud/web/boot-service-hybrid-cloud.tgz $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/boot-service/boot-service-hybrid-cloud.tgz
+	# image deployment
+	ln -sf $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/hybrid-cloud/web/image.ami-deployment.php $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/boot-service/image.ami-deployment.php
+	# creating acl dir for Azure
+	mkdir -p $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/hybrid-cloud/etc/acl
+	chmod -R 777 $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/hybrid-cloud/etc/acl
+	# create stat dir, writeable for the monitorstatistics
+	mkdir -p $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/hybrid-cloud/web/hybrid-cloud-stat/
+	chmod -R 777 $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/hybrid-cloud/web/hybrid-cloud-stat/
+	# creating the table
+	if ! wget -q $WGET_NO_CERT_CHECK -O /dev/null --http-user=$USERNAME --http-password=$PASSWORD "$htvcenter_WEB_PROTOCOL://$resource_htvcenterserver/htvcenter/base/plugins/hybrid-cloud/hybrid-cloud-action.php?hybrid_cloud_command=init"; then
+		hybrid_cloud_log init "ERROR: Could not create the hybrid-cloud-plugin tables in the database!"
+		return 1
+	fi
+	# install libcloud
+	if [ "$htvcenter_AZURE_SUPPORT" == "true" ]; then
+		# install azure python api
+		if ! pip install azure; then
+			hybrid_cloud_log init "ERROR: Could not automatically install Azure python API! Please run: pip install Azure python API"
+			htvcenter_post_event 0 "init" 3 "hybrid-cloud" "Could not automatically install Azure python API!"
+			htvcenter_post_event 0 "init" 3 "hybrid-cloud" "Please run: pip install azure"
+		fi
+		PIP_INSTALL_CMD="pip install -e git+https://git-wip-us.apache.org/repos/asf/libcloud.git@trunk#egg=apache-libcloud"
+	else
+		PIP_INSTALL_CMD="pip install apache-libcloud"
+	fi
+	if ! $PIP_INSTALL_CMD; then
+		hybrid_cloud_log init "ERROR: Could not automatically install apache-libcloud! Please run: pip install apache-libcloud"
+		htvcenter_post_event 0 "init" 3 "hybrid-cloud" "Could not automatically install apache-libcloud!"
+		htvcenter_post_event 0 "init" 3 "hybrid-cloud" "Please run: pip install apache-libcloud"
+	fi
+
+}
+
+USER=$2
+PASS=$3
+
+case "$1" in
+	start)
+		htvcenter_plugin_hybrid_cloud_start
+		;;
+	stop)
+		htvcenter_plugin_hybrid_cloud_stop
+		;;
+	restart)
+		htvcenter_plugin_hybrid_cloud_stop
+		sleep 1
+		htvcenter_plugin_hybrid_cloud_start
+		;;
+	init)
+		htvcenter_plugin_hybrid_cloud_init $USER $PASS
+		;;
+	uninstall)
+		htvcenter_plugin_hybrid_cloud_uninstall $USER $PASS
+		;;
+	*)
+		echo "Usage: $0 {start|stop|restart|init|uninstall}"
+		exit 1
+
+esac
+exit $?
+
+
+
+

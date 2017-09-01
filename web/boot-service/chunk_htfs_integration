@@ -1,0 +1,153 @@
+#!/bin/bash
+#
+# htvcenter Enterprise developed by htvcenter Enterprise GmbH.
+#
+# All source code and content (c) Copyright 2014, htvcenter Enterprise GmbH unless specifically noted otherwise.
+#
+# This source code is released under the htvcenter Enterprise Server and Client License, unless otherwise agreed with htvcenter Enterprise GmbH.
+# The latest version of this license can be found here: http://htvcenter-enterprise.com/license
+#
+# By using this software, you acknowledge having read this license and agree to be bound thereby.
+#
+#           http://htvcenter-enterprise.com
+#
+# Copyright 2014, htvcenter Enterprise GmbH <info@htvcenter-enterprise.com>
+#
+
+# This script integrates a local (existing) server into htvcenter
+# The system then can (should) be set to netboot to gain the full
+# advantages and flexibility of the htvcenter management platform
+export LANGUAGE=C
+export LANG=C
+export LC_ALL=C
+
+function usage() {
+		echo "Usage : $0 integrate -s [<htvcenter-ip>] -d [<disk>]"
+}
+
+
+function htvcenter_integrate_local_server() {
+
+if [ -f /etc/redhat-release ]; then
+	echo "Getting htfs storage package"
+		yum install -y wget fuse fuse-libs
+		if ! wget -q --no-check-certificate -O /tmp/htfs-install.tgz "http://$htvcenter_SERVER/htvcenter/boot-service/htfs-install.tgz"; then
+		echo "ERROR: Failed to get the htfs storage package!"
+		return 1
+		fi
+		##mount point
+		mkdir -p /usr/share/htvcenter/storage
+	
+		#decompress htfs
+		tar -xzf /tmp/htfs-install.tgz -C /tmp/
+		rm -f /tmp/htfs-install.tgz
+	
+		#install htfs
+		yum install -y fuse fuse-libs
+		rpm -ivh /tmp/htfs-install/rpm/bash-completion-1.3-7.el6.noarch.rpm
+		rpm -ivh /tmp/htfs-install/rpm/htfs-client-3.10.6-0el6.x86_64.rpm
+		rpm -ivh /tmp/htfs-install/rpm/htfs-chunkserver-3.10.6-0el6.x86_64.rpm
+		rmp -ivh /tmp/htfs-install/rpm/htfs-metalogger-3.10.6-0el6.x86_64.rpm
+		rmp -ivh /tmp/htfs-install/rpm/htfs-debuginfo-3.10.6-0el6.x86_64.rpm
+		
+			#configure client and 1part of chunkserver
+		cp -rf /tmp/htfs-install/etc/* /etc/htfs/
+		sed -i -e s/^MASTER_HOST.*/"MASTER_HOST = $htvcenter_SERVER"/g /etc/htfs/htfschunkserver.cfg
+		
+		sed -i -e s/^htfsmaster.*/"htfsmaster=$htvcenter_SERVER"/g /etc/htfs/htfsmount.cfg
+				
+		for disk1 in $disk
+			do
+				echo $disk1 >> /etc/htfs/htfshdd.cfg
+				chown -R htfs:htfs $disk1
+		done
+		
+		/etc/init.d/htfs-chunkserver start
+		/usr/bin/htfsmount
+		/sbin/chkconfig htfs-chunkserver on
+fi
+
+
+if [ -f /etc/debian_version ]; then
+	echo "Getting storage"
+	mkdir -p /usr/share/htvcenter/storage
+	wget -O - http://packages.lizardfs.com/lizardfs.key | apt-key add -
+		
+	. /etc/lsb-release	
+	echo "deb http://packages.lizardfs.com/ubuntu/$DISTRIB_CODENAME $DISTRIB_CODENAME main" > /etc/apt/sources.list.d/lizardfs.list
+	echo "deb-src http://packages.lizardfs.com/ubuntu/$DISTRIB_CODENAME $DISTRIB_CODENAME main" >> /etc/apt/sources.list.d/lizardfs.list
+	apt-get update && apt-get install -y make
+	apt-get install -y rpl
+	apt-get install -y nfs-kernel-server
+	apt-get install -y sshpass
+
+	apt-get install -y lizardfs-master lizardfs-chunkserver lizardfs-client lizardfs-adm lizardfs-cgi lizardfs-metalogger lizardfs-common
+
+	cp -r /etc/mfs/mfsexports.cfg.dist /etc/mfs/mfsexports.cfg
+	cp -r /etc/mfs/mfschunkserver.cfg.dist /etc/mfs/mfschunkserver.cfg
+	cp -r /etc/mfs/mfshdd.cfg.dist /etc/mfs/mfshdd.cfg	
+	cp -r /etc/mfs/mfsmount.cfg.dist /etc/mfs/mfsmount.cfg
+	
+	sed -i -e s/.*MASTER_HOST.*/"MASTER_HOST = $htvcenter_SERVER"/g /etc/mfs/mfschunkserver.cfg
+	sed -i -e s/.*SYSLOG_IDENT.*/"SYSLOG_IDENT = htfschunkserver"/g /etc/mfs/mfschunkserver.cfg
+	sed -i -e s/.*LABEL.*/"LABEL = LOCAL"/g /etc/mfs/mfschunkserver.cfg
+	sed -i -e s/.*LIZARDFSCHUNKSERVER_ENABLE.*/"LIZARDFSCHUNKSERVER_ENABLE=true"/g /etc/default/lizardfs-chunkserver
+	#sed -i -e s/.*LIZARDFSMASTER_ENABLE.*/"LIZARDFSMASTER_ENABLE=true"/g /etc/default/lizardfs-master
+	
+	sed -i -e s/.*mfsmaster.*/"mfsmaster=$htvcenter_SERVER"/g /etc/mfs/mfsmount.cfg
+	echo "/usr/share/htvcenter/storage"  >> /etc/mfs/mfsmount.cfg
+	
+	for disk1 in $disk
+		do
+			echo $disk1 >> /etc/mfs/mfshdd.cfg	
+			chown  -R mfs:mfs $disk1
+		done
+		
+	mfschunkserver start
+	mfsmount
+
+
+fi
+
+}
+
+
+case "$1" in
+	integrate)
+		shift
+		if [ $# == 0 ]; then
+			usage
+			exit 0
+		fi
+		while [ $# -ne 0 ]; do
+			case "$1" in
+				-s)
+					htvcenter_SERVER=$2
+					;;
+				-d)
+					disk=$2
+					;;
+
+			esac
+			shift
+		done
+		if [ "$htvcenter_SERVER" == "" ]; then
+			echo "htvcenter_SERVER: Missing htvcenter-server ip-address !"
+			usage
+			exit 1
+		fi
+		if [ "$disk" == "" ]; then
+			echo "DISK PATH: Missing DISK PATH!"
+			usage
+			exit 1
+		fi
+		export htvcenter_SERVER
+		export disk
+		htvcenter_integrate_local_server
+		;;
+	*)
+		usage
+		exit 0
+		;;
+
+esac

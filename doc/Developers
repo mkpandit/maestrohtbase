@@ -1,0 +1,29 @@
+
+For developers or persons interested in submitting a patch for
+consideration please note the following guide.
+
+1. Setup the enviroment
+    cd /usr/src
+    svn co https://htvcenter.svn.sourceforge.net/svnroot/htvcenter/trunk/src htvcenter
+
+2. Work inside the htvcenter folder
+    cd htvcenter
+
+3. Sync with branch just in case
+    cd /usr/src/htvcenter
+    make update
+
+4. Create SVN Diff
+    svn diff > /usr/src/all_htvcenter_changes.patch
+    or
+    svn diff folder/folder/file.php > /usr/src/file.php_htvcenter.patch
+    or
+    svn diff folder/folder/file.php Makefile doc/README \
+    doc/INSTALL > /usr/src/misc_htvcenter_changes.patch
+
+5. Politely forward this file with a description of what it is doing and why to
+htvcenter-developer@lists.sourceforge.net and don't forget the attachment.
+For large patches you may want to link to the file on the Internet or ask for
+further instructions on the list.
+
+Thanks !

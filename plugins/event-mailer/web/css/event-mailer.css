@@ -1,0 +1,35 @@
+.htmlobject_th.func,
+.htmlobject_td.func {
+	width: 30px;
+	text-align: center;
+	vertical-align: top;
+}
+.htmlobject_th.active,
+.htmlobject_td.active,
+.htmlobject_th.error,
+.htmlobject_td.error,
+.htmlobject_th.warning,
+.htmlobject_td.warning,
+.htmlobject_th.regular,
+.htmlobject_td.regular,
+.htmlobject_th.remove,
+.htmlobject_td.remove {
+	width: 60px;
+	text-align: center;
+	vertical-align: top;
+	font-weight: normal;
+}
+.event_mailer_template .htmlobject_box .left {
+	width: 100px;
+}
+.event_mailer_template .htmlobject_box .right .text {
+	width: 400px;
+}
+.event_mailer_template .htmlobject_box .right textarea {
+	width: 400px;
+	height: 300px;
+}
+
+.event-mailer #Tabelle td.func {
+	text-align: right;
+}

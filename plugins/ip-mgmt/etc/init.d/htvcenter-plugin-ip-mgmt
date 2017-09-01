@@ -1,0 +1,125 @@
+#!/bin/bash
+#
+# htvcenter Enterprise developed by htvcenter Enterprise GmbH.
+#
+# All source code and content (c) Copyright 2014, htvcenter Enterprise GmbH unless specifically noted otherwise.
+#
+# This source code is released under the htvcenter Enterprise Server and Client License, unless otherwise agreed with htvcenter Enterprise GmbH.
+# The latest version of this license can be found here: http://htvcenter-enterprise.com/license
+#
+# By using this software, you acknowledge having read this license and agree to be bound thereby.
+#
+#           http://htvcenter-enterprise.com
+#
+# Copyright 2014, htvcenter Enterprise GmbH <info@htvcenter-enterprise.com>
+
+
+htvcenter_SERVER_BASE_DIR=$(pushd $(dirname $0)/../../../../.. > /dev/null; echo $PWD; popd > /dev/null)
+. $htvcenter_SERVER_BASE_DIR/htvcenter/etc/htvcenter-server.conf
+. $htvcenter_SERVER_BASE_DIR/htvcenter/include/htvcenter-functions
+. $htvcenter_SERVER_BASE_DIR/htvcenter/include/htvcenter-server-functions
+. $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/ip-mgmt/include/htvcenter-plugin-ip-mgmt-functions
+. $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/ip-mgmt/etc/htvcenter-plugin-ip-mgmt.conf
+# get the ip config
+htvcenter_server_get_config
+export resource_htvcenterserver=$htvcenter_SERVER_IP_ADDRESS
+export LANG=C
+# define wget to use with https
+if [ "$htvcenter_WEB_PROTOCOL" == "https" ]; then
+	WGET_NO_CERT_CHECK="--no-check-certificate"
+fi
+
+function htvcenter_plugin_ip_mgmt_start() {
+	echo "Starting the htvcenter ip-mgmt-plugin"
+	touch $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/ip-mgmt/.running
+}
+
+
+function htvcenter_plugin_ip_mgmt_stop() {
+	echo "Stopping the htvcenter ip-mgmt-plugin"
+	rm -f $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/ip-mgmt/.running
+}
+
+function htvcenter_plugin_ip_mgmt_uninstall() {
+	local USERNAME=$1
+	local PASSWORD=$2
+	if [ "$USERNAME" == "" ] && [ "$PASSWORD" == "" ]; then
+		echo -n "ip-mgmt: Please give a username to uninstall the plugin : "
+		read USERNAME
+		echo
+		echo -n "ip-mgmt: Please give the password for user $USERNAME : "
+		read PASSWORD
+		echo
+	fi
+	echo "Uninstalling the htvcenter ip-mgmt-plugin"
+	htvcenter_plugin_ip_mgmt_stop
+
+	# removing the table
+	if ! wget -q $WGET_NO_CERT_CHECK -O /dev/null --http-user=$USERNAME --http-password=$PASSWORD "$htvcenter_WEB_PROTOCOL://$resource_htvcenterserver/htvcenter/base/plugins/ip-mgmt/ip-mgmt-action.php?ip_mgmt_command=uninstall"; then
+		ip-mgmt_log init "ERROR: Could not drop the ip-mgmt-plugin tables in the database!"
+		return 1
+	fi
+	rm -f $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/ip-mgmt
+	rm -f $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/boot-service/boot-service-ip-mgmt.tgz
+	rm -f $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/boot-service/ip-mgmt-appliance-config.php
+
+}
+
+function htvcenter_plugin_ip_mgmt_init() {
+	local USERNAME=$1
+	local PASSWORD=$2
+	if [ "$USERNAME" == "" ] && [ "$PASSWORD" == "" ]; then
+		echo -n "ip-mgmt: Please give a username to init the plugin : "
+		read USERNAME
+		echo
+		echo -n "ip-mgmt: Please give the password for user $USERNAME : "
+		read PASSWORD
+		echo
+	fi
+	echo "Initializing the htvcenter ip-mgmt-plugin"
+	# linking the web dir
+	ln -sf $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/ip-mgmt/web $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/ip-mgmt
+	# link the boot-service
+	ln -sf $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/ip-mgmt/web/boot-service-ip-mgmt.tgz $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/boot-service/boot-service-ip-mgmt.tgz
+
+	# creating the table
+	if ! wget -q $WGET_NO_CERT_CHECK -O /dev/null --http-user=$USERNAME --http-password=$PASSWORD "$htvcenter_WEB_PROTOCOL://$resource_htvcenterserver/htvcenter/base/plugins/ip-mgmt/ip-mgmt-action.php?ip_mgmt_command=init"; then
+		ip-mgmt_log init "ERROR: Could not create the ip-mgmt-plugin tables in the database!"
+		return 1
+	fi
+	# linking appliance config
+	ln -sf $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/ip-mgmt/web/ip-mgmt-appliance-config.php $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/boot-service/ip-mgmt-appliance-config.php
+
+}
+
+USER=$2
+PASS=$3
+
+case "$1" in
+	start)
+		htvcenter_plugin_ip_mgmt_start
+		;;
+	stop)
+		htvcenter_plugin_ip_mgmt_stop
+		;;
+	restart)
+		htvcenter_plugin_ip_mgmt_stop
+		sleep 1
+		htvcenter_plugin_ip_mgmt_start
+		;;
+	init)
+		htvcenter_plugin_ip_mgmt_init $USER $PASS
+		;;
+	uninstall)
+		htvcenter_plugin_ip_mgmt_uninstall $USER $PASS
+		;;
+	*)
+		echo "Usage: $0 {start|stop|restart|init|uninstall}"
+		exit 1
+
+esac
+exit $?
+
+
+
+

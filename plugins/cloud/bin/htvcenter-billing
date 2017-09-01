@@ -1,0 +1,209 @@
+htvcenter_SERVER_CONF="/usr/share/htvcenter/etc/htvcenter-server.conf"
+htvcenter_DB_BACKUP_DIR="/var/spool/htvcenter_db"
+htvcenter_BILLING_DB="htvcenter_billing"
+
+
+if [ ! -e "$htvcenter_SERVER_CONF" ]; then
+        echo "ERROR: $htvcenter_SERVER_CONF is not existing"
+        exit 1
+fi
+. $htvcenter_SERVER_CONF
+
+if  [ "$htvcenter_DATABASE_PASSWORD" != "" ]; then
+	DB_PASS="-p$htvcenter_DATABASE_PASSWORD"
+fi
+
+if ! which mysql 1>/dev/null 2>&1; then
+	echo "ERROR: Mysql client 'mysql' not installed/found on this system" | logger
+	exit 1
+else
+	export MYSQL_CLIENT=`which mysql`
+fi
+
+MYSQL="$MYSQL_CLIENT -N -B -u $htvcenter_DATABASE_USER $DB_PASS --host $htvcenter_DATABASE_SERVER $htvcenter_DATABASE_NAME -e "
+MYSQL_BILLING="$MYSQL_CLIENT -f -N -B -u $htvcenter_DATABASE_USER $DB_PASS --host $htvcenter_DATABASE_SERVER $htvcenter_BILLING_DB "
+
+
+function htvcenter_billing_usage() {
+	echo "Usage : $0 import"
+	echo "      : $0 report -u <cloud-username> [-m <month as Oct, Nov, Dez>] [-y <year>] [-c csv]"
+	exit 1
+}
+
+
+function billing_import() {
+
+	# create db if not existing
+	if ! $MYSQL "show databases" | grep -w $htvcenter_BILLING_DB 1>/dev/null; then
+		echo "Billing database $htvcenter_BILLING_DB not existing yet, creating it!"
+
+		if ! $MYSQL "create database $htvcenter_BILLING_DB"; then
+			echo "ERROR: Could not create $htvcenter_BILLING_DB, exiting!"
+		else
+			echo "NOTICE: Created $htvcenter_BILLING_DB"
+		fi
+	else
+		echo "NOTICE: database $htvcenter_BILLING_DB exists already, cleaning table cloud_transaction"
+		$MYSQL_BILLING -e "delete from cloud_transaction"
+	fi
+
+	# update db from transcation backup
+	for DBBACKUP in `ls $htvcenter_DB_BACKUP_DIR/htvcenter_db_cloud_transaction_*`; do 
+		echo "- importing $DBBACKUP into $htvcenter_BILLING_DB"
+		DBTMP=`mktemp -d /tmp/htvcenter-billing.XXXXXXXXXX` || exit 1
+		/bin/cp -f $DBBACKUP $DBTMP/
+		DBBACKUP=`basename $DBBACKUP`
+		if ! gunzip $DBTMP/$DBBACKUP; then
+			echo "WARNING: Could not unpack $DBBACKUP! Continuing"
+		fi
+		DBBACKUP=`echo $DBBACKUP | sed -e "s/\.gz//g"`
+		# remove drop table
+		sed -i -e "s/^DROP TABLE.*//g" $DBTMP/$DBBACKUP
+		$MYSQL_BILLING < $DBTMP/$DBBACKUP 2>1 | grep -v "ERROR 1050"
+		rm -f $DBTMP/$DBBACKUP
+		rmdir $DBTMP
+
+	done
+
+}
+
+
+
+function billing_report() {
+
+	CLOUD_USER=$1
+	if [ "$CLOUD_USER" == "" ]; then
+		htvcenter_billing_usage
+		exit 0
+	fi
+	CLOUD_USER_ID=`$MYSQL "select cu_id from cloud_users where cu_name=\"$CLOUD_USER\""`
+	if [ "$CLOUD_USER_ID" == "" ]; then
+		echo "NOTICE: Cloud user $CLOUD_USER not existing in the cloud transactions"
+		exit 0
+	fi
+
+
+	DBTMPF=`mktemp /tmp/htvcenter-billing.XXXXXXXXXX` || exit 1
+	$MYSQL_BILLING -e "select ct_time, ct_ccu_charge, ct_ccu_balance, ct_comment from cloud_transaction where ct_cu_id=$CLOUD_USER_ID" > $DBTMPF
+
+	SUM_CHARGE=0
+
+	OIFS=$IFS
+IFS='
+'
+
+
+	for DBROW in `cat $DBTMPF`; do
+	
+		BDATE=`echo $DBROW | awk '{ print $1 }'`
+		BDATE=`date --date \@$BDATE`
+		BCHARGE=`echo $DBROW | awk '{ print $2 }'`
+		BCCU=`echo $DBROW | awk '{ print $3 }'`
+		BCOMMENT=`echo $DBROW | awk '{ $1=$2=$3=""; print $0 }'`
+
+
+		if [ "$PARAM_MONTH" != "" ]; then
+			if ! echo $BDATE | grep -w $PARAM_MONTH 1>/dev/null; then
+				continue
+			fi
+		fi
+		if [ "$PARAM_YEAR" != "" ]; then
+			if ! echo $BDATE | grep -w $PARAM_YEAR 1>/dev/null; then
+				continue
+			fi
+		fi
+
+		if [ "$PARAM_CSV" == "" ]; then
+			
+			echo "$BDATE - charged -$BCHARGE for $BCOMMENT"
+			
+		else
+			echo "$BDATE,-$BCHARGE,$BCOMMENT"
+		fi
+
+		SUM_CHARGE=$(( $SUM_CHARGE + $BCHARGE ))
+
+
+	done
+
+	IFS=$OIFS
+	rm -f $DBTMPF
+
+	if [ "$PARAM_CSV" == "" ]; then
+		
+			echo 
+			echo "--------------------------------------------------------------"
+			echo "User $CLOUD_USER consumed $SUM_CHARGE CCUs for this period"
+			echo "--------------------------------------------------------------"
+			echo 
+		
+
+		
+
+	fi
+
+}
+
+
+
+CLOUD_BILLING_COMMAND=$1
+shift
+
+while [ $# -ne 0 ]; do
+	case "$1" in
+		-u)
+			PARAM_USER=$2
+			shift
+			;;
+		-m)
+			PARAM_MONTH=$2
+			shift
+			;;
+		-y)
+			PARAM_YEAR=$2
+			shift
+			;;
+		-c)
+			PARAM_CSV=$2
+			shift
+			;;	
+		*)
+			echo "ERROR: Free commandline arguments are not allowed"
+			htvcenter_billing_usage
+			exit 6
+			;;
+	esac
+	shift
+done
+
+
+
+
+# main
+case "$CLOUD_BILLING_COMMAND" in 
+
+	import)
+		billing_import
+		;;
+
+
+	report)
+		billing_report $PARAM_USER $PARAM_MONTH $PARAM_YEAR
+		;;
+
+	*)
+		htvcenter_billing_usage
+		;;
+
+
+esac
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,1 @@
+dbclient -K 10 -y -i /usr/share/htvcenter/etc/dropbear/dropbear_rsa_host_key -p 1667 root@192.168.0.235 "/usr/share/htvcenter/bin/htvcenter-cmd /usr/share/htvcenter/plugins/kvm/bin/htvcenter-kvm remove -n 14931522077472.cloud_14932388283910_1_ -v /usr/share/htvcenter/storage -t kvm-bf-deployment -u htvcenter -p htvcenter --htvcenter-cmd-mode background"

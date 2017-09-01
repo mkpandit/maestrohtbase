@@ -1,0 +1,144 @@
+#!/usr/bin/python
+#
+# htvcenter Enterprise developed by htvcenter Enterprise GmbH.
+#
+# All source code and content (c) Copyright 2014, htvcenter Enterprise GmbH unless specifically noted otherwise.
+#
+# This source code is released under the htvcenter Enterprise Server and Client License, unless otherwise agreed with htvcenter Enterprise GmbH.
+# The latest version of this license can be found here: http://htvcenter-enterprise.com/license
+#
+# By using this software, you acknowledge having read this license and agree to be bound thereby.
+#
+#           http://htvcenter-enterprise.com
+#
+# Copyright 2014, htvcenter Enterprise GmbH <info@htvcenter-enterprise.com>
+#
+import sys
+import time
+import syslog
+from oqlibcloudcompute import *
+from azure import *
+from azure.servicemanagement import *
+
+def main(argv):
+
+	syslog.syslog('Terminate instance started')
+	instances = {}
+	item = '';
+	cmdline = htvcenter_lc_parse_cmdline(argv)
+	if cmdline['IDENTIFIER'] == '':
+		syslog.syslog('Instance identifier missing')
+		sys.exit(1)
+	conn = htvcenter_lc_get_connection(cmdline)
+	if cmdline['PROVIDER'] == 'AZURE':
+		try:
+			instances = conn.list_nodes(ex_cloud_service_name=cmdline['SERVICENAME'])
+		except Exception as e:
+			syslog.syslog("Unexpected error during list Instance - %s" % e.message)
+	else:
+		try:
+			instances = conn.list_nodes()
+		except Exception as e:
+			syslog.syslog("Unexpected error during list Instance - %s" % e.message)
+
+	
+
+	# EC2
+	if (cmdline['PROVIDER'] == 'EC2_EU_WEST') or (cmdline['PROVIDER'] == 'EC2_US_EAST'):
+		for item in instances:
+			if item.extra['instanceId'] == cmdline['IDENTIFIER']:
+				 if item.state != 2:
+					syslog.syslog("Terminating Instance %s" % cmdline['IDENTIFIER'])
+					try:
+						conn.destroy_node(item)
+					except Exception as e:
+						syslog.syslog("Unexpected error during destroy Instance - %s" % e.message)
+
+	# OPENSTACK/AZURE
+	if (cmdline['PROVIDER'] == 'OPENSTACK') or (cmdline['PROVIDER'] == 'AZURE'):
+		for item in instances:
+			if item.name == cmdline['IDENTIFIER']:
+				 if item.state != 2:
+					syslog.syslog("Terminating Instance %s" % cmdline['IDENTIFIER'])
+					try:
+						conn.destroy_node(item)
+					except Exception as e:
+						syslog.syslog("Unexpected error during destroy Instance - %s" % e.message)
+					
+
+	# remove cloud-service
+	if (cmdline['PROVIDER'] == 'AZURE') and (cmdline['SERVICENAME'] != ''):
+		time.sleep( 60 )
+		syslog.syslog("Starting removing Azure Cloud-Service")
+		loop = 0
+		result = False
+		while True:
+			time.sleep( 10 )
+			try:
+				syslog.syslog("Trying to remove cloud service %s" % cmdline['SERVICENAME'])
+				result = conn.ex_destroy_cloud_service(name=cmdline['SERVICENAME'])
+			except Exception as e:
+				syslog.syslog("Unexpected error during removing cloud service - %s" % e.message)
+			if (result == True):
+				syslog.syslog("Removed cloud-service %s" % cmdline['SERVICENAME'])
+				break
+			else:
+				syslog.syslog("Failed removing cloud-service %s - retrying" % cmdline['SERVICENAME'])
+				syslog.syslog("- Re-terminating Instance %s" % cmdline['IDENTIFIER'])
+				try:
+					conn.destroy_node(item)
+				except Exception as e:
+					syslog.syslog("Unexpected error during destroy Instance - %s" % e.message)
+
+			if (loop > 20 ):
+				syslog.syslog("Timeout removing cloud-service %s - retrying" % cmdline['SERVICENAME'])
+				break
+			loop += 1
+		if (result == True):
+			syslog.syslog("Finally removed cloud-service %s" % cmdline['SERVICENAME'])
+		else:
+			syslog.syslog("Retry failed. Could not remove cloud-service %s" % cmdline['SERVICENAME'])
+
+
+		syslog.syslog("Starting to remove Azure Storage Account %s" % cmdline['IDENTIFIER'])
+		loop = 0
+		subscription_id = cmdline['SUBSCRIPTION_ID']
+		certificate_path = cmdline['KEYFILE']
+		sms = ServiceManagementService(subscription_id, certificate_path)
+		while True:
+			time.sleep( 10 )
+			storage_account_exists = False
+			try:
+				syslog.syslog("Listing Storage Accounts")
+				result = sms.list_storage_accounts()
+			except Exception as e:
+				syslog.syslog("Unexpected error during list storage accounts - %s" % e.message)
+			for service in result:
+				if (service.service_name == cmdline['IDENTIFIER']):
+					print "STORAGE %s" % (service.service_name)
+					storage_account_exists = True
+					try:
+						syslog.syslog("Trying to delete Storage Account %s" % cmdline['IDENTIFIER'])
+						result = sms.delete_storage_account(cmdline['IDENTIFIER'])
+					except Exception as e:
+						syslog.syslog("Unexpected error during remove storage account - %s" % e.message)
+					syslog.syslog("Removed Storage Account %s" % cmdline['IDENTIFIER'])
+
+			if (storage_account_exists == False):
+				syslog.syslog("Finally removed Storage Account %s" % cmdline['IDENTIFIER'])
+				break
+
+			loop += 1
+			if (loop > 10 ):
+				syslog.syslog("Timeout removing Storage Account %s" % cmdline['IDENTIFIER'])
+				break
+			else:
+				syslog.syslog("Retrying to remove Storage Account %s" % cmdline['IDENTIFIER'])
+
+		sys.exit(0)
+
+if __name__ == "__main__":
+	main(sys.argv[1:])
+
+
+

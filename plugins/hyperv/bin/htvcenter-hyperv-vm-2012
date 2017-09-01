@@ -1,0 +1,1202 @@
+
+# function to translate a VM mac address into its resource id
+function get_vm_resource_id() {
+	local VM_MAC=$1
+	local VM_PXE=`echo 01-$VM_MAC | sed -e "s/:/-/g" | tr '[:upper:]'  '[:lower:]'`
+	if [ -f "$htvcenter_SERVER_BASE_DIR/htvcenter/tftpboot/pxelinux.cfg/$VM_PXE" ]; then
+		cat $htvcenter_SERVER_BASE_DIR/htvcenter/tftpboot/pxelinux.cfg/$VM_PXE | grep ^append | grep initrd | sed -e "s/.*id=//g" | awk {' print $1 '}
+	else
+		return
+	fi
+}
+
+# function to translate a mac address into a VM name
+function get_vm_name_by_mac() {
+	local vmnicmac=`echo $1 | sed -e "s/://g"`
+	$WINEXE -A $htvcenter_HYPERV_HOST_CONF_DIR/$HYPERV_HOST_IP.conf //$HYPERV_HOST_IP "powershell.exe -inputformat none -ExecutionPolicy RemoteSigned Get-VM|Get-VMNetworkAdapter | FT VMName, MACAddress" | grep -wi $vmnicmac | awk '{ print $1 }'
+}
+
+
+
+# function to remove a VMs nic
+function vm_remove_nic() {
+	local vmname=$1
+	local nicnumber=$2
+	cat $htvcenter_HYPERV_REMOVE_NETWORK_DEVICE_TEMPLATE |	\
+		sed -e "s/@@htvcenter_HYPERV_VM_NAME@@/$vmname/g" |	\
+		sed -e "s/@@htvcenter_HYPERV_HOST@@/$VI_SERVER_HOSTNAME/g" |	\
+		sed -e "s/@@HYPERV_VM_COMPONENT_NUMBER@@/$nicnumber/g"	\
+		> $htvcenter_HYPERV_VM_CONF_DIR/$vmname.remove-network-$nicnumber.xml
+	# make sure vmreconfig.pl is patched to work on Hyper-V
+	if [ ! -f "$htvcenter_HYPERV_SDK_DIR/apps/vm/vmreconfig.pl.htvcenter-backup" ]; then
+		cp -f $htvcenter_HYPERV_SDK_DIR/apps/vm/vmreconfig.pl $htvcenter_HYPERV_SDK_DIR/apps/vm/vmreconfig.pl.htvcenter-backup
+	fi
+	sed -i -e "s/\$reconfig_hash{Host},/undef,/g" $htvcenter_HYPERV_SDK_DIR/apps/vm/vmreconfig.pl
+	# add via API call
+	if ! $htvcenter_HYPERV_SDK_DIR/apps/vm/vmreconfig.pl --filename $htvcenter_HYPERV_VM_CONF_DIR/$vmname.remove-network-$nicnumber.xml --schema $htvcenter_HYPERV_SDK_DIR/apps/schema/vmreconfig.xsd; then
+		htvcenter_post_event 0 "vm_remove_nic" 3 "htvcenter-hyperv" "Failed to remove the $nicnumber network card from Hyper-V VM $vmname!"
+		return 1
+	fi
+	return 0
+}
+
+# function to add a VMs nic
+function vm_add_nic() {
+	local vmname=$1
+	local nicnumber=$2
+	local vmnicmac=$3
+	local vmnictype=$4
+	local vmnicbridge=$5
+	vmnicbridge=`echo $vmnicbridge | sed -e "s/@/ /g"`
+
+	cat $htvcenter_HYPERV_ADD_NETWORK_DEVICE_TEMPLATE |	\
+		sed -e "s/@@htvcenter_HYPERV_VM_NAME@@/$vmname/g" |	\
+		sed -e "s/@@htvcenter_HYPERV_HOST@@/$VI_SERVER_HOSTNAME/g" |	\
+		sed -e "s/@@htvcenter_HYPERV_EXTERNAL_BRIDGE@@/$vmnicbridge/g"	\
+		> $htvcenter_HYPERV_VM_CONF_DIR/$vmname.add-network-$nicnumber.xml
+	# make sure vmreconfig.pl is patched to work on Hyper-V
+	if [ ! -f "$htvcenter_HYPERV_SDK_DIR/apps/vm/vmreconfig.pl.htvcenter-backup" ]; then
+		cp -f $htvcenter_HYPERV_SDK_DIR/apps/vm/vmreconfig.pl $htvcenter_HYPERV_SDK_DIR/apps/vm/vmreconfig.pl.htvcenter-backup
+	fi
+	sed -i -e "s/\$reconfig_hash{Host},/undef,/g" $htvcenter_HYPERV_SDK_DIR/apps/vm/vmreconfig.pl
+	# add via API call
+	if ! $htvcenter_HYPERV_SDK_DIR/apps/vm/vmreconfig.pl --filename $htvcenter_HYPERV_VM_CONF_DIR/$vmname.add-network-$nicnumber.xml --schema $htvcenter_HYPERV_SDK_DIR/apps/schema/vmreconfig.xsd; then
+		htvcenter_post_event 0 "vm_add_nic" 3 "htvcenter-hyperv" "Failed to add the $nicnumber network card to Hyper-V VM $vmname!"
+		return 1
+	fi
+	# adapt the VMs mac address of the nic
+	if ! $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/hyperv/bin/perl/vmNICManagement.pl --vmname $vmname --mac $vmnicmac  --operation updatemac --vnic $nicnumber; then
+		htvcenter_post_event 0 "vm_add_nic" 3 "htvcenter-hyperv" "Failed to change mac address of Hyper-V VM $vmname $nicnumber nic!"
+		return 1
+	fi
+	# adapt the VMs nic type of the nic
+	if ! $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/hyperv/bin/perl/vmNICManagement.pl --vmname $vmname --nictype $vmnictype --operation updatenictype --vnic $nicnumber; then
+		htvcenter_post_event 0 "vm_add_nic" 3 "htvcenter-hyperv" "Failed to change nic type of Hyper-V VM $vmname to $VM_NIC_TYPE!"
+		return 1
+	fi
+	return 0
+}
+
+
+# function to update a VMs nic
+function vm_update_nic() {
+	local vmname=$1
+	local nicnumber=$2
+	local vmnicmac=$3
+	local vmnictype=$4
+	local vmnicbridge=$5
+	if ! vm_remove_nic $vmname $nicnumber; then
+		htvcenter_post_event 0 "vm_update_nic" 3 "htvcenter-hyperv" "Failed to remove the $nicnumber network card from Hyper-V VM $vmname!"
+		return 1
+	fi
+	if ! vm_add_nic $vmname $nicnumber $vmnicmac $vmnictype $vmnicbridge; then
+		htvcenter_post_event 0 "vm_update_nic" 3 "htvcenter-hyperv" "Failed to add the $nicnumber network card to Hyper-V VM $vmname!"
+		return 1
+	fi
+	return 0
+}
+
+
+# function to update a VMs boot sequence
+function vm_setboot() {
+	local vmname=$1
+	local vmboot=$2
+	case "$vmboot" in
+		local)
+			HYPERV_VM_BOOT_PARAMETER='@(\"IDE\",\"CD\",\"LegacyNetworkAdapter\",\"Floppy\")'
+			;;
+		net)
+			HYPERV_VM_BOOT_PARAMETER='@(\"LegacyNetworkAdapter\",\"CD\",\"IDE\",\"Floppy\")'
+			;;
+		network)
+			HYPERV_VM_BOOT_PARAMETER='@(\"LegacyNetworkAdapter\",\"CD\",\"IDE\",\"Floppy\")'
+			;;
+		cdrom)
+			HYPERV_VM_BOOT_PARAMETER='@(\"CD\",\"IDE\",\"LegacyNetworkAdapter\",\"Floppy\")'
+			;;
+		iso)
+			HYPERV_VM_BOOT_PARAMETER='@(\"CD\",\"IDE\",\"LegacyNetworkAdapter\",\"Floppy\")'
+			;;
+	esac
+	if ! $WINEXE -A $htvcenter_HYPERV_HOST_CONF_DIR/$HYPERV_HOST_IP.conf //$HYPERV_HOST_IP 'powershell.exe -inputformat none -ExecutionPolicy RemoteSigned Set-VMBios -StartupOrder '$HYPERV_VM_BOOT_PARAMETER' -VMName '$HYPERV_VM_NAME''; then
+		htvcenter_post_event 0 "vm_setboot" 3 "htvcenter-hyperv" "Failed to setboot to $vmboot for Hyper-V VM $vmname!"
+		return 1
+	fi
+	return 0
+}
+
+
+# main
+case "$HYPERV_COMMAND" in 
+
+	configure)
+		if [ "$HYPERV_USERNAME" == "" ] || [ "$HYPERV_PASSWORD" == "" ] || [ "$HYPERV_HOSTNAME" == "" ] || [ "$HYPERV_DOMAINNAME" == "" ]; then
+			htvcenter_post_event 0 "configure" 3 "htvcenter-hyperv" "Wrong usage, Hyper-V Host username missing!"
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			hyperv_usage
+		fi
+
+		LOCK_TIME=`htvcenter_lock_queue aquire hyperv`
+		trap "htvcenter_lock_queue release hyperv $LOCK_TIME" EXIT
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+
+		# test if the connection credentials work
+		echo "username=$HYPERV_USERNAME" > $htvcenter_HYPERV_HOST_CONF_DIR/$HYPERV_HOST_IP.conf
+		echo "password=$HYPERV_PASSWORD" >> $htvcenter_HYPERV_HOST_CONF_DIR/$HYPERV_HOST_IP.conf
+		echo "domain=$HYPERV_HOST_IP" >> $htvcenter_HYPERV_HOST_CONF_DIR/$HYPERV_HOST_IP.conf
+
+		HYPERVRETURN=$($WINEXE -A $htvcenter_HYPERV_HOST_CONF_DIR/$HYPERV_HOST_IP.conf //$HYPERV_HOST_IP "powershell.exe -inputformat none -ExecutionPolicy RemoteSigned Get-VM" 2>&1 >/dev/null)
+		if [ -n "$HYPERVRETURN" ] ; then
+			rm -f $htvcenter_HYPERV_HOST_CONF_DIR/$HYPERV_HOST_IP.conf
+			# notify htvcenter
+			echo $HYPERVRETURN > $htvcenter_HYPERV_STAT_DIR/$HYPERV_HOST_IP.integrated_successful.tmp
+			chmod 777 $htvcenter_HYPERV_STAT_DIR/$HYPERV_HOST_IP.integrated_successful.tmp
+			mv $htvcenter_HYPERV_STAT_DIR/$HYPERV_HOST_IP.integrated_successful.tmp $htvcenter_HYPERV_STAT_DIR/$HYPERV_HOST_IP.integrated_successful
+
+			htvcenter_lock_queue release hyperv $LOCK_TIME
+			trap '' EXIT
+			exit 1
+		fi
+		# notify htvcenter
+		echo "success" > $htvcenter_HYPERV_STAT_DIR/$HYPERV_HOST_IP.integrated_successful.tmp
+		chmod 777 $htvcenter_HYPERV_STAT_DIR/$HYPERV_HOST_IP.integrated_successful.tmp
+		mv $htvcenter_HYPERV_STAT_DIR/$HYPERV_HOST_IP.integrated_successful.tmp $htvcenter_HYPERV_STAT_DIR/$HYPERV_HOST_IP.integrated_successful
+
+		htvcenter_lock_queue release hyperv $LOCK_TIME
+		trap '' EXIT
+		;;
+
+
+	create)
+		# check requirements
+		if [ "$HYPERV_VM_MAC" == "" ]; then
+			htvcenter_post_event 0 "parameter_check" 3 "htvcenter-hyperv" "Wrong usage, VM mac address missing!"
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			hyperv_usage
+		fi
+		if [ "$HYPERV_VM_TYPE" == "" ]; then
+			htvcenter_post_event 0 "parameter_check" 3 "htvcenter-hyperv" "Wrong usage, VM type is missing!"
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			hyperv_usage
+		fi
+
+		# set some defaults
+		if [ "$HYPERV_VM_CPU" == "" ]; then
+			HYPERV_VM_CPU=$DEFAULT_HYPERV_VM_CPU
+		fi
+		if [ "$HYPERV_VM_DISK" == "" ]; then
+			HYPERV_VM_DISK=$DEFAULT_HYPERV_VM_DISK
+		fi
+		if [ "$HYPERV_VM_EXISTING_VMDK" != "" ]; then
+			HYPERV_VM_DISK=$DEFAULT_HYPERV_MINI_VM_DISK
+		fi
+		if [ "$HYPERV_VM_RAM" == "" ]; then
+			HYPERV_VM_RAM=$DEFAULT_HYPERV_VM_RAM
+		fi
+		if [ "$HYPERV_VM_NIC_VSWITCH1" == "" ]; then
+			HYPERV_VM_NIC_VSWITCH1=$htvcenter_HYPERV_INTERNAL_BRIDGE
+		fi
+		if [ "$HYPERV_VM_BOOT" == "" ]; then
+			HYPERV_VM_BOOT="network"
+		fi
+
+
+		LOCK_TIME=`htvcenter_lock_queue aquire hyperv`
+		trap "htvcenter_lock_queue release hyperv $LOCK_TIME" EXIT
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+
+		htvcenter_post_event 0 "create" 5 "htvcenter-hyperv" "Creating Hyper-V VM $HYPERV_VM_NAME."
+
+		CREATERETURN=$($WINEXE -A $htvcenter_HYPERV_HOST_CONF_DIR/$HYPERV_HOST_IP.conf //$HYPERV_HOST_IP 'powershell.exe -inputformat none -ExecutionPolicy RemoteSigned New-VM -Name '$HYPERV_VM_NAME'' 2>&1)
+		CREATEERROR=$(echo $CREATERETURN | grep "Error")
+		if [ -n "$CREATEERROR" ]; then
+			CREATEERROR=$(htvcenter_format_error_msg $CREATEERROR)
+			htvcenter_post_event 0 "create" 3 "htvcenter-hyperv" "Failed to create Hyper-V VM $HYPERV_VM_NAME!<br>$CREATEERROR"
+			htvcenter_lock_queue release hyperv $LOCK_TIME
+			trap '' EXIT
+			exit 1
+		fi
+		# check the VM was created correctly
+		CHECK_VM_CREATED=false
+
+		for VM in `$WINEXE -A $htvcenter_HYPERV_HOST_CONF_DIR/$HYPERV_HOST_IP.conf //$HYPERV_HOST_IP 'powershell.exe -inputformat none -ExecutionPolicy RemoteSigned Get-VM |  fw VMName'`; do
+			if ! echo $VM | grep '[[:alnum:]]' 1>/dev/null; then
+				continue
+			fi
+			if [ "$VM" == "$HYPERV_VM_NAME" ]; then
+				CHECK_VM_CREATED=true
+			fi
+		done
+		if [ "$CHECK_VM_CREATED" == "false" ]; then
+			htvcenter_post_event 0 "create" 3 "htvcenter-hyperv" "(check) Failed to create Hyper-V VM $HYPERV_VM_NAME!"
+			htvcenter_lock_queue release hyperv $LOCK_TIME
+			trap '' EXIT
+			exit 1
+		fi
+
+		# set cpu
+		if ! $WINEXE -A $htvcenter_HYPERV_HOST_CONF_DIR/$HYPERV_HOST_IP.conf //$HYPERV_HOST_IP 'powershell.exe -inputformat none -ExecutionPolicy RemoteSigned Set-VMProcessor -Count '$HYPERV_VM_CPU' -VMName '$HYPERV_VM_NAME''; then
+			htvcenter_post_event 0 "create" 3 "htvcenter-hyperv" "Failed to cpu count of Hyper-V VM $HYPERV_VM_NAME!"
+
+			htvcenter_lock_queue release hyperv $LOCK_TIME
+			trap '' EXIT
+
+			exit 1
+		fi
+
+		# set mem
+		if ! $WINEXE -A $htvcenter_HYPERV_HOST_CONF_DIR/$HYPERV_HOST_IP.conf //$HYPERV_HOST_IP 'powershell.exe -inputformat none -ExecutionPolicy RemoteSigned Set-VMMemory -VMName '$HYPERV_VM_NAME' -DynamicMemoryEnabled 1 -MinimumBytes 64MB -StartupBytes '$HYPERV_VM_RAM'MB -MaximumBytes '$HYPERV_VM_RAM'MB -Priority 80 -Buffer 25'; then
+			htvcenter_post_event 0 "create" 3 "htvcenter-hyperv" "Failed to adapt memory of Hyper-V VM $HYPERV_VM_NAME!"
+
+			htvcenter_lock_queue release hyperv $LOCK_TIME
+			trap '' EXIT
+
+			exit 1
+		fi
+
+		# if existing vhd is set then attach it, the cloud sends none so the image/vhd will be attached during assign
+		if [ "$HYPERV_VM_EXISTING_VMDK" == "" ] || [ "$HYPERV_VM_EXISTING_VMDK" == "none" ]; then
+			DISK_PATH=`echo $HYPERV_VM_DATASTORE | sed -e "s/@/ /g"`
+			if ! $WINEXE -A $htvcenter_HYPERV_HOST_CONF_DIR/$HYPERV_HOST_IP.conf //$HYPERV_HOST_IP "powershell.exe -inputformat none -ExecutionPolicy RemoteSigned New-VHD -Path '$DISK_PATH\\$HYPERV_VM_NAME.vhdx' -SizeBytes $HYPERV_VM_DISK""MB -Dynamic"; then
+
+				htvcenter_post_event 0 "create" 3 "htvcenter-hyperv" "Failed to create disk $DISK_PATH\\$HYPERV_VM_NAME.vhdx for Hyper-V VM $HYPERV_VM_NAME!"
+
+				htvcenter_lock_queue release hyperv $LOCK_TIME
+				trap '' EXIT
+
+				exit 1
+			fi
+			HYPERV_VM_EXISTING_VMDK="$DISK_PATH\\$HYPERV_VM_NAME.vhdx"
+		fi
+
+		# attach existing vhdx
+		HYPERV_VM_EXISTING_VMDK=`echo $HYPERV_VM_EXISTING_VMDK | sed -e "s/@/ /g"`
+		echo "attaching existing vhd $HYPERV_VM_EXISTING_VMDK"
+		if ! $WINEXE -A $htvcenter_HYPERV_HOST_CONF_DIR/$HYPERV_HOST_IP.conf //$HYPERV_HOST_IP "powershell.exe -inputformat none -ExecutionPolicy RemoteSigned Add-VMHardDiskDrive -VMName $HYPERV_VM_NAME -Path '$HYPERV_VM_EXISTING_VMDK' -ControllerType IDE -ControllerNumber 0"; then
+
+			htvcenter_post_event 0 "create" 3 "htvcenter-hyperv" "Failed to attach disk $HYPERV_VM_EXISTING_VMDK tp Hyper-V VM $HYPERV_VM_NAME!"
+
+			htvcenter_lock_queue release hyperv $LOCK_TIME
+			trap '' EXIT
+
+			exit 1
+		fi
+
+		# adding the first nic
+		HYPERV_VM_NIC_VSWITCH1=`echo $HYPERV_VM_NIC_VSWITCH1 | sed -e "s/@/ /g"`
+		htvcenter_post_event 0 "create" 5 "htvcenter-hyperv" "Adding Hyper-V VM $HYPERV_VM_NAME first network card to $HYPERV_VM_MAC."
+		$WINEXE -A $htvcenter_HYPERV_HOST_CONF_DIR/$HYPERV_HOST_IP.conf //$HYPERV_HOST_IP 'powershell.exe -inputformat none -ExecutionPolicy RemoteSigned Remove-VMNetworkAdapter -VMName '$HYPERV_VM_NAME' -VMNetworkAdapterName *'
+		if ! $WINEXE -A $htvcenter_HYPERV_HOST_CONF_DIR/$HYPERV_HOST_IP.conf //$HYPERV_HOST_IP "powershell.exe -inputformat none -ExecutionPolicy RemoteSigned Add-VMNetworkAdapter -Switchname '$HYPERV_VM_NIC_VSWITCH1' -VMName '$HYPERV_VM_NAME' -StaticMacAddress '$HYPERV_VM_MAC'"; then
+
+			htvcenter_post_event 0 "create" 3 "htvcenter-hyperv" "Failed to add first network card to Hyper-V VM $HYPERV_VM_NAME!"
+
+			htvcenter_lock_queue release hyperv $LOCK_TIME
+			trap '' EXIT
+
+			exit 1
+		fi
+
+
+
+		#######################################################################################################
+
+		# addtional nics -> nic2
+		if [ "$HYPERV_VM_MAC2" != "" ]; then
+			NETWORK_CARD_SEQ="$NETWORK_CARD_SEQ 2"
+			if [ "$HYPERV_VM_NIC_VSWITCH2" == "" ]; then
+				HYPERV_VM_NIC_VSWITCH2=$htvcenter_HYPERV_EXTERNAL_BRIDGE_2
+			fi
+			HYPERV_VM_NIC_VSWITCH2=`echo $HYPERV_VM_NIC_VSWITCH2 | sed -e "s/@/ /g"`
+		fi
+		# addtional nics -> nic3
+		if [ "$HYPERV_VM_MAC3" != "" ]; then
+			NETWORK_CARD_SEQ="$NETWORK_CARD_SEQ 3"
+			if [ "$HYPERV_VM_NIC_VSWITCH3" == "" ]; then
+				HYPERV_VM_NIC_VSWITCH3=$htvcenter_HYPERV_EXTERNAL_BRIDGE_3
+			fi
+			HYPERV_VM_NIC_VSWITCH3=`echo $HYPERV_VM_NIC_VSWITCH3 | sed -e "s/@/ /g"`
+		fi
+		# addtional nics -> nic4
+		if [ "$HYPERV_VM_MAC4" != "" ]; then
+			NETWORK_CARD_SEQ="$NETWORK_CARD_SEQ 4"
+			if [ "$HYPERV_VM_NIC_VSWITCH4" == "" ]; then
+				HYPERV_VM_NIC_VSWITCH4=$htvcenter_HYPERV_EXTERNAL_BRIDGE_4
+			fi
+			HYPERV_VM_NIC_VSWITCH4=`echo $HYPERV_VM_NIC_VSWITCH4 | sed -e "s/@/ /g"`
+		fi
+		# addtional nics -> nic5
+		if [ "$HYPERV_VM_MAC5" != "" ]; then
+			NETWORK_CARD_SEQ="$NETWORK_CARD_SEQ 5"
+			if [ "$HYPERV_VM_NIC_VSWITCH5" == "" ]; then
+				HYPERV_VM_NIC_VSWITCH5=$htvcenter_HYPERV_EXTERNAL_BRIDGE_5
+			fi
+			HYPERV_VM_NIC_VSWITCH5=`echo $HYPERV_VM_NIC_VSWITCH5 | sed -e "s/@/ /g"`
+		fi
+		for SEQ in $NETWORK_CARD_SEQ; do
+			htvcenter_post_event 0 "create" 5 "htvcenter-hyperv" "Creating nic $SEQ."
+			eval "VM_BRIDGE=\$HYPERV_VM_NIC_VSWITCH$SEQ"
+			eval "VM_MAC=\$HYPERV_VM_MAC$SEQ"
+
+			if ! $WINEXE -A $htvcenter_HYPERV_HOST_CONF_DIR/$HYPERV_HOST_IP.conf //$HYPERV_HOST_IP "powershell.exe -inputformat none -ExecutionPolicy RemoteSigned Add-VMNetworkAdapter -Switchname '$VM_BRIDGE' -VMName '$HYPERV_VM_NAME' -StaticMacAddress '$VM_MAC'"; then
+
+				htvcenter_post_event 0 "create" 3 "htvcenter-hyperv" "Failed to add $SEQ network card to Hyper-V VM $HYPERV_VM_NAME!"
+
+				htvcenter_lock_queue release hyperv $LOCK_TIME
+				trap '' EXIT
+
+				exit 1
+			fi
+		done
+
+
+		# add a virtual cdrom
+		if [ "$HYPERV_VM_ISO" != "" ]; then
+			if ! $WINEXE -A $htvcenter_HYPERV_HOST_CONF_DIR/$HYPERV_HOST_IP.conf //$HYPERV_HOST_IP 'powershell.exe -inputformat none -ExecutionPolicy RemoteSigned Set-VMDvdDrive -VMName '$HYPERV_VM_NAME' -ControllerNumber 1 -Path '$HYPERV_VM_ISO''; then
+				htvcenter_post_event 0 "start" 3 "htvcenter-hyperv" "Failed to attache ISO $HYPERV_VM_ISO to Hyper-V VM $HYPERV_VM_NAME!"
+
+				htvcenter_lock_queue release hyperv $LOCK_TIME
+				trap '' EXIT
+
+				exit 1
+			fi
+		fi
+
+		# setting the bootorder
+		htvcenter_post_event 0 "create" 5 "Setting the boot sequence for Hyper-V VM $HYPERV_VM_NAME to $HYPERV_VM_BOOT boot."
+
+		if ! vm_setboot $HYPERV_VM_NAME $HYPERV_VM_BOOT; then
+			htvcenter_post_event 0 "create" 3 "htvcenter-hyperv" "Failed to setboot to $HYPERV_VM_BOOT for Hyper-V VM $HYPERV_VM_NAME!"
+
+			htvcenter_lock_queue release hyperv $LOCK_TIME
+			trap '' EXIT
+
+			exit 1
+		fi
+
+		# for hyperv-localboot we stop the VM here, the monitoring will set it to idle
+		if [ "$HYPERV_VM_TYPE" == "hyperv-vm-net" ]; then
+			echo "starting net vm"
+			if ! $WINEXE -A $htvcenter_HYPERV_HOST_CONF_DIR/$HYPERV_HOST_IP.conf //$HYPERV_HOST_IP 'powershell.exe -inputformat none -ExecutionPolicy RemoteSigned Start-VM -VMName '$HYPERV_VM_NAME''; then
+				htvcenter_post_event 0 "start" 3 "htvcenter-hyperv" "Failed to start Hyper-V VM $HYPERV_VM_NAME!"
+
+				htvcenter_lock_queue release hyperv $LOCK_TIME
+				trap '' EXIT
+
+				exit 1
+			fi
+		fi
+
+		htvcenter_lock_queue release hyperv $LOCK_TIME
+		trap '' EXIT
+
+		# post_vm_list again
+		$0 post_vm_list -i $HYPERV_HOST_IP --htvcenter-internal-cmd true
+		;;
+
+	update)
+		LOCK_TIME=`htvcenter_lock_queue aquire hyperv`
+		trap "htvcenter_lock_queue release hyperv $LOCK_TIME" EXIT
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+
+		htvcenter_post_event 0 "update" 5 "htvcenter-hyperv" "Updating Hyper-V VM $HYPERV_VM_NAME."
+		
+		# remove space separators from vswitch parameter
+		HYPERV_VM_NIC_VSWITCH1=`echo $HYPERV_VM_NIC_VSWITCH1 | sed -e "s/@/ /g"`
+		HYPERV_VM_NIC_VSWITCH2=`echo $HYPERV_VM_NIC_VSWITCH2 | sed -e "s/@/ /g"`
+		HYPERV_VM_NIC_VSWITCH3=`echo $HYPERV_VM_NIC_VSWITCH3 | sed -e "s/@/ /g"`
+		HYPERV_VM_NIC_VSWITCH4=`echo $HYPERV_VM_NIC_VSWITCH4 | sed -e "s/@/ /g"`
+		HYPERV_VM_NIC_VSWITCH5=`echo $HYPERV_VM_NIC_VSWITCH5 | sed -e "s/@/ /g"`
+
+		# get full vm configuration
+
+		VMTMP=`mktemp /tmp/hyperv-vmc.XXXXXX` || exit 1
+		VM_DETAILS=""
+		$WINEXE -A $htvcenter_HYPERV_HOST_CONF_DIR/$HYPERV_HOST_IP.conf //$HYPERV_HOST_IP 'powershell.exe -inputformat none -ExecutionPolicy RemoteSigned Get-VM -VMName '$HYPERV_VM_NAME' | fl *' | grep '[[:alnum:]]' > $VMTMP
+		sed -i -e 's/: /="/g; s/ * //; s/{//g; s/}//g; s/\r/"/g' $VMTMP
+		. $VMTMP
+		MACADDRESS=""
+		for MAC in `$WINEXE -A $htvcenter_HYPERV_HOST_CONF_DIR/$HYPERV_HOST_IP.conf //$HYPERV_HOST_IP "powershell.exe -inputformat none -ExecutionPolicy RemoteSigned Get-VM -VMname '$HYPERV_VM_NAME' | Get-VMNetworkAdapter | fw MACAddress"`; do
+			if ! echo $MAC | grep '[[:alnum:]]' 1>/dev/null; then
+					continue
+			fi
+			MACADDRESS="$MACADDRESS,$MAC"
+		done
+		MACADDRESS=`echo $MACADDRESS | cut -d',' -f2-`
+		rm -f $VMTMP
+
+		# cpu changed ?
+		if [ "$HYPERV_VM_CPU" != "" ] && [ "$HYPERV_VM_CPU" != "$ProcessorCount=" ]; then
+			htvcenter_post_event 0 "update" 5 "htvcenter-hyperv" "Updating CPUS to $HYPERV_VM_CPU of Hyper-V VM $HYPERV_VM_NAME."
+			if ! $WINEXE -A $htvcenter_HYPERV_HOST_CONF_DIR/$HYPERV_HOST_IP.conf //$HYPERV_HOST_IP 'powershell.exe -inputformat none -ExecutionPolicy RemoteSigned Set-VMProcessor -Count '$HYPERV_VM_CPU' -VMName '$HYPERV_VM_NAME''; then
+				htvcenter_post_event 0 "create" 3 "htvcenter-hyperv" "Failed to cpu count of Hyper-V VM $HYPERV_VM_NAME!"
+
+				htvcenter_lock_queue release hyperv $LOCK_TIME
+				trap '' EXIT
+
+				exit 1
+			fi
+		fi
+		# ram changed ?
+		if [ "$HYPERV_VM_RAM" != "" ]; then
+			htvcenter_post_event 0 "update" 5 "htvcenter-hyperv" "Updating RAM to $HYPERV_VM_RAM of Hyper-V VM $HYPERV_VM_NAME."
+			if ! $WINEXE -A $htvcenter_HYPERV_HOST_CONF_DIR/$HYPERV_HOST_IP.conf //$HYPERV_HOST_IP 'powershell.exe -inputformat none -ExecutionPolicy RemoteSigned Set-VMMemory -VMName '$HYPERV_VM_NAME' -DynamicMemoryEnabled 1 -MinimumBytes 64MB -StartupBytes '$HYPERV_VM_RAM'MB -MaximumBytes '$HYPERV_VM_RAM'MB -Priority 80 -Buffer 25'; then
+				htvcenter_post_event 0 "create" 3 "htvcenter-hyperv" "Failed to adapt memory of Hyper-V VM $HYPERV_VM_NAME!"
+
+				htvcenter_lock_queue release hyperv $LOCK_TIME
+				trap '' EXIT
+
+				exit 1
+			fi
+		fi
+
+		# iso/cdrom changed
+		if [ "$HYPERV_VM_ISO" != "" ]; then
+			htvcenter_post_event 0 "update" 5 "htvcenter-hyperv" "Updating ISO/CDROM to $HYPERV_VM_ISO of Hyper-V VM $HYPERV_VM_NAME."
+			if ! $WINEXE -A $htvcenter_HYPERV_HOST_CONF_DIR/$HYPERV_HOST_IP.conf //$HYPERV_HOST_IP 'powershell.exe -inputformat none -ExecutionPolicy RemoteSigned Set-VMDvdDrive -VMName '$HYPERV_VM_NAME' -ControllerNumber 1 -Path '$HYPERV_VM_ISO''; then
+				htvcenter_post_event 0 "start" 3 "htvcenter-hyperv" "Failed to attache ISO $HYPERV_VM_ISO to Hyper-V VM $HYPERV_VM_NAME!"
+
+				htvcenter_lock_queue release hyperv $LOCK_TIME
+				trap '' EXIT
+
+				exit 1
+			fi
+		fi
+		# boot sequence changed
+		if [ "$HYPERV_VM_BOOT" != "" ]; then
+			htvcenter_post_event 0 "update" 5 "htvcenter-hyperv" "Updating bootsequence to $HYPERV_VM_BOOT of Hyper-V VM $HYPERV_VM_NAME."
+			if ! vm_setboot $HYPERV_VM_NAME $HYPERV_VM_BOOT; then
+				htvcenter_post_event 0 "update" 3 "htvcenter-hyperv" "Failed to setboot to $HYPERV_VM_BOOT for Hyper-V VM $HYPERV_VM_NAME!"
+
+				htvcenter_lock_queue release hyperv $LOCK_TIME
+				trap '' EXIT
+
+				exit 1
+			fi
+		fi
+
+		# addtional nics -> nic2
+		if [ "$HYPERV_VM_MAC2" != "" ]; then
+			NETWORK_CARD_SEQ="$NETWORK_CARD_SEQ 2"
+			if [ "$HYPERV_VM_NIC_VSWITCH2" == "" ]; then
+				HYPERV_VM_NIC_VSWITCH2=$htvcenter_HYPERV_EXTERNAL_BRIDGE_2
+			fi
+			HYPERV_VM_NIC_VSWITCH2=`echo $HYPERV_VM_NIC_VSWITCH2 | sed -e "s/@/ /g"`
+		fi
+		# addtional nics -> nic3
+		if [ "$HYPERV_VM_MAC3" != "" ]; then
+			NETWORK_CARD_SEQ="$NETWORK_CARD_SEQ 3"
+			if [ "$HYPERV_VM_NIC_VSWITCH3" == "" ]; then
+				HYPERV_VM_NIC_VSWITCH3=$htvcenter_HYPERV_EXTERNAL_BRIDGE_3
+			fi
+			HYPERV_VM_NIC_VSWITCH3=`echo $HYPERV_VM_NIC_VSWITCH3 | sed -e "s/@/ /g"`
+		fi
+		# addtional nics -> nic4
+		if [ "$HYPERV_VM_MAC4" != "" ]; then
+			NETWORK_CARD_SEQ="$NETWORK_CARD_SEQ 4"
+			if [ "$HYPERV_VM_NIC_VSWITCH4" == "" ]; then
+				HYPERV_VM_NIC_VSWITCH4=$htvcenter_HYPERV_EXTERNAL_BRIDGE_4
+			fi
+			HYPERV_VM_NIC_VSWITCH4=`echo $HYPERV_VM_NIC_VSWITCH4 | sed -e "s/@/ /g"`
+		fi
+		# addtional nics -> nic5
+		if [ "$HYPERV_VM_MAC5" != "" ]; then
+			NETWORK_CARD_SEQ="$NETWORK_CARD_SEQ 5"
+			if [ "$HYPERV_VM_NIC_VSWITCH5" == "" ]; then
+				HYPERV_VM_NIC_VSWITCH5=$htvcenter_HYPERV_EXTERNAL_BRIDGE_5
+			fi
+			HYPERV_VM_NIC_VSWITCH5=`echo $HYPERV_VM_NIC_VSWITCH5 | sed -e "s/@/ /g"`
+		fi
+
+
+		# remove all network cards 
+		$WINEXE -A $htvcenter_HYPERV_HOST_CONF_DIR/$HYPERV_HOST_IP.conf //$HYPERV_HOST_IP 'powershell.exe -inputformat none -ExecutionPolicy RemoteSigned Remove-VMNetworkAdapter -VMName '$HYPERV_VM_NAME' -VMNetworkAdapterName *'
+		# recreate the first nic
+		htvcenter_post_event 0 "create" 5 "htvcenter-hyperv" "Re-Adding Hyper-V VM $HYPERV_VM_NAME first network card to $HYPERV_VM_MAC."
+		if ! $WINEXE -A $htvcenter_HYPERV_HOST_CONF_DIR/$HYPERV_HOST_IP.conf //$HYPERV_HOST_IP "powershell.exe -inputformat none -ExecutionPolicy RemoteSigned Add-VMNetworkAdapter -Switchname '$HYPERV_VM_NIC_VSWITCH1' -VMName '$HYPERV_VM_NAME' -StaticMacAddress '$HYPERV_VM_MAC'"; then
+
+			htvcenter_post_event 0 "create" 3 "htvcenter-hyperv" "Failed to add first network card to Hyper-V VM $HYPERV_VM_NAME!"
+
+			htvcenter_lock_queue release hyperv $LOCK_TIME
+			trap '' EXIT
+
+			exit 1
+		fi
+		# further nics
+		for SEQ in $NETWORK_CARD_SEQ; do
+			htvcenter_post_event 0 "create" 5 "htvcenter-hyperv" "Creating nic $SEQ."
+			eval "VM_BRIDGE=\$HYPERV_VM_NIC_VSWITCH$SEQ"
+			eval "VM_MAC=\$HYPERV_VM_MAC$SEQ"
+
+			if ! $WINEXE -A $htvcenter_HYPERV_HOST_CONF_DIR/$HYPERV_HOST_IP.conf //$HYPERV_HOST_IP "powershell.exe -inputformat none -ExecutionPolicy RemoteSigned Add-VMNetworkAdapter -Switchname '$VM_BRIDGE' -VMName '$HYPERV_VM_NAME' -StaticMacAddress '$VM_MAC'"; then
+
+				htvcenter_post_event 0 "create" 3 "htvcenter-hyperv" "Failed to add $SEQ network card to Hyper-V VM $HYPERV_VM_NAME!"
+
+				htvcenter_lock_queue release hyperv $LOCK_TIME
+				trap '' EXIT
+
+				exit 1
+			fi
+		done
+
+		htvcenter_lock_queue release hyperv $LOCK_TIME
+		trap '' EXIT
+
+		$0 post_vm_list -i $HYPERV_HOST_IP --htvcenter-internal-cmd true
+		;;
+	start)
+		LOCK_TIME=`htvcenter_lock_queue aquire hyperv`
+		trap "htvcenter_lock_queue release hyperv $LOCK_TIME" EXIT
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+
+		if ! $WINEXE -A $htvcenter_HYPERV_HOST_CONF_DIR/$HYPERV_HOST_IP.conf //$HYPERV_HOST_IP 'powershell.exe -inputformat none -ExecutionPolicy RemoteSigned Start-VM -VMName '$HYPERV_VM_NAME''; then
+			htvcenter_post_event 0 "start" 3 "htvcenter-hyperv" "Failed to start Hyper-V VM $HYPERV_VM_NAME!"
+
+			htvcenter_lock_queue release hyperv $LOCK_TIME
+			trap '' EXIT
+
+			exit 1
+		fi
+
+		htvcenter_lock_queue release hyperv $LOCK_TIME
+		trap '' EXIT
+		# post_vm_list again
+		$0 post_vm_list -i $HYPERV_HOST_IP --htvcenter-internal-cmd true
+		;;
+	stop)
+		LOCK_TIME=`htvcenter_lock_queue aquire hyperv`
+		trap "htvcenter_lock_queue release hyperv $LOCK_TIME" EXIT
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+
+		if ! $WINEXE -A $htvcenter_HYPERV_HOST_CONF_DIR/$HYPERV_HOST_IP.conf //$HYPERV_HOST_IP 'powershell.exe -inputformat none -ExecutionPolicy RemoteSigned Stop-VM -VMName '$HYPERV_VM_NAME' -Force'; then
+			if ! $WINEXE -A $htvcenter_HYPERV_HOST_CONF_DIR/$HYPERV_HOST_IP.conf //$HYPERV_HOST_IP 'powershell.exe -inputformat none -ExecutionPolicy RemoteSigned Stop-VM -VMName '$HYPERV_VM_NAME' -Force'; then
+				htvcenter_post_event 0 "stop" 3 "htvcenter-hyperv" "Failed to stop Hyper-V VM $HYPERV_VM_NAME!"
+
+				htvcenter_lock_queue release hyperv $LOCK_TIME
+				trap '' EXIT
+
+				exit 1
+			fi
+		fi
+
+		htvcenter_lock_queue release hyperv $LOCK_TIME
+		trap '' EXIT
+		# post_vm_list again
+		$0 post_vm_list -i $HYPERV_HOST_IP --htvcenter-internal-cmd true
+		;;
+	reboot)
+		LOCK_TIME=`htvcenter_lock_queue aquire hyperv`
+		trap "htvcenter_lock_queue release hyperv $LOCK_TIME" EXIT
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+
+		if ! $WINEXE -A $htvcenter_HYPERV_HOST_CONF_DIR/$HYPERV_HOST_IP.conf //$HYPERV_HOST_IP 'powershell.exe -inputformat none -ExecutionPolicy RemoteSigned Restart-VM -VMName '$HYPERV_VM_NAME''; then
+			htvcenter_post_event 0 "start" 3 "htvcenter-hyperv" "Failed to start Hyper-V VM $HYPERV_VM_NAME!"
+
+			htvcenter_lock_queue release hyperv $LOCK_TIME
+			trap '' EXIT
+
+			exit 1
+		fi
+
+		htvcenter_lock_queue release hyperv $LOCK_TIME
+		trap '' EXIT
+		# post_vm_list again
+		$0 post_vm_list -i $HYPERV_HOST_IP --htvcenter-internal-cmd true
+		;;
+	remove)
+		LOCK_TIME=`htvcenter_lock_queue aquire hyperv`
+		trap "htvcenter_lock_queue release hyperv $LOCK_TIME" EXIT
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+
+		# make sure it is stopped
+		$WINEXE -A $htvcenter_HYPERV_HOST_CONF_DIR/$HYPERV_HOST_IP.conf //$HYPERV_HOST_IP 'powershell.exe -inputformat none -ExecutionPolicy RemoteSigned Stop-VM -VMName '$HYPERV_VM_NAME' -Force'
+		if ! $WINEXE -A $htvcenter_HYPERV_HOST_CONF_DIR/$HYPERV_HOST_IP.conf //$HYPERV_HOST_IP 'powershell.exe -inputformat none -ExecutionPolicy RemoteSigned Remove-VM -VMName '$HYPERV_VM_NAME' -Force'; then
+			htvcenter_post_event 0 "stop" 3 "htvcenter-hyperv" "Failed to remove Hyper-V VM $HYPERV_VM_NAME!"
+
+			htvcenter_lock_queue release hyperv $LOCK_TIME
+			trap '' EXIT
+
+			exit 1
+		fi
+
+		htvcenter_lock_queue release hyperv $LOCK_TIME
+		trap '' EXIT
+		if [ "$NO_POST" != "true" ]; then
+			# post_vm_list again
+			$0 post_vm_list -i $HYPERV_HOST_IP --htvcenter-internal-cmd true
+		fi
+		;;
+
+	list)
+		# run API command
+		$WINEXE -A $htvcenter_HYPERV_HOST_CONF_DIR/$HYPERV_HOST_IP.conf //$HYPERV_HOST_IP 'powershell.exe -inputformat none -ExecutionPolicy RemoteSigned Get-VM'
+		;;
+
+	post_vm_list)
+		HYPERV_STATS="$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/hyperv/web/hyperv-stat/$HYPERV_HOST_IP.vm_list"
+		HYPERV_STATS_TMP="$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/hyperv/web/hyperv-stat/$HYPERV_HOST_IP.vm_list.tmp"
+		rm -f $HYPERV_STATS
+		> $HYPERV_STATS_TMP
+IFS='
+'
+		for VM in `$WINEXE -A $htvcenter_HYPERV_HOST_CONF_DIR/$HYPERV_HOST_IP.conf //$HYPERV_HOST_IP 'powershell.exe -inputformat none -ExecutionPolicy RemoteSigned Get-VM |  fl VMName' | cut -d ':' -f2- | sed -e "s/ //"`; do
+			if ! echo $VM | grep '[[:alnum:]]' 1>/dev/null; then
+				continue
+			fi
+			VM=`echo $VM | sed -e "s/\r//g"`
+			VMTMP=`mktemp /tmp/hyperv-vm.XXXXXX` || exit 1
+			MACADDRESS=""
+			VM_DETAILS=""
+
+			for MAC in `$WINEXE -A $htvcenter_HYPERV_HOST_CONF_DIR/$HYPERV_HOST_IP.conf //$HYPERV_HOST_IP "powershell.exe -inputformat none -ExecutionPolicy RemoteSigned Get-VM -VMname '$VM' | Get-VMNetworkAdapter | fw MACAddress"`; do
+				if ! echo $MAC | grep '[[:alnum:]]' 1>/dev/null; then
+						continue
+				fi
+				MACADDRESS="$MACADDRESS,$MAC"
+
+			done
+			MACADDRESS=`echo $MACADDRESS | cut -d',' -f2-`
+			IFS="$ORG_IFS"
+			$WINEXE -A $htvcenter_HYPERV_HOST_CONF_DIR/$HYPERV_HOST_IP.conf //$HYPERV_HOST_IP "powershell.exe -inputformat none -ExecutionPolicy RemoteSigned Get-VM -VMname '$VM' | fl *" | grep '[[:alnum:]]' > $VMTMP
+			sed -i -e 's/: /="/g; s/ * //; s/{//g; s/}//g; s/\r/"/g' $VMTMP
+			VM_DETAILS=`tr '\n' '|'  < $VMTMP`
+			echo "name="$VM"|mac="$MACADDRESS"|"$VM_DETAILS >> $HYPERV_STATS_TMP
+			rm -f $VMTMP
+		done
+		chmod 777 $HYPERV_STATS_TMP
+		/bin/mv $HYPERV_STATS_TMP $HYPERV_STATS
+		;;
+
+	post_short_vm_list)
+		HYPERV_STATS="$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/hyperv/web/hyperv-stat/$HYPERV_HOST_IP.short_vm_list"
+		HYPERV_STATS_TMP="$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/hyperv/web/hyperv-stat/$HYPERV_HOST_IP.short_vm_list.tmp"
+		rm -f $HYPERV_STATS
+		> $HYPERV_STATS_TMP
+		VMTMP=`mktemp /tmp/hyperv-sw.XXXXXX` || exit 1
+
+		$WINEXE -A $htvcenter_HYPERV_HOST_CONF_DIR/$HYPERV_HOST_IP.conf //$HYPERV_HOST_IP "powershell.exe -inputformat none -ExecutionPolicy RemoteSigned Get-VM  | Get-VMNetworkAdapter |  ft MACAddress,VMName" | tail -n+4 | sed '/^\s*$/d' > $VMTMP
+IFS='
+'
+		for N in `cat $VMTMP | cut -d\  -f2- | sed -e 's/^[ \t]*//' | uniq`; do
+			IFS=$ORG_IFS
+			L=0
+			for M in `cat $VMTMP | grep -w "$N" | cut -d\  -f1`; do
+				if [ "$L" == 0 ]; then
+						ML="$M"
+				else
+						ML=$ML",$M"
+				fi
+				L=$(( L + 1 ))
+			done
+			echo "mac=$ML|name=$N" >> $HYPERV_STATS_TMP
+			unset ML
+		done
+		rm -f $VMTMP
+
+		chmod 777 $HYPERV_STATS_TMP
+		/bin/mv $HYPERV_STATS_TMP $HYPERV_STATS
+		;;
+
+	post_vm_components)
+		HYPERV_STATS="$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/hyperv/web/hyperv-stat/$HYPERV_HOST_IP.vm_components"
+		HYPERV_STATS_TMP="$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/hyperv/web/hyperv-stat/$HYPERV_HOST_IP.components.tmp"
+		rm -f $HYPERV_STATS
+		> $HYPERV_STATS_TMP
+
+
+		for SW in `$WINEXE -A $htvcenter_HYPERV_HOST_CONF_DIR/$HYPERV_HOST_IP.conf //$HYPERV_HOST_IP 'powershell.exe -inputformat none -ExecutionPolicy RemoteSigned Get-VMSwitch | fw Id'`; do
+			if ! echo $SW | grep '[[:alnum:]]' 1>/dev/null; then
+				continue
+			fi
+			VMTMP=`mktemp /tmp/hyperv-sw.XXXXXX` || exit 1
+			VM_DETAILS=""
+			$WINEXE -A $htvcenter_HYPERV_HOST_CONF_DIR/$HYPERV_HOST_IP.conf //$HYPERV_HOST_IP 'powershell.exe -inputformat none -ExecutionPolicy RemoteSigned Get-VMSwitch -Id '$SW' | fl *' | grep '[[:alnum:]]' > $VMTMP
+			sed -i -e 's/: /="/g; s/ * //; s/{//g; s/}//g; s/\r/"/g' $VMTMP
+			VM_DETAILS=`tr '\n' '|'  < $VMTMP`
+			echo "type=switch|id="$SW"|"$VM_DETAILS >> $HYPERV_STATS_TMP
+			rm -f $VMTMP
+		done
+
+
+
+		chmod 777 $HYPERV_STATS_TMP
+		/bin/mv $HYPERV_STATS_TMP $HYPERV_STATS
+		;;
+
+	post_vm_config)
+		HYPERV_STATS="$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/hyperv/web/hyperv-stat/$HYPERV_HOST_IP.$HYPERV_VM_NAME.vm_config"
+		HYPERV_STATS_TMP="$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/hyperv/web/hyperv-stat/$HYPERV_HOST_IP.$HYPERV_VM_NAME.vm_config.tmp"
+		rm -f $HYPERV_STATS
+		> $HYPERV_STATS_TMP
+
+		VMTMP=`mktemp /tmp/hyperv-vmc.XXXXXX` || exit 1
+		VM_DETAILS=""
+		$WINEXE -A $htvcenter_HYPERV_HOST_CONF_DIR/$HYPERV_HOST_IP.conf //$HYPERV_HOST_IP 'powershell.exe -inputformat none -ExecutionPolicy RemoteSigned Get-VM -VMName '$HYPERV_VM_NAME' | fl *' | grep '[[:alnum:]]' > $VMTMP
+		sed -i -e 's/: /="/g; s/ * //; s/{//g; s/}//g; s/\r/"/g' $VMTMP
+		VM_DETAILS=`tr '\n' '|'  < $VMTMP`
+		MACADDRESS=""
+		for MAC in `$WINEXE -A $htvcenter_HYPERV_HOST_CONF_DIR/$HYPERV_HOST_IP.conf //$HYPERV_HOST_IP "powershell.exe -inputformat none -ExecutionPolicy RemoteSigned Get-VM -VMname '$HYPERV_VM_NAME' | Get-VMNetworkAdapter | fw MACAddress"`; do
+			if ! echo $MAC | grep '[[:alnum:]]' 1>/dev/null; then
+					continue
+			fi
+			MACADDRESS="$MACADDRESS,$MAC"
+		done
+		MACADDRESS=`echo $MACADDRESS | cut -d',' -f2-`
+		echo "name="$HYPERV_VM_NAME"|mac="$MACADDRESS"|"$VM_DETAILS >> $HYPERV_STATS_TMP
+		rm -f $VMTMP
+		chmod 777 $HYPERV_STATS_TMP
+		/bin/mv $HYPERV_STATS_TMP $HYPERV_STATS
+		;;
+
+
+
+	setboot_by_mac)
+		# this command is is running from the htvcenter engine which does not know about the vm-name
+	   unset HYPERV_VM_NAME
+		if [ "$HYPERV_VM_MAC" == "" ] || [ "$HYPERV_VM_BOOT" == "" ]; then
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			hyperv_usage
+		fi
+
+		LOCK_TIME=`htvcenter_lock_queue aquire hyperv`
+		trap "htvcenter_lock_queue release hyperv $LOCK_TIME" EXIT
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+
+		HYPERV_VM_NAME=`get_vm_name_by_mac $HYPERV_VM_MAC`
+		if [ "$HYPERV_VM_NAME" == "" ]; then
+				htvcenter_post_event 0 "setboot_by_mac" 3 "htvcenter-hyperv" "VM with MAC address $VM_MAC is not existing on Hyper-V Host $VI_SERVER_HOSTNAME!"
+
+				htvcenter_lock_queue release hyperv $LOCK_TIME
+				trap '' EXIT
+
+				exit 1
+		else
+			hyperv_lock aquire
+			if ! vm_setboot $HYPERV_VM_NAME $HYPERV_VM_BOOT; then
+				htvcenter_post_event 0 "setboot_by_mac" 3 "htvcenter-hyperv" "Failed to setboot to $HYPERV_VM_BOOT for Hyper-V VM $HYPERV_VM_NAME!"
+
+				htvcenter_lock_queue release hyperv $LOCK_TIME
+				trap '' EXIT
+
+				exit 1
+			fi
+			htvcenter_lock_queue release hyperv $LOCK_TIME
+			trap '' EXIT
+		fi
+		;;
+
+
+	setboot)
+		if [ "$HYPERV_VM_BOOT" == "" ]; then
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			hyperv_usage
+		fi
+
+		LOCK_TIME=`htvcenter_lock_queue aquire hyperv`
+		trap "htvcenter_lock_queue release hyperv $LOCK_TIME" EXIT
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+
+		if ! vm_setboot $HYPERV_VM_NAME $HYPERV_VM_BOOT; then
+			htvcenter_post_event 0 "setboot" 3 "htvcenter-hyperv" "Failed to setboot to $HYPERV_VM_BOOT for Hyper-V VM $HYPERV_VM_NAME!"
+
+			htvcenter_lock_queue release hyperv $LOCK_TIME
+			trap '' EXIT
+
+			exit 1
+		fi
+
+		htvcenter_lock_queue release hyperv $LOCK_TIME
+		trap '' EXIT
+
+		$0 post_vm_list -i $HYPERV_HOST_IP --htvcenter-internal-cmd true
+		;;
+
+
+	fence)
+		# this command is is running from the htvcenter engine which does not know about the vm-name
+	   unset HYPERV_VM_NAME
+		if [ "$HYPERV_VM_MAC" == "" ]; then
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			hyperv_usage
+		fi
+
+		LOCK_TIME=`htvcenter_lock_queue aquire hyperv`
+		trap "htvcenter_lock_queue release hyperv $LOCK_TIME" EXIT
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+
+		HYPERV_VM_NAME=`get_vm_name_by_mac $HYPERV_VM_MAC`
+		if [ "$HYPERV_VM_NAME" == "" ]; then
+				htvcenter_post_event 0 "fence" 3 "htvcenter-hyperv" "VM with MAC address $VM_MAC is not existing on Hyper-V Host $VI_SERVER_HOSTNAME!"
+
+				htvcenter_lock_queue release hyperv $LOCK_TIME
+				trap '' EXIT
+
+				exit 1
+		else
+			hyperv_lock aquire
+
+			if ! $WINEXE -A $htvcenter_HYPERV_HOST_CONF_DIR/$HYPERV_HOST_IP.conf //$HYPERV_HOST_IP 'powershell.exe -inputformat none -ExecutionPolicy RemoteSigned Stop-VM -VMName '$HYPERV_VM_NAME' -Force'; then
+				if ! $WINEXE -A $htvcenter_HYPERV_HOST_CONF_DIR/$HYPERV_HOST_IP.conf //$HYPERV_HOST_IP 'powershell.exe -inputformat none -ExecutionPolicy RemoteSigned Stop-VM -VMName '$HYPERV_VM_NAME' -Force'; then
+					htvcenter_post_event 0 "fence" 3 "htvcenter-hyperv" "Failed to stop Hyper-V VM $HYPERV_VM_NAME!"
+
+					htvcenter_lock_queue release hyperv $LOCK_TIME
+					trap '' EXIT
+
+					exit 1
+				fi
+			fi
+		fi
+
+		htvcenter_lock_queue release hyperv $LOCK_TIME
+		trap '' EXIT
+		;;
+
+
+	assign_by_mac)
+		# this command is is running from the htvcenter engine which does not know about the vm-name
+		unset HYPERV_VM_NAME
+		if [ "$HYPERV_VM_MAC" == "" ] || [ "$HYPERV_VM_DISK" == "" ]; then
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			hyperv_usage
+		fi
+
+		LOCK_TIME=`htvcenter_lock_queue aquire hyperv`
+		trap "htvcenter_lock_queue release hyperv $LOCK_TIME" EXIT
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+
+		HYPERV_VM_NAME=`get_vm_name_by_mac $HYPERV_VM_MAC`
+		if [ "$HYPERV_VM_NAME" == "" ]; then
+			htvcenter_post_event 0 "assign_by_mac" 3 "htvcenter-hyperv" "VM with MAC address $VM_MAC is not existing on Hyper-V Host $VI_SERVER_HOSTNAME!"
+
+			htvcenter_lock_queue release hyperv $LOCK_TIME
+			trap '' EXIT
+
+			exit 1
+		fi
+		# stop VM
+		if ! $WINEXE -A $htvcenter_HYPERV_HOST_CONF_DIR/$HYPERV_HOST_IP.conf //$HYPERV_HOST_IP 'powershell.exe -inputformat none -ExecutionPolicy RemoteSigned Stop-VM -VMName '$HYPERV_VM_NAME' -Force'; then
+			if ! $WINEXE -A $htvcenter_HYPERV_HOST_CONF_DIR/$HYPERV_HOST_IP.conf //$HYPERV_HOST_IP 'powershell.exe -inputformat none -ExecutionPolicy RemoteSigned Stop-VM -VMName '$HYPERV_VM_NAME' -Force'; then
+				htvcenter_post_event 0 "assign_by_mac" 3 "htvcenter-hyperv" "Failed to stop Hyper-V VM $HYPERV_VM_NAME!"
+
+				htvcenter_lock_queue release hyperv $LOCK_TIME
+				trap '' EXIT
+
+				exit 1
+			fi
+		fi
+
+		HYPERV_VM_DISK=`echo $HYPERV_VM_DISK | sed -e "s/@/ /g"`
+		htvcenter_HYPERV_VM_DISK1=`$WINEXE -A $htvcenter_HYPERV_HOST_CONF_DIR/$HYPERV_HOST_IP.conf //$HYPERV_HOST_IP 'powershell.exe -inputformat none -ExecutionPolicy RemoteSigned Get-VMHardDiskDrive -VMName '$HYPERV_VM_NAME' | fl' | grep -w ^Name`
+		# disk1 empty, this is coming from idle assignment
+		if [ "$htvcenter_HYPERV_VM_DISK1" == "" ]; then
+			# attach disk
+			if ! $WINEXE -A $htvcenter_HYPERV_HOST_CONF_DIR/$HYPERV_HOST_IP.conf //$HYPERV_HOST_IP "powershell.exe -inputformat none -ExecutionPolicy RemoteSigned Add-VMHardDiskDrive -VMName '$HYPERV_VM_NAME' -Path '$HYPERV_VM_DISK' -ControllerType IDE -ControllerNumber 0"; then
+				htvcenter_post_event 0 "assign_by_mac" 3 "htvcenter-hyperv" "Failed to assign disk $HYPERV_VM_DISK to Hyper-V VM $HYPERV_VM_NAME!"
+
+				htvcenter_lock_queue release hyperv $LOCK_TIME
+				trap '' EXIT
+
+				exit 1
+			fi
+
+		else
+			# make sure current disk is detached
+			if ! $WINEXE -A $htvcenter_HYPERV_HOST_CONF_DIR/$HYPERV_HOST_IP.conf //$HYPERV_HOST_IP "powershell.exe -inputformat none -ExecutionPolicy RemoteSigned Get-VMHardDiskDrive -VMName '$HYPERV_VM_NAME' | Remove-VMHardDiskDrive"; then
+				htvcenter_post_event 0 "assign_by_mac" 3 "htvcenter-hyperv" "Failed to remove disk from Hyper-V VM $HYPERV_VM_NAME!"
+
+				htvcenter_lock_queue release hyperv $LOCK_TIME
+				trap '' EXIT
+
+				exit 1
+			fi
+
+			# attach disk
+			if ! $WINEXE -A $htvcenter_HYPERV_HOST_CONF_DIR/$HYPERV_HOST_IP.conf //$HYPERV_HOST_IP "powershell.exe -inputformat none -ExecutionPolicy RemoteSigned Add-VMHardDiskDrive -VMName '$HYPERV_VM_NAME' -Path '$HYPERV_VM_DISK' -ControllerType IDE -ControllerNumber 0"; then
+				htvcenter_post_event 0 "assign_by_mac" 3 "htvcenter-hyperv" "Failed to assign disk $HYPERV_VM_DISK to Hyper-V VM $HYPERV_VM_NAME!"
+
+				htvcenter_lock_queue release hyperv $LOCK_TIME
+				trap '' EXIT
+
+				exit 1
+			fi
+		fi
+		# we leave the VM stopped to make the virtual-resource reboot_by_mac command start it again
+
+		htvcenter_lock_queue release hyperv $LOCK_TIME
+		trap '' EXIT
+		;;
+
+	deassign_by_mac)
+		# this command is is running from the htvcenter engine which does not know about the vm-name
+		unset HYPERV_VM_NAME
+		if [ "$HYPERV_VM_MAC" == "" ] || [ "$HYPERV_VM_DISK" == "" ]; then
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			hyperv_usage
+		fi
+
+		LOCK_TIME=`htvcenter_lock_queue aquire hyperv`
+		trap "htvcenter_lock_queue release hyperv $LOCK_TIME" EXIT
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+
+		HYPERV_VM_NAME=`get_vm_name_by_mac $HYPERV_VM_MAC`
+		if [ "$HYPERV_VM_NAME" == "" ]; then
+			htvcenter_post_event 0 "deassign_by_mac" 3 "htvcenter-hyperv" "VM with MAC address $VM_MAC is not existing on Hyper-V Host $VI_SERVER_HOSTNAME!"
+
+			htvcenter_lock_queue release hyperv $LOCK_TIME
+			trap '' EXIT
+
+			exit 1
+		fi
+		# stop VM
+		if ! $WINEXE -A $htvcenter_HYPERV_HOST_CONF_DIR/$HYPERV_HOST_IP.conf //$HYPERV_HOST_IP "powershell.exe -inputformat none -ExecutionPolicy RemoteSigned Stop-VM -VMName '$HYPERV_VM_NAME' -Force"; then
+			if ! $WINEXE -A $htvcenter_HYPERV_HOST_CONF_DIR/$HYPERV_HOST_IP.conf //$HYPERV_HOST_IP "powershell.exe -inputformat none -ExecutionPolicy RemoteSigned Stop-VM -VMName '$HYPERV_VM_NAME' -Force"; then
+				htvcenter_post_event 0 "deassign_by_mac" 3 "htvcenter-hyperv" "Failed to stop Hyper-V VM $HYPERV_VM_NAME!"
+
+				htvcenter_lock_queue release hyperv $LOCK_TIME
+				trap '' EXIT
+
+				exit 1
+			fi
+		fi
+		# remove disk
+		HYPERV_VM_DISK=`echo $HYPERV_VM_DISK | sed -e "s/@/ /g"`
+		if ! $WINEXE -A $htvcenter_HYPERV_HOST_CONF_DIR/$HYPERV_HOST_IP.conf //$HYPERV_HOST_IP "powershell.exe -inputformat none -ExecutionPolicy RemoteSigned Get-VMHardDiskDrive -VMName '$HYPERV_VM_NAME' | Remove-VMHardDiskDrive"; then
+			htvcenter_post_event 0 "deassign_by_mac" 3 "htvcenter-hyperv" "Failed to remove disk from Hyper-V VM $HYPERV_VM_NAME!"
+
+			htvcenter_lock_queue release hyperv $LOCK_TIME
+			trap '' EXIT
+
+			exit 1
+		fi
+		# we leave the VM stopped to make the virtual-resource reboot_by_mac command start it again
+
+		htvcenter_lock_queue release hyperv $LOCK_TIME
+		trap '' EXIT
+		;;
+
+
+	stop_by_mac)
+		# this command is is running from the htvcenter engine which does not know about the vm-name
+		unset HYPERV_VM_NAME
+		if [ "$HYPERV_VM_MAC" == "" ]; then
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			hyperv_usage
+		fi
+
+		LOCK_TIME=`htvcenter_lock_queue aquire hyperv`
+		trap "htvcenter_lock_queue release hyperv $LOCK_TIME" EXIT
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+
+		HYPERV_VM_NAME=`get_vm_name_by_mac $HYPERV_VM_MAC`
+		if [ "$HYPERV_VM_NAME" == "" ]; then
+			htvcenter_post_event 0 "stop_by_mac" 3 "htvcenter-hyperv" "VM with MAC address $VM_MAC is not existing on Hyper-V Host $VI_SERVER_HOSTNAME!"
+
+			htvcenter_lock_queue release hyperv $LOCK_TIME
+			trap '' EXIT
+
+			exit 1
+		fi
+		if ! $WINEXE -A $htvcenter_HYPERV_HOST_CONF_DIR/$HYPERV_HOST_IP.conf //$HYPERV_HOST_IP "powershell.exe -inputformat none -ExecutionPolicy RemoteSigned Stop-VM -VMName '$HYPERV_VM_NAME' -Force"; then
+			if ! $WINEXE -A $htvcenter_HYPERV_HOST_CONF_DIR/$HYPERV_HOST_IP.conf //$HYPERV_HOST_IP "powershell.exe -inputformat none -ExecutionPolicy RemoteSigned Stop-VM -VMName '$HYPERV_VM_NAME' -Force"; then
+				htvcenter_post_event 0 "stop_by_mac" 3 "htvcenter-hyperv" "Failed to stop Hyper-V VM $HYPERV_VM_NAME!"
+
+				htvcenter_lock_queue release hyperv $LOCK_TIME
+				trap '' EXIT
+
+				exit 1
+			fi
+		fi
+
+		htvcenter_lock_queue release hyperv $LOCK_TIME
+		trap '' EXIT
+		;;
+
+	reboot_by_mac)
+		# check if the VM is running
+		# if yes, reboot it
+		# if not just start it
+		# this command is is running from the htvcenter engine which does not know about the vm-name
+		unset HYPERV_VM_NAME
+		if [ "$HYPERV_VM_MAC" == "" ]; then
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			hyperv_usage
+		fi
+
+		LOCK_TIME=`htvcenter_lock_queue aquire hyperv`
+		trap "htvcenter_lock_queue release hyperv $LOCK_TIME" EXIT
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+
+		HYPERV_VM_NAME=`get_vm_name_by_mac $HYPERV_VM_MAC`
+		if [ "$HYPERV_VM_NAME" == "" ]; then
+			htvcenter_post_event 0 "reboot_by_mac" 3 "htvcenter-hyperv" "VM with MAC address $VM_MAC is not existing on Hyper-V Host $VI_SERVER_HOSTNAME!"
+
+			htvcenter_lock_queue release hyperv $LOCK_TIME
+			trap '' EXIT
+
+			exit 1
+		fi
+
+		if $WINEXE -A $htvcenter_HYPERV_HOST_CONF_DIR/$HYPERV_HOST_IP.conf //$HYPERV_HOST_IP "powershell.exe -inputformat none -ExecutionPolicy RemoteSigned Get-VM -VMName '$HYPERV_VM_NAME' | fl State" | grep ^State | grep Running 1>/dev/null; then
+			# reboot/restart, this is coming from the UI resource reboot
+			if ! $WINEXE -A $htvcenter_HYPERV_HOST_CONF_DIR/$HYPERV_HOST_IP.conf //$HYPERV_HOST_IP "powershell.exe -inputformat none -ExecutionPolicy RemoteSigned Restart-VM -VMName '$HYPERV_VM_NAME'"; then
+				htvcenter_post_event 0 "start" 3 "htvcenter-hyperv" "Failed to start Hyper-V VM $HYPERV_VM_NAME!"
+
+				htvcenter_lock_queue release hyperv $LOCK_TIME
+				trap '' EXIT
+
+				exit 1
+			fi
+		else
+			# just start, this is coming from server assignment which leaves the VM stopped
+			# it only start hyperv-localboot VMs if active, monitoring will set the non-running localboot VMs to idle
+			if ! $WINEXE -A $htvcenter_HYPERV_HOST_CONF_DIR/$HYPERV_HOST_IP.conf //$HYPERV_HOST_IP "powershell.exe -inputformat none -ExecutionPolicy RemoteSigned Start-VM -VMName '$HYPERV_VM_NAME'"; then
+				htvcenter_post_event 0 "start" 3 "htvcenter-hyperv" "Failed to start Hyper-V VM $HYPERV_VM_NAME!"
+
+				htvcenter_lock_queue release hyperv $LOCK_TIME
+				trap '' EXIT
+
+				exit 1
+			fi
+		fi
+
+		htvcenter_lock_queue release hyperv $LOCK_TIME
+		trap '' EXIT
+		;;
+
+# host functions
+
+	host_shutdown)
+		LOCK_TIME=`htvcenter_lock_queue aquire hyperv`
+		trap "htvcenter_lock_queue release hyperv $LOCK_TIME" EXIT
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+
+		if ! $WINEXE -A $htvcenter_HYPERV_HOST_CONF_DIR/$HYPERV_HOST_IP.conf //$HYPERV_HOST_IP 'powershell.exe -inputformat none -ExecutionPolicy RemoteSigned Stop-Computer -computer '$HYPERV_HOST_IP' -Force'; then
+			htvcenter_post_event 0 "host_shutdown" 3 "htvcenter-hyperv" "Failed to shtudown Hyper-V Host $HYPERV_HOST_IP!"
+
+			htvcenter_lock_queue release hyperv $LOCK_TIME
+			trap '' EXIT
+
+			exit 1
+		fi
+
+		htvcenter_lock_queue release hyperv $LOCK_TIME
+		trap '' EXIT
+		;;
+
+
+	host_reboot)
+		LOCK_TIME=`htvcenter_lock_queue aquire hyperv`
+		trap "htvcenter_lock_queue release hyperv $LOCK_TIME" EXIT
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+
+		if ! $WINEXE -A $htvcenter_HYPERV_HOST_CONF_DIR/$HYPERV_HOST_IP.conf //$HYPERV_HOST_IP 'powershell.exe -inputformat none -ExecutionPolicy RemoteSigned Restart-Computer -computer '$HYPERV_HOST_IP' -Force'; then
+			htvcenter_post_event 0 "host_shutdown" 3 "htvcenter-hyperv" "Failed to resdtart Hyper-V Host $HYPERV_HOST_IP!"
+
+			htvcenter_lock_queue release hyperv $LOCK_TIME
+			trap '' EXIT
+
+			exit 1
+		fi
+
+		htvcenter_lock_queue release hyperv $LOCK_TIME
+		trap '' EXIT
+		;;
+
+
+	post_iso_list)
+		# post dir list
+		PICK_ISO_CONFIG_TMP=$HYPERV_HOST_IP.pick_iso_config
+		HYPERV_ISO_STATS="$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/hyperv/web/hyperv-stat/$HYPERV_HOST_IP.pick_iso_config"
+		> $PICK_ISO_CONFIG_TMP
+		for DRIVE in `$WINEXE -A $htvcenter_HYPERV_HOST_CONF_DIR/$HYPERV_HOST_IP.conf //$HYPERV_HOST_IP "powershell.exe -inputformat none Get-Volume | fw DriveLetter"`; do
+			if echo $DRIVE | grep [A-Z] 1>/dev/null; then
+				for ITEM in `$WINEXE -A $htvcenter_HYPERV_HOST_CONF_DIR/$HYPERV_HOST_IP.conf //$HYPERV_HOST_IP "powershell.exe -inputformat none get-childitem -Path $DRIVE:/ -Recurse -Filter '*.ISO' | fl" | grep ^VersionInfo | cut -d':' -f3- |  sed -e 's/^[ \t]*//'`; do
+					echo "$ITEM" >> $PICK_ISO_CONFIG_TMP
+				done
+			fi
+		done
+		chmod 777 $PICK_ISO_CONFIG_TMP
+		/bin/mv $PICK_ISO_CONFIG_TMP $HYPERV_ISO_STATS
+		;;
+
+
+
+	post_file_list)
+		if [ "$HYPERV_VM_PATH" == "" ]; then
+			HYPERV_VM_PATH='C:/'
+		fi
+		# support whitespaces in path
+		HYPERV_VM_PATH=`echo $HYPERV_VM_PATH | sed -e "s/@/ /g"`
+		# post dir list
+		PICK_ISO_CONFIG_TMP=$HYPERV_HOST_IP.pick_file_config
+		HYPERV_ISO_STATS="$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/hyperv/web/hyperv-stat/$HYPERV_HOST_IP.pick_file_config"
+		> $PICK_ISO_CONFIG_TMP
+
+		echo "P@$HYPERV_VM_PATH" >> $PICK_ISO_CONFIG_TMP
+		for DRIVE in `$WINEXE -A $htvcenter_HYPERV_HOST_CONF_DIR/$HYPERV_HOST_IP.conf //$HYPERV_HOST_IP "powershell.exe -inputformat none Get-Volume | fw DriveLetter"`; do
+			if echo $DRIVE | grep [A-Z] 1>/dev/null; then
+				echo "L@$DRIVE" >> $PICK_ISO_CONFIG_TMP
+			fi
+		done
+		# dir up + base link
+		echo "N@Create Virtual Disk" >> $PICK_ISO_CONFIG_TMP
+		echo "B@/" >> $PICK_ISO_CONFIG_TMP
+		echo "U@.." >> $PICK_ISO_CONFIG_TMP
+		# dir items
+IFS='
+'
+		for ITEM in `$WINEXE -A $htvcenter_HYPERV_HOST_CONF_DIR/$HYPERV_HOST_IP.conf //$HYPERV_HOST_IP "powershell.exe -inputformat none get-childitem '$HYPERV_VM_PATH' | ft Mode,Name"`; do
+			#echo $ITEM
+			TYPE=`echo $ITEM | awk '{ print $1 }'`
+			FNAME=`echo $ITEM | awk '{$1=""; print $0}' |  sed -e 's/^[ \t]*//'`
+			if [ "$ITEM" == "" ]; then
+					continue
+			fi
+			if echo $TYPE | grep -w ^d 1>/dev/null; then
+					echo "D@$FNAME" >> $PICK_ISO_CONFIG_TMP
+			fi
+			if echo $TYPE | grep -w a 1>/dev/null; then
+					echo "F@$FNAME" >> $PICK_ISO_CONFIG_TMP
+			fi
+		done
+IFS=$ORG_IFS
+		chmod 777 $PICK_ISO_CONFIG_TMP
+		/bin/mv $PICK_ISO_CONFIG_TMP $HYPERV_ISO_STATS
+		;;
+
+
+	post_host_statistics)
+		HYPERV_STATS="$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/hyperv/web/hyperv-stat/$HYPERV_HOST_IP.host_statistics"
+		HYPERV_STATS_TMP="$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/hyperv/web/hyperv-stat/$HYPERV_HOST_IP.host_statistics.tmp"
+		rm -f $HYPERV_STATS
+		# check if host is online, we are not trying to connect an offline host via the Hyper-V API
+		if ! ping -W 1 -c 1 -w 1 $HYPERV_HOST_IP &>/dev/null; then
+			exit 0
+		fi
+		if ! check_hyperv_online $HYPERV_HOST_IP; then
+			exit 0
+		fi
+		> $HYPERV_STATS_TMP
+
+		# host statistics
+		$WINEXE -A $htvcenter_HYPERV_HOST_CONF_DIR/$HYPERV_HOST_IP.conf //$HYPERV_HOST_IP "powershell.exe -inputformat none -ExecutionPolicy RemoteSigned Get-VMHost | ft" | tail -n+4 | sed '/^\s*$/d' | awk '{ print "name="$1"|cpu="$2"|memory="$3 }' > $HYPERV_STATS_TMP
+		# vm statistics
+		#$WINEXE -A $htvcenter_HYPERV_HOST_CONF_DIR/$HYPERV_HOST_IP.conf //$HYPERV_HOST_IP "powershell.exe -inputformat none -ExecutionPolicy RemoteSigned Get-VM |  where state -eq 'Running' | Get-VMNetworkAdapter | ft MACAddress,VMName,MemoryAssigned,Uptime" | tail -n+4 | sed '/^\s*$/d' | awk '{ print "mac="$1"|name="$2"|memory="$3"|uptime="$4 }' >> $HYPERV_STATS_TMP
+		$WINEXE -A $htvcenter_HYPERV_HOST_CONF_DIR/$HYPERV_HOST_IP.conf //$HYPERV_HOST_IP "powershell.exe -inputformat none -ExecutionPolicy RemoteSigned Get-VM |  where state -eq 'Running' | Get-VMNetworkAdapter | ft MACAddress" | tail -n+4 | sed '/^\s*$/d' | awk '{ print "mac="$1"|state=active" }' >> $HYPERV_STATS_TMP
+		$WINEXE -A $htvcenter_HYPERV_HOST_CONF_DIR/$HYPERV_HOST_IP.conf //$HYPERV_HOST_IP "powershell.exe -inputformat none -ExecutionPolicy RemoteSigned Get-VM |  where state -eq 'Off' | Get-VMNetworkAdapter | ft MACAddress" | tail -n+4 | sed '/^\s*$/d' | awk '{ print "mac="$1"|state=off" }' >> $HYPERV_STATS_TMP
+
+		# echo "$HYPERV_HOSTNAME@$HYPERV_CPU_SPEED@$HYPERV_CPU_USAGE@$HYPERV_PHYSICAL_MEMORY@$HYPERV_USED_MEMORY@$HYPERV_NETWORK_ADAPTER" >> $HYPERV_STATS_TMP
+
+
+		chmod 777 $HYPERV_STATS_TMP
+		/bin/mv $HYPERV_STATS_TMP $HYPERV_STATS
+		rm -f $HYPERV_HOST_DETAILS
+		;;
+
+
+	*)
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+		hyperv_usage
+		;;
+
+esac
+

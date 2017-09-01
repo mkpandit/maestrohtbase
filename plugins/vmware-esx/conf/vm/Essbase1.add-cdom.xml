@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+ <Reconfigure-Virtual-Machine>
+   <Name>Essbase1</Name>
+   <Host>HTBASESRV7.htbase.com</Host>
+   <Add-Device>
+	  <CD-DVD-Drive>
+	     <Name>/dev/cdrom</Name>
+	  </CD-DVD-Drive>
+   </Add-Device>
+ </Reconfigure-Virtual-Machine>

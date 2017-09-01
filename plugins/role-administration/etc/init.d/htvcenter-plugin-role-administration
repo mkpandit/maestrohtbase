@@ -1,0 +1,126 @@
+#!/bin/bash
+# init script for the htvcenter role-administration-plugin
+#
+# htvcenter Enterprise developed by htvcenter Enterprise GmbH.
+#
+# All source code and content (c) Copyright 2014, htvcenter Enterprise GmbH unless specifically noted otherwise.
+#
+# This source code is released under the htvcenter Enterprise Server and Client License, unless otherwise agreed with htvcenter Enterprise GmbH.
+# The latest version of this license can be found here: http://htvcenter-enterprise.com/license
+#
+# By using this software, you acknowledge having read this license and agree to be bound thereby.
+#
+#           http://htvcenter-enterprise.com
+#
+# Copyright 2014, htvcenter Enterprise GmbH <info@htvcenter-enterprise.com>
+#
+
+htvcenter_SERVER_BASE_DIR=$(pushd $(dirname $0)/../../../../.. > /dev/null; echo $PWD; popd > /dev/null)
+. $htvcenter_SERVER_BASE_DIR/htvcenter/etc/htvcenter-server.conf
+. $htvcenter_SERVER_BASE_DIR/htvcenter/include/htvcenter-functions
+. $htvcenter_SERVER_BASE_DIR/htvcenter/include/htvcenter-server-functions
+. $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/role-administration/include/htvcenter-plugin-role-administration-functions
+. $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/role-administration/etc/htvcenter-plugin-role-administration.conf
+htvcenter_server_get_config
+export LANG=C
+# define wget to use with https
+if [ "$htvcenter_WEB_PROTOCOL" == "https" ]; then
+	WGET_NO_CERT_CHECK="--no-check-certificate"
+fi
+
+
+function htvcenter_plugin_role_administration_start() {
+	echo "Starting the htvcenter role-administration-plugin"
+	touch $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/role-administration/.running
+}
+
+
+function htvcenter_plugin_role_administration_stop() {
+	echo "Stopping the htvcenter role-administration-plugin"
+	rm -f $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/role-administration/.running
+}
+
+function htvcenter_plugin_role_administration_uninstall() {
+	local USERNAME=$1
+	local PASSWORD=$2
+	if [ "$USERNAME" == "" ] && [ "$PASSWORD" == "" ]; then
+		echo -n "role-administration: Please give a username to uninstall the plugin : "
+		read USERNAME
+		echo
+		echo -n "role-administration: Please give the password for user $USERNAME : "
+		read PASSWORD
+		echo
+	fi
+	echo "Uninstalling the htvcenter role-administration-plugin"
+	htvcenter_plugin_role_administration_stop
+
+	# removing the role-administration tables
+	if ! wget -q $WGET_NO_CERT_CHECK -O /dev/null --http-user=$USERNAME --http-password=$PASSWORD "$htvcenter_WEB_PROTOCOL://localhost/htvcenter/base/plugins/role-administration/role-administration-action.php?role_administration_command=uninstall"; then
+		role_administration_manager_log uninstall "ERROR: Could not drop the role-administration-plugin tables in the database!"
+		exit 1
+	fi
+	rm -f $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/role-administration
+}
+
+function htvcenter_plugin_role_administration_init() {
+	local USERNAME=$1
+	local PASSWORD=$2
+	if [ "$USERNAME" == "" ] && [ "$PASSWORD" == "" ]; then
+		echo -n "role-administration: Please give a username to init the plugin : "
+		read USERNAME
+		echo
+		echo -n "role-administration: Please give the password for user $USERNAME : "
+		read PASSWORD
+		echo
+	fi
+
+	CURRENTD=`pwd`
+	echo "Initializing the htvcenter role-administration-plugin"
+	# linking the web dir
+	ln -sf $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/role-administration/web $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/role-administration
+
+	# creating the tables
+	if ! wget -q $WGET_NO_CERT_CHECK -O /dev/null --http-user=$USERNAME --http-password=$PASSWORD "$htvcenter_WEB_PROTOCOL://localhost/htvcenter/base/plugins/role-administration/role-administration-action.php?role_administration_command=init"; then
+		role_administration_manager_log init "ERROR: Could not create the role-administration-plugin tables in the database!"
+		exit 1
+	fi
+
+}
+
+
+
+
+
+
+
+USER=$2
+PASS=$3
+
+case "$1" in
+	start)
+		htvcenter_plugin_role_administration_start
+		;;
+	stop)
+		htvcenter_plugin_role_administration_stop
+		;;
+	restart)
+		htvcenter_plugin_role_administration_stop
+		sleep 1
+		htvcenter_plugin_role_administration_start
+		;;
+	init)
+		htvcenter_plugin_role_administration_init $USER $PASS
+		;;
+	uninstall)
+		htvcenter_plugin_role_administration_uninstall $USER $PASS
+		;;
+	*)
+		echo "Usage: $0 {start|stop|restart|init|uninstall}"
+		exit 1
+
+esac
+exit $?
+
+
+
+

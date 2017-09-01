@@ -1,0 +1,276 @@
+#!/bin/bash
+#
+# htvcenter Enterprise developed by htvcenter Enterprise GmbH.
+#
+# All source code and content (c) Copyright 2014, htvcenter Enterprise GmbH unless specifically noted otherwise.
+#
+# This source code is released under the htvcenter Enterprise Server and Client License, unless otherwise agreed with htvcenter Enterprise GmbH.
+# The latest version of this license can be found here: http://htvcenter-enterprise.com/license
+#
+# By using this software, you acknowledge having read this license and agree to be bound thereby.
+#
+#           http://htvcenter-enterprise.com
+#
+# Copyright 2014, htvcenter Enterprise GmbH <info@htvcenter-enterprise.com>
+
+# this script automatically manages opsi
+# and runs on the htvcenter serer only
+htvcenter_SERVER_BASE_DIR=$(dirname $0)/../../../..
+htvcenter_SERVER_BASE_DIR=$(pushd $htvcenter_SERVER_BASE_DIR > /dev/null && echo $PWD && popd > /dev/null)
+. $htvcenter_SERVER_BASE_DIR/htvcenter/include/htvcenter-functions
+# unblock starting command queue early for non-blocking + ui commands
+# only blocking commands
+. $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/opsi/include/htvcenter-plugin-opsi-functions
+. $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/opsi/etc/htvcenter-plugin-opsi.conf
+. $htvcenter_SERVER_BASE_DIR/htvcenter/etc/htvcenter-server.conf
+. $htvcenter_SERVER_BASE_DIR/htvcenter/include/htvcenter-server-functions
+# get the ip config
+. $htvcenter_SERVER_BASE_DIR/htvcenter/etc/htvcenter-server.conf
+. $htvcenter_SERVER_BASE_DIR/htvcenter/include/htvcenter-server-functions
+htvcenter_server_get_config
+export LANG=C
+export resource_htvcenterserver=$htvcenter_SERVER_IP_ADDRESS
+
+DHCPD_CONF="$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/dhcpd/etc/dhcpd.conf"
+OPSI_DHCPD_HOST_TEMPLATE="$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/opsi/etc/templates/htvcenter-plugin-opsi-host.template"
+DHCPD_HOST_TEMPLATE="$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/dhcpd/etc/templates/htvcenter-plugin-dhcpd-host.template"
+
+# functions running on the opsi-server
+function opsi_usage() {
+	echo "Usage : $0 transfer_to_opsi -o <opsi-server-ip> -i <resource-ip> -m <resource-mac> -n <resource-name>"
+	echo "        $0 take_over_from_opsi -i <resource-ip> -m <resource-mac> -n <resource-name>"
+	echo "        $0 set_opsi_client_to_local_boot -m <resource-mac>"
+	echo ""
+	echo "Optional parameters:"
+	echo "             [--htvcenter-ui-user <username>]"
+	echo "             [--htvcenter-internal-cmd <true/false>]"
+	echo "             [--htvcenter-cmd-mode <regular/background/fork>]"
+	exit 1
+}
+
+
+FULL_COMMANDLINE="$0 $@"
+OPSI_COMMAND=$1
+shift
+
+while [ $# -ne 0 ]; do
+	case "$1" in
+		-i)
+			PARAM_RESOURCE_IP=$2
+			shift
+			;;
+		-m)
+			PARAM_RESOURCE_MAC=$2
+			shift
+			;;
+		-n)
+			PARAM_RESOURCE_NAME=$2
+			shift
+			;;
+		-o)
+			PARAM_OPSI_SERVER_IP=$2
+			shift
+			;;
+		--htvcenter-ui-user)
+			htvcenter_UI_USER=$2
+			shift
+			;;
+		--htvcenter-internal-cmd)
+			htvcenter_INTERNAL_CMD=$2
+			shift
+			;;
+		--htvcenter-cmd-mode)
+			htvcenter_CMD_MODE=$2
+			shift
+			;;
+		*)
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			echo "ERROR: Free commandline arguments are not allowed"
+			opsi_usage
+			exit 6
+			;;
+	esac
+	shift
+done
+
+# checks
+if [ "$OPSI_COMMAND" == "" ]; then
+	htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+	opsi_usage
+fi
+if [ "$htvcenter_UI_USER" != "" ]; then
+	htvcenter_UI_USER_PARAMETER=" --htvcenter-ui-user $htvcenter_UI_USER"
+fi
+
+
+
+# main
+case "$OPSI_COMMAND" in
+
+	transfer_to_opsi)
+		if [ "$PARAM_RESOURCE_NAME" == "" ] || [ "$PARAM_RESOURCE_IP" == "" ] || [ "$PARAM_RESOURCE_MAC" == "" ] || [ "$PARAM_OPSI_SERVER_IP" == "" ]; then
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			opsi_usage
+		fi
+
+		# on purpose we are locking the dhcpd plugin here!
+		LOCK_TIME=`htvcenter_lock_queue aquire dhcpd`
+		trap "htvcenter_lock_queue release dhcpd $LOCK_TIME" EXIT
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+
+		echo "NOTICE: Transfering resource $PARAM_RESOURCE_NAME/$PARAM_RESOURCE_IP/$PARAM_RESOURCE_MAC to Opsi-server at $PARAM_OPSI_SERVER_IP."
+		if ! grep $PARAM_RESOURCE_NAME $DHCPD_CONF 1>/dev/null; then
+			htvcenter_post_event 0 "opsi" 2 "htvcenter-opsi-manager" "Resource $PARAM_RESOURCE_NAME not existing in the dhcpd-server."
+
+			htvcenter_lock_queue release dhcpd $LOCK_TIME
+			trap '' EXIT
+
+			exit 0
+		fi
+		if grep -A 1 $PARAM_RESOURCE_NAME $DHCPD_CONF | grep "# opsi" 1>/dev/null; then
+			htvcenter_post_event 0 "opsi" 2 "htvcenter-opsi-manager" "Resource  $PARAM_RESOURCE_NAME already assigned to Opsi-server at $PARAM_OPSI_SERVER_IP."
+
+			htvcenter_lock_queue release dhcpd $LOCK_TIME
+			trap '' EXIT
+
+			exit 0
+		fi
+
+		cp -f $DHCPD_CONF $DHCPD_CONF.htvcenter-dhcpd-manager
+		# find the resource entry + remove it
+		# first - resource
+		grep -B 10000 -A 4 "^host $PARAM_RESOURCE_NAME {" $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/dhcpd/etc/dhcpd.conf | sed -e :a -e '$d;N;2,5ba' -e 'P;D' > $DHCPD_CONF.first_part
+		# after resource
+		grep -A 10000 "^host $PARAM_RESOURCE_NAME {" $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/dhcpd/etc/dhcpd.conf | sed '1,5d' > $DHCPD_CONF.last_part
+
+		# now add the resource entry again with the new opsi config
+		cat $OPSI_DHCPD_HOST_TEMPLATE | \
+			sed -e "s/@@@@PARAM_RESOURCE_NAME@@@@/$PARAM_RESOURCE_NAME/g" |	\
+			sed -e "s/@@@@PARAM_RESOURCE_IP@@@@/$PARAM_RESOURCE_IP/g" |	\
+			sed -e "s/@@@@PARAM_RESOURCE_MAC@@@@/$PARAM_RESOURCE_MAC/g" |	\
+			sed -e "s/@@@@PARAM_OPSI_SERVER_IP@@@@/$PARAM_OPSI_SERVER_IP/g" > $DHCPD_CONF.opsi_part
+
+		# create new config
+		cat $DHCPD_CONF.first_part $DHCPD_CONF.opsi_part $DHCPD_CONF.last_part > $DHCPD_CONF
+		# restart dhcpd
+		if [ -f "$htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/dhcpd/.running" ]; then
+			$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/dhcpd/etc/init.d/htvcenter-plugin-dhcpd stop
+			if ! $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/dhcpd/etc/init.d/htvcenter-plugin-dhcpd start; then
+				htvcenter_post_event 0 "opsi" 2 "htvcenter-opsi-manager" "Adding Resource $PARAM_RESOURCE_NAME failed. Reverting dhcpd-configuration."
+				# restore previous version, better not to add it than to corrupt the config
+				cp -f $DHCPD_CONF.htvcenter-dhcpd-manager $DHCPD_CONF
+				$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/dhcpd/etc/init.d/htvcenter-plugin-dhcpd start
+			fi
+		fi
+
+		htvcenter_lock_queue release dhcpd $LOCK_TIME
+		trap '' EXIT
+
+		# wait a bit until the client started the opsi auto-installation
+		htvcenter_post_event 0 "opsi" 5 "htvcenter-opsi-manager" "Waiting to take-over $PARAM_RESOURCE_NAME/$PARAM_RESOURCE_IP/$PARAM_RESOURCE_MAC from Opsi-server at $PARAM_OPSI_SERVER_IP."
+		sleep $htvcenter_PLUGIN_OPSI_INSTALL_START_DELAY
+		# return the client to htvcenter PXE -> local-boot
+		htvcenter_post_event 0 "opsi" 5 "htvcenter-opsi-manager" "Taking over $PARAM_RESOURCE_NAME/$PARAM_RESOURCE_IP/$PARAM_RESOURCE_MAC from Opsi-server at $PARAM_OPSI_SERVER_IP."
+		$0 take_over_from_opsi -o $PARAM_OPSI_SERVER_IP -i $PARAM_RESOURCE_IP -m $PARAM_RESOURCE_MAC -n $PARAM_RESOURCE_NAME
+		# set the clients pxe config to local-boot
+		RESOURCE_PXELINUXCFG_FILE=`echo 01-$PARAM_RESOURCE_MAC | sed -e "s/:/-/g" | tr '[:upper:]' '[:lower:]'`
+		sed -i -e "s/^default.*/default local/g" $htvcenter_SERVER_BASE_DIR/htvcenter/tftpboot/pxelinux.cfg/$RESOURCE_PXELINUXCFG_FILE
+		chmod 777 $htvcenter_SERVER_BASE_DIR/htvcenter/tftpboot/pxelinux.cfg/$RESOURCE_PXELINUXCFG_FILE
+		;;
+
+
+
+	take_over_from_opsi)
+		if [ "$PARAM_RESOURCE_NAME" == "" ] || [ "$PARAM_RESOURCE_IP" == "" ] || [ "$PARAM_RESOURCE_MAC" == "" ]; then
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			opsi_usage
+		fi
+
+		# on purpose we are locking the dhcpd plugin here!
+		LOCK_TIME=`htvcenter_lock_queue aquire dhcpd`
+		trap "htvcenter_lock_queue release dhcpd $LOCK_TIME" EXIT
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+
+		echo "NOTICE: Taking over resource $PARAM_RESOURCE_NAME/$PARAM_RESOURCE_IP/$PARAM_RESOURCE_MAC from Opsi-server."
+		if ! grep $PARAM_RESOURCE_NAME $DHCPD_CONF 1>/dev/null; then
+			htvcenter_post_event 0 "opsi" 2 "htvcenter-opsi-manager" "Resource $PARAM_RESOURCE_NAME not existing in the dhcpd-server."
+
+			htvcenter_lock_queue release dhcpd $LOCK_TIME
+			trap '' EXIT
+
+			exit 0
+		fi
+		if ! grep -A 1 $PARAM_RESOURCE_NAME $DHCPD_CONF | grep "# opsi" 1>/dev/null; then
+			htvcenter_post_event 0 "opsi" 2 "htvcenter-opsi-manager" "Resource $PARAM_RESOURCE_NAME is not assigned to Opsi-server."
+
+			htvcenter_lock_queue release dhcpd $LOCK_TIME
+			trap '' EXIT
+
+			exit 0
+		fi
+
+		htvcenter_post_event 0 "opsi" 5 "htvcenter-opsi-manager" "Taking over $PARAM_RESOURCE_NAME/$PARAM_RESOURCE_IP/$PARAM_RESOURCE_MAC."
+
+		cp -f $DHCPD_CONF $DHCPD_CONF.htvcenter-dhcpd-manager
+		# find the resource entry + remove it
+		# first - resource
+		grep -B 10000 -A 4 "^host $PARAM_RESOURCE_NAME {" $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/dhcpd/etc/dhcpd.conf | sed -e :a -e '$d;N;2,5ba' -e 'P;D' > $DHCPD_CONF.first_part
+		# after resource
+		grep -A 10000 "^host $PARAM_RESOURCE_NAME {" $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/dhcpd/etc/dhcpd.conf | sed '1,7d' > $DHCPD_CONF.last_part
+		cat $DHCPD_HOST_TEMPLATE | \
+			sed -e "s/DHCPD_RESOURCE_HOSTNAME/$PARAM_RESOURCE_NAME/g" |	\
+			sed -e "s/DHCPD_RESOURCE_MAC/$PARAM_RESOURCE_MAC/g" |	\
+			sed -e "s/DHCPD_RESOURCE_IP/$PARAM_RESOURCE_IP/g" > $DHCPD_CONF.host_part
+		# create new config
+		cat $DHCPD_CONF.first_part $DHCPD_CONF.host_part $DHCPD_CONF.last_part > $DHCPD_CONF
+		# restart dhcpd
+		if [ -f "$htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/dhcpd/.running" ]; then
+			$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/dhcpd/etc/init.d/htvcenter-plugin-dhcpd stop
+			if ! $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/dhcpd/etc/init.d/htvcenter-plugin-dhcpd start; then
+				htvcenter_post_event 0 "opsi" 2 "htvcenter-opsi-manager" "Adding Resource $PARAM_RESOURCE_NAME failed. Reverting dhcpd-configuration."
+				# restore previous version, better not to add it than to corrupt the config
+				cp -f $DHCPD_CONF $DHCPD_CONF.failed
+				cp -f $DHCPD_CONF.htvcenter-dhcpd-manager $DHCPD_CONF
+				$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/dhcpd/etc/init.d/htvcenter-plugin-dhcpd start
+			fi
+		fi
+		# set the clients pxe config to net-boot, this is for appliance stop
+		RESOURCE_PXELINUXCFG_FILE=`echo 01-$PARAM_RESOURCE_MAC | sed -e "s/:/-/g" | tr '[:upper:]' '[:lower:]'`
+		sed -i -e "s/^default.*/default linux/g" $htvcenter_SERVER_BASE_DIR/htvcenter/tftpboot/pxelinux.cfg/$RESOURCE_PXELINUXCFG_FILE
+		chmod 777 $htvcenter_SERVER_BASE_DIR/htvcenter/tftpboot/pxelinux.cfg/$RESOURCE_PXELINUXCFG_FILE
+
+		htvcenter_lock_queue release dhcpd $LOCK_TIME
+		trap '' EXIT
+		;;
+
+
+	set_opsi_client_to_local_boot)
+		if [ "$PARAM_RESOURCE_MAC" == "" ]; then
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			opsi_usage
+		fi
+		LOCK_TIME=`htvcenter_lock_queue aquire dhcpd`
+		trap "htvcenter_lock_queue release dhcpd $LOCK_TIME" EXIT
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+
+		htvcenter_post_event 0 "opsi" 5 "htvcenter-opsi-manager" "Setting resource $PARAM_RESOURCE_MAC to local-boot."
+
+		# set the clients pxe config to local-boot, this is for appliance start
+		RESOURCE_PXELINUXCFG_FILE=`echo 01-$PARAM_RESOURCE_MAC | sed -e "s/:/-/g" | tr '[:upper:]' '[:lower:]'`
+		sed -i -e "s/^default.*/default local/g" $htvcenter_SERVER_BASE_DIR/htvcenter/tftpboot/pxelinux.cfg/$RESOURCE_PXELINUXCFG_FILE
+		chmod 777 $htvcenter_SERVER_BASE_DIR/htvcenter/tftpboot/pxelinux.cfg/$RESOURCE_PXELINUXCFG_FILE
+
+		htvcenter_lock_queue release dhcpd $LOCK_TIME
+		trap '' EXIT
+		;;
+
+
+
+	*)
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+		opsi_usage
+		;;
+
+
+esac
+

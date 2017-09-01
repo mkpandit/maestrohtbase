@@ -1,0 +1,228 @@
+#!/bin/bash
+# this script automatically manages hyperv networks (vswitch + porgroups)
+#
+# htvcenter Enterprise developed by htvcenter Enterprise GmbH.
+#
+# All source code and content (c) Copyright 2014, htvcenter Enterprise GmbH unless specifically noted otherwise.
+#
+# This source code is released under the htvcenter Enterprise Server and Client License, unless otherwise agreed with htvcenter Enterprise GmbH.
+# The latest version of this license can be found here: http://htvcenter-enterprise.com/license
+#
+# By using this software, you acknowledge having read this license and agree to be bound thereby.
+#
+#           http://htvcenter-enterprise.com
+#
+# Copyright 2014, htvcenter Enterprise GmbH <info@htvcenter-enterprise.com>
+#
+htvcenter_SERVER_BASE_DIR=$(dirname $0)/../../../..
+htvcenter_SERVER_BASE_DIR=$(pushd $htvcenter_SERVER_BASE_DIR > /dev/null && echo $PWD && popd > /dev/null)
+. $htvcenter_SERVER_BASE_DIR/htvcenter/include/htvcenter-functions
+# unblock starting command queue early for non-blocking + ui commands
+# only blocking commands
+export htvcenter_SOURCE_DIR="$htvcenter_SERVER_BASE_DIR/htvcenter/"
+. $htvcenter_SERVER_BASE_DIR/htvcenter/include/htvcenter-package-functions
+. $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/hyperv/include/htvcenter-plugin-hyperv-functions
+. $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/hyperv/etc/htvcenter-plugin-hyperv.conf
+. $htvcenter_SERVER_BASE_DIR/htvcenter/etc/htvcenter-server.conf
+. $htvcenter_SERVER_BASE_DIR/htvcenter/include/htvcenter-server-functions
+htvcenter_server_get_config
+export resource_htvcenterserver=$htvcenter_SERVER_IP_ADDRESS
+htvcenter_HYPERV_HOST_CONF_DIR="$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/hyperv/conf/host"
+htvcenter_HYPERV_STAT_DIR="$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/hyperv/web/hyperv-stat/"
+export LANG=C
+ORG_IFS="$IFS"
+
+# let only root run this script
+WHOAMI=`whoami`
+if [ "$WHOAMI" != "root" ]; then
+	hyperv_log "ERROR: Please run this script as root!"
+	exit 6
+fi
+
+# make sure required deps are installed
+if ! check_hyperv_deps; then
+	if [ "$NON_BLOCKING" != "true" ]; then
+		htvcenter_unblock_starting_queue $@
+	fi
+	exit 1
+fi
+
+if [ ! -d "$htvcenter_HYPERV_HOST_CONF_DIR" ]; then
+	mkdir -p $htvcenter_HYPERV_HOST_CONF_DIR
+fi
+if [ ! -d "$htvcenter_HYPERV_STAT_DIR" ]; then
+	mkdir -p $htvcenter_HYPERV_STAT_DIR
+	chmod 777 $htvcenter_HYPERV_STAT_DIR
+fi
+
+function hyperv_usage() {
+	echo "Usage : $0 discover"
+	echo "        $0 configure <-i hyperv-server-ip> <-eu hyperv-server-username> <-ep hyperv-server-password> <-eh hyperv-server-hostname> <-ed hyperv-server-domainname>"
+	echo ""
+	echo "Optional parameters:"
+	echo "             [--htvcenter-ui-user <username>]"
+	echo "             [--htvcenter-internal-cmd <true/false>]"
+	echo "             [--htvcenter-cmd-mode <regular/background/fork>]"
+	exit 1
+}
+
+
+
+FULL_COMMANDLINE="$0 $@"
+HYPERV_COMMAND=$1
+shift
+while [ $# -ne 0 ]; do
+	case "$1" in
+		-i)
+			HYPERV_HOST_IP=$2
+			shift
+			;;
+		-eu)
+			HYPERV_USERNAME=$2
+			shift
+			;;
+		-ep)
+			HYPERV_PASSWORD=$2
+			shift
+			;;
+		-eh)
+			HYPERV_HOSTNAME=$2
+			shift
+			;;
+		-ed)
+			HYPERV_DOMAINNAME=$2
+			shift
+			;;
+		-ev)
+			HYPERV_HYPERV_VERSION=$2
+			shift
+			;;
+		--htvcenter-ui-user)
+			htvcenter_UI_USER=$2
+			shift
+			;;
+		--htvcenter-internal-cmd)
+			htvcenter_INTERNAL_CMD=$2
+			shift
+			;;
+		--htvcenter-cmd-mode)
+			htvcenter_CMD_MODE=$2
+			shift
+			;;
+
+		*)
+			if [ "$NON_BLOCKING" != "true" ]; then
+				htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			fi
+			echo "ERROR: Free commandline arguments are not allowed"
+			hyperv_usage
+			exit 6
+			;;
+	esac
+	shift
+done
+
+
+# command set ?
+if [ "$HYPERV_COMMAND" == "" ]; then
+	htvcenter_post_event 0 "parameter_check" 3 "htvcenter-hyperv" "Wrong usage, no command given!"
+	htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+	hyperv_usage
+fi
+
+if [ "$htvcenter_UI_USER" != "" ]; then
+	htvcenter_UI_USER_PARAMETER=" --htvcenter-ui-user $htvcenter_UI_USER"
+fi
+
+
+# main
+case "$HYPERV_COMMAND" in 
+
+	configure)
+		if [ "$HYPERV_USERNAME" == "" ] || [ "$HYPERV_PASSWORD" == "" ] || [ "$HYPERV_HOSTNAME" == "" ] || [ "$HYPERV_DOMAINNAME" == "" ] || [ "$HYPERV_HYPERV_VERSION" == "" ]; then
+			htvcenter_post_event 0 "configure" 3 "htvcenter-hyperv" "Wrong usage, Hyper-V Host username missing!"
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			hyperv_usage
+		fi
+
+		LOCK_TIME=`htvcenter_lock_queue aquire hyperv-autodiscovery`
+		trap "htvcenter_lock_queue release hyperv-autodiscovery $LOCK_TIME" EXIT
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+
+		# test if the connection credentials work
+		echo "username=$HYPERV_USERNAME" > $htvcenter_HYPERV_HOST_CONF_DIR/$HYPERV_HOST_IP.conf
+		echo "password=$HYPERV_PASSWORD" >> $htvcenter_HYPERV_HOST_CONF_DIR/$HYPERV_HOST_IP.conf
+		echo "domain=$HYPERV_HOST_IP" >> $htvcenter_HYPERV_HOST_CONF_DIR/$HYPERV_HOST_IP.conf
+		echo "version=$HYPERV_HYPERV_VERSION" >> $htvcenter_HYPERV_HOST_CONF_DIR/$HYPERV_HOST_IP.conf
+
+		HYPERVRETURN=$($WINEXE -A $htvcenter_HYPERV_HOST_CONF_DIR/$HYPERV_HOST_IP.conf //$HYPERV_HOST_IP "powershell.exe -inputformat none -ExecutionPolicy RemoteSigned Get-VM" 2>&1 >/dev/null)
+		if [ -n "$HYPERVRETURN" ] ; then
+			rm -f $htvcenter_HYPERV_HOST_CONF_DIR/$HYPERV_HOST_IP.conf
+			# notify htvcenter
+			echo $HYPERVRETURN > $htvcenter_HYPERV_STAT_DIR/$HYPERV_HOST_IP.integrated_successful.tmp
+			chmod 777 $htvcenter_HYPERV_STAT_DIR/$HYPERV_HOST_IP.integrated_successful.tmp
+			mv $htvcenter_HYPERV_STAT_DIR/$HYPERV_HOST_IP.integrated_successful.tmp $htvcenter_HYPERV_STAT_DIR/$HYPERV_HOST_IP.integrated_successful
+
+			htvcenter_lock_queue release hyperv-autodiscovery $LOCK_TIME
+			trap '' EXIT
+			exit 1
+		fi
+		# notify htvcenter
+		echo "success" > $htvcenter_HYPERV_STAT_DIR/$HYPERV_HOST_IP.integrated_successful.tmp
+		chmod 777 $htvcenter_HYPERV_STAT_DIR/$HYPERV_HOST_IP.integrated_successful.tmp
+		mv $htvcenter_HYPERV_STAT_DIR/$HYPERV_HOST_IP.integrated_successful.tmp $htvcenter_HYPERV_STAT_DIR/$HYPERV_HOST_IP.integrated_successful
+
+		htvcenter_lock_queue release hyperv-autodiscovery $LOCK_TIME
+		trap '' EXIT
+		;;
+
+
+	discover)
+		LOCK_TIME=`htvcenter_lock_queue aquire hyperv-autodiscovery`
+		trap "htvcenter_lock_queue release hyperv-autodiscovery $LOCK_TIME" EXIT
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+
+		htvcenter_post_event 0 "hyperv" 10 "auto-discovery-lock" "Hyper-V Host Auto-Discovery already active. Waiting to aquire the lock!"
+		htvcenter_post_event 0 "hyperv" 9 "auto-discovery" "Hyper-V Auto-Discovery active!"
+		BASE_IP=`echo $htvcenter_SERVER_IP_ADDRESS | cut -d'.' -f1-3`
+
+		WGET_OUTPUT_FILE=`mktemp /tmp/hyperv-autodiscovery.XXXXXX` || exit 1
+		> $htvcenter_HYPERV_STAT_DIR/autodiscovery_finished.tmp
+
+		# for debugging # for LAST_BYTE in `seq 1 5`; do
+		for LAST_BYTE in `seq 1 255`; do
+
+			hyperv_log auto_discovery "...checking $BASE_IP.$LAST_BYTE"
+			if ! ping -W 1 -c 1 -w 1 $BASE_IP.$LAST_BYTE &>/dev/null; then
+				continue
+			fi
+
+			if check_hyperv_online $BASE_IP.$LAST_BYTE; then
+				nmap -p139 $BASE_IP.$LAST_BYTE > $WGET_OUTPUT_FILE
+				HYPERV_MAC_ADDRESS=`grep ^MAC $WGET_OUTPUT_FILE | awk '{ print $3 }'`
+				HYPERV_IP_ADDRESS="$BASE_IP.$LAST_BYTE"
+				htvcenter_post_event 0 "hyperv" 5 "auto-discovery" "Found eventual Hyper-V Host at $HYPERV_IP_ADDRESS@$HYPERV_MAC_ADDRESS!"
+				echo "$HYPERV_IP_ADDRESS@$HYPERV_MAC_ADDRESS" >> $htvcenter_HYPERV_STAT_DIR/autodiscovery_finished.tmp
+			fi
+		done
+		rm -f $WGET_OUTPUT_FILE
+		# let htvcenter now that auto-discovery has finished
+		chmod 777 $htvcenter_HYPERV_STAT_DIR/autodiscovery_finished.tmp
+		mv $htvcenter_HYPERV_STAT_DIR/autodiscovery_finished.tmp $htvcenter_HYPERV_STAT_DIR/autodiscovery_finished
+		htvcenter_post_event 0 "hyperv" 10 "auto-discovery" "Hyper-V Auto-Discovery active!"
+
+		htvcenter_lock_queue release hyperv-autodiscovery $LOCK_TIME
+		trap '' EXIT
+		;;
+
+	*)
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+		hyperv_usage
+		;;
+
+esac
+
+
+
+
+

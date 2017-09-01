@@ -1,0 +1,4 @@
+name=Data|Name="Data"|ifDesc="Broadcom BCM5708C NetXtreme II GigE (NDIS VBD Client) #40"|
+name=vEthernet (Data)|Name="vEthernet (Data)"|ifDesc="Hyper-V Virtual Ethernet Adapter #3"|
+name=vEthernet (Server)|Name="vEthernet (Server)"|ifDesc="Hyper-V Virtual Ethernet Adapter #2"|
+name=Server|Name="Server"|ifDesc="Broadcom BCM5708C NetXtreme II GigE (NDIS VBD Client) #39"|

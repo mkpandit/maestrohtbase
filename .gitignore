@@ -1,0 +1,9 @@
+web/mts.tar.gz
+plugins/chatbot/*
+plugins/collectd/*
+plugins/dhcpd/*
+plugins/dns/*
+plugins/local-server/*
+*.rrd
+*.tgz
+wc.db

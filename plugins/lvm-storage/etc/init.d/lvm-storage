@@ -1,0 +1,205 @@
+#!/bin/bash
+# this is the boot-service init script for the LVM-Storage-hosts
+#
+# htvcenter Enterprise developed by htvcenter Enterprise GmbH.
+#
+# All source code and content (c) Copyright 2014, htvcenter Enterprise GmbH unless specifically noted otherwise.
+#
+# This source code is released under the htvcenter Enterprise Server and Client License, unless otherwise agreed with htvcenter Enterprise GmbH.
+# The latest version of this license can be found here: http://htvcenter-enterprise.com/license
+#
+# By using this software, you acknowledge having read this license and agree to be bound thereby.
+#
+#           http://htvcenter-enterprise.com
+#
+# Copyright 2014, htvcenter Enterprise GmbH <info@htvcenter-enterprise.com>
+#
+
+htvcenter_SERVER_BASE_DIR=$(pushd $(dirname $0)/../../../../.. > /dev/null; echo $PWD; popd > /dev/null)
+. $htvcenter_SERVER_BASE_DIR/htvcenter/include/htvcenter-functions
+. $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/lvm-storage/include/htvcenter-plugin-lvm-storage-functions
+. $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/lvm-storage/etc/htvcenter-plugin-lvm-storage.conf
+LINE_IFS='
+'
+
+# do not start on the intitrd
+if [ -f /etc/initrd-devices.conf ]; then
+	exit 0
+fi
+
+function lvm_storage_start() {
+	echo "Starting the htvcenter lvm-storage-plugin"
+	if [ "$LVM_AOE_STORAGE_AUTO_START" == "yes" ]; then
+		# aoe
+		mkdir -p /var/run/vblade/
+		if [ -x "/etc/init.d/vblade" ]; then
+			if [ -x "`which invoke-rc.d 2>/dev/null`" ]; then
+				invoke-rc.d vblade start
+			else
+				/etc/init.d/vblade start
+			fi
+		else
+			if [ -f $VBLADECONF ]; then
+				if which vbladed 1>/dev/null; then
+					echo "Starting vblades ..."
+					OLD_IFS=$IFS
+					IFS=$LINE_IFS
+					for VBLADE_L in `cat $VBLADECONF | grep -v '#' | sed '/^$/d'`; do
+						V_INTERFACE=`echo $VBLADE_L | awk {' print $1 '}`
+						V_SHELF=`echo $VBLADE_L | awk {' print $2 '}`
+						V_SLOT=`echo $VBLADE_L | awk {' print $3 '}`
+						V_IMAGE=`echo $VBLADE_L | awk {' print $4 '}`
+						V_ALLOWED_MAC=`echo $VBLADE_L | awk {' print $5 '}`
+						vbladed $V_SHELF $V_SLOT $V_INTERFACE $V_IMAGE
+					done
+					IFS=$OLD_IFS
+				fi
+			fi
+		fi
+	fi
+	if [ "$LVM_NFS_STORAGE_AUTO_START" == "yes" ]; then
+		if [ -x "/etc/init.d/nfs-kernel-server" ]; then
+			if [ -x "`which invoke-rc.d 2>/dev/null`" ]; then
+				invoke-rc.d nfs-kernel-server start
+			else
+				/etc/init.d/nfs-kernel-server start
+			fi
+		fi
+		if [ -x "/etc/init.d/nfs" ]; then
+			if [ -x "`which invoke-rc.d 2>/dev/null`" ]; then
+				invoke-rc.d nfs start
+			else
+				/etc/init.d/nfs start
+			fi
+		fi
+		if [ -x "/etc/init.d/nfslock" ]; then
+			if [ -x "`which invoke-rc.d 2>/dev/null`" ]; then
+				invoke-rc.d nfslock start
+			else
+				/etc/init.d/nfslock start
+			fi
+		fi
+		# for Suse
+		if [ -x /etc/init.d/nfsserver ]; then
+			/etc/init.d/nfsserver start
+		fi
+	fi
+	if [ "$LVM_ISCSI_STORAGE_AUTO_START" == "yes" ]; then
+		if [ -x "/etc/init.d/iscsi-target" ]; then
+			if [ -x "`which invoke-rc.d 2>/dev/null`" ]; then
+				invoke-rc.d iscsi-target start
+			else
+				/etc/init.d/iscsi-target start
+			fi
+		elif [ -x /etc/init.d/iscsitarget ]; then
+			if [ -x "`which invoke-rc.d 2>/dev/null`" ]; then
+				invoke-rc.d iscsitarget start
+			else
+				/etc/init.d/iscsitarget start
+			fi
+		fi
+	fi
+}
+
+
+function lvm_storage_stop() {
+	echo "Stopping the htvcenter lvm-storage-plugin"
+	if [ "$LVM_AOE_STORAGE_AUTO_START" == "yes" ]; then
+		# aoe
+		if [ -x "/etc/init.d/vblade" ]; then
+			if [ -x "`which invoke-rc.d 2>/dev/null`" ]; then
+				invoke-rc.d vblade stop
+			else
+				/etc/init.d/vblade stop
+				for VPID in `ps ax | grep vblade | grep -v grep | awk {' print $1 '}`; do
+					kill $VPID
+				done
+			fi
+		else
+			if [ -f $VBLADECONF ]; then
+				echo "Stopping vblades ..."
+				OLD_IFS=$IFS
+				IFS=$LINE_IFS
+				for VBLADE_L in `cat $VBLADECONF | grep -v '#' | sed '/^$/d'`; do
+					V_INTERFACE=`echo $VBLADE_L | awk {' print $1 '}`
+					V_SHELF=`echo $VBLADE_L | awk {' print $2 '}`
+					V_SLOT=`echo $VBLADE_L | awk {' print $3 '}`
+					V_IMAGE=`echo $VBLADE_L | awk {' print $4 '}`
+					V_ALLOWED_MAC=`echo $VBLADE_L | awk {' print $5 '}`
+					for VBLADE_PID in `ps ax | grep vblade | grep -w $V_IMAGE | awk {' print $1 '}`; do
+						kill $VBLADE_PID
+					done
+				done
+				IFS=$OLD_IFS
+			fi
+			killall vblade 1>/dev/null 2>&1
+		fi
+	fi
+	if [ "$LVM_NFS_STORAGE_AUTO_START" == "yes" ]; then
+		if [ -x "/etc/init.d/nfs-kernel-server" ]; then
+			if [ -x "`which invoke-rc.d 2>/dev/null`" ]; then
+				invoke-rc.d nfs-kernel-server stop
+			else
+				/etc/init.d/nfs-kernel-server stop
+			fi
+		fi
+		if [ -x "/etc/init.d/nfs" ]; then
+			if [ -x "`which invoke-rc.d 2>/dev/null`" ]; then
+				invoke-rc.d nfs stop
+			else
+				/etc/init.d/nfs stop
+			fi
+		fi
+		if [ -x "/etc/init.d/nfslock" ]; then
+			if [ -x "`which invoke-rc.d 2>/dev/null`" ]; then
+				invoke-rc.d nfslock stop
+			else
+				/etc/init.d/nfslock stop
+			fi
+		fi
+		# for Suse
+		if [ -x /etc/init.d/nfsserver ]; then
+			/etc/init.d/nfsserver stop
+		fi
+	fi
+	if [ "$LVM_ISCSI_STORAGE_AUTO_START" == "yes" ]; then
+		if [ -x "/etc/init.d/iscsi-target" ]; then
+			if [ -x "`which invoke-rc.d 2>/dev/null`" ]; then
+				invoke-rc.d iscsi-target stop
+			else
+				/etc/init.d/iscsi-target stop
+			fi
+		elif [ -x /etc/init.d/iscsitarget ]; then
+			if [ -x "`which invoke-rc.d 2>/dev/null`" ]; then
+				invoke-rc.d iscsitarget stop
+			else
+				/etc/init.d/iscsitarget stop
+			fi
+		fi
+	fi
+
+}
+
+
+
+
+
+case "$1" in
+	start)
+		lvm_storage_start
+		;;
+	stop)
+		lvm_storage_stop
+		;;
+	restart)
+		lvm_storage_stop
+		sleep 1
+		lvm_storage_start
+		;;
+	*)
+		echo "Usage: $0 {start|stop|restart}"
+		exit 1
+
+esac
+exit $?
+

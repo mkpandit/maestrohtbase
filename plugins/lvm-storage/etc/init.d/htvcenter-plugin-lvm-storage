@@ -1,0 +1,338 @@
+#!/bin/bash
+# init script for the htvcenter lvm-storage-plugin
+#
+# htvcenter Enterprise developed by htvcenter Enterprise GmbH.
+#
+# All source code and content (c) Copyright 2014, htvcenter Enterprise GmbH unless specifically noted otherwise.
+#
+# This source code is released under the htvcenter Enterprise Server and Client License, unless otherwise agreed with htvcenter Enterprise GmbH.
+# The latest version of this license can be found here: http://htvcenter-enterprise.com/license
+#
+# By using this software, you acknowledge having read this license and agree to be bound thereby.
+#
+#           http://htvcenter-enterprise.com
+#
+# Copyright 2014, htvcenter Enterprise GmbH <info@htvcenter-enterprise.com>
+#
+
+htvcenter_SERVER_BASE_DIR=$(pushd $(dirname $0)/../../../../.. > /dev/null; echo $PWD; popd > /dev/null)
+. $htvcenter_SERVER_BASE_DIR/htvcenter/etc/htvcenter-server.conf
+. $htvcenter_SERVER_BASE_DIR/htvcenter/include/htvcenter-functions
+. $htvcenter_SERVER_BASE_DIR/htvcenter/include/htvcenter-server-functions
+. $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/lvm-storage/include/htvcenter-plugin-lvm-storage-functions
+. $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/lvm-storage/etc/htvcenter-plugin-lvm-storage.conf
+
+
+LINE_IFS='
+'
+
+function htvcenter_plugin_lvm-storage_start() {
+	echo "Starting the htvcenter lvm-storage-plugin"
+	touch $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/lvm-storage/.running
+
+	if [ "$LVM_AOE_STORAGE_AUTO_START" == "yes" ]; then
+	   # make sure vbladed is stopped, not using the init script here because this may exit 1
+		for VPID in `ps ax | grep vblade | grep -v grep | awk {' print $1 '}`; do
+			kill $VPID
+		done
+		killall vblade 1>/dev/null 2>&1
+		#htvcenter_plugin_lvm-storage_stop 1>/dev/null 2>&1
+
+		# aoe
+		mkdir -p /var/run/vblade/
+		if [ -x "/etc/init.d/vblade" ]; then
+			if [ -x "`which invoke-rc.d 2>/dev/null`" ]; then
+				invoke-rc.d vblade start
+			else
+				/etc/init.d/vblade start
+			fi
+		else
+			if [ -f $VBLADECONF ]; then
+				if which vbladed 1>/dev/null; then
+					echo "Starting vblades ..."
+					OLD_IFS=$IFS
+					IFS=$LINE_IFS
+					for VBLADE_L in `cat $VBLADECONF | grep -v '#' | sed '/^$/d'`; do
+						V_INTERFACE=`echo $VBLADE_L | awk {' print $1 '}`
+						V_SHELF=`echo $VBLADE_L | awk {' print $2 '}`
+						V_SLOT=`echo $VBLADE_L | awk {' print $3 '}`
+						V_IMAGE=`echo $VBLADE_L | awk {' print $4 '}`
+						V_ALLOWED_MAC=`echo $VBLADE_L | awk {' print $5 '}`
+						vbladed $V_SHELF $V_SLOT $V_INTERFACE $V_IMAGE
+					done
+					IFS=$OLD_IFS
+				fi
+			fi
+		fi
+	fi
+	if [ "$LVM_NFS_STORAGE_AUTO_START" == "yes" ]; then
+		if [ -x "/etc/init.d/nfs-kernel-server" ]; then
+			if [ -x "`which invoke-rc.d 2>/dev/null`" ]; then
+				invoke-rc.d nfs-kernel-server start
+			else
+				/etc/init.d/nfs-kernel-server start
+			fi
+		fi
+		if [ -x "/etc/init.d/nfs" ]; then
+			if [ -x "`which invoke-rc.d 2>/dev/null`" ]; then
+				invoke-rc.d nfs start
+			else
+				/etc/init.d/nfs start
+			fi
+		fi
+		if [ -x "/etc/init.d/nfslock" ]; then
+			if [ -x "`which invoke-rc.d 2>/dev/null`" ]; then
+				invoke-rc.d nfslock start
+			else
+				/etc/init.d/nfslock start
+			fi
+		fi
+		# for Suse
+		if [ -x /etc/init.d/nfsserver ]; then
+			/etc/init.d/nfsserver start
+		fi
+	fi
+	if [ "$LVM_ISCSI_STORAGE_AUTO_START" == "yes" ]; then
+		if [ -x "/etc/init.d/iscsi-target" ]; then
+			if [ -x "`which invoke-rc.d 2>/dev/null`" ]; then
+				invoke-rc.d iscsi-target start
+			else
+				/etc/init.d/iscsi-target start
+			fi
+		elif [ -x /etc/init.d/iscsitarget ]; then
+			if [ -x "`which invoke-rc.d 2>/dev/null`" ]; then
+				invoke-rc.d iscsitarget start
+			else
+				/etc/init.d/iscsitarget start
+			fi
+		fi
+	fi
+
+}
+
+
+function htvcenter_plugin_lvm-storage_stop() {
+	echo "Stopping the htvcenter lvm-storage-plugin"
+	rm -f $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/lvm-storage/.running
+
+	if [ "$LVM_AOE_STORAGE_AUTO_START" == "yes" ]; then
+		# aoe
+		if [ -x "/etc/init.d/vblade" ]; then
+			if [ -x "`which invoke-rc.d 2>/dev/null`" ]; then
+				invoke-rc.d vblade stop
+			else
+				/etc/init.d/vblade stop
+				for VPID in `ps ax | grep vblade | grep -v grep | awk {' print $1 '}`; do
+					kill $VPID
+				done
+			fi
+		else
+			if [ -f $VBLADECONF ]; then
+				echo "Stopping vblades ..."
+				OLD_IFS=$IFS
+				IFS=$LINE_IFS
+				for VBLADE_L in `cat $VBLADECONF | grep -v '#' | sed '/^$/d'`; do
+					V_INTERFACE=`echo $VBLADE_L | awk {' print $1 '}`
+					V_SHELF=`echo $VBLADE_L | awk {' print $2 '}`
+					V_SLOT=`echo $VBLADE_L | awk {' print $3 '}`
+					V_IMAGE=`echo $VBLADE_L | awk {' print $4 '}`
+					V_ALLOWED_MAC=`echo $VBLADE_L | awk {' print $5 '}`
+					for VBLADE_PID in `ps ax | grep vblade | grep -w $V_IMAGE | awk {' print $1 '}`; do
+						kill $VBLADE_PID
+					done
+				done
+				IFS=$OLD_IFS
+			fi
+			killall vblade 1>/dev/null 2>&1
+		fi
+	fi
+
+	if [ "$LVM_NFS_STORAGE_AUTO_START" == "yes" ]; then
+		if [ -x "/etc/init.d/nfs-kernel-server" ]; then
+			if [ -x "`which invoke-rc.d 2>/dev/null`" ]; then
+				invoke-rc.d nfs-kernel-server stop
+			else
+				/etc/init.d/nfs-kernel-server stop
+			fi
+		fi
+		if [ -x "/etc/init.d/nfs" ]; then
+			if [ -x "`which invoke-rc.d 2>/dev/null`" ]; then
+				invoke-rc.d nfs stop
+			else
+				/etc/init.d/nfs stop
+			fi
+		fi
+		if [ -x "/etc/init.d/nfslock" ]; then
+			if [ -x "`which invoke-rc.d 2>/dev/null`" ]; then
+				invoke-rc.d nfslock stop
+			else
+				/etc/init.d/nfslock stop
+			fi
+		fi
+		# for Suse
+		if [ -x /etc/init.d/nfsserver ]; then
+			/etc/init.d/nfsserver stop
+		fi
+	fi
+	if [ "$LVM_ISCSI_STORAGE_AUTO_START" == "yes" ]; then
+		if [ -x "/etc/init.d/iscsi-target" ]; then
+			if [ -x "`which invoke-rc.d 2>/dev/null`" ]; then
+				invoke-rc.d iscsi-target stop
+			else
+				/etc/init.d/iscsi-target stop
+			fi
+		elif [ -x /etc/init.d/iscsitarget ]; then
+			if [ -x "`which invoke-rc.d 2>/dev/null`" ]; then
+				invoke-rc.d iscsitarget stop
+			else
+				/etc/init.d/iscsitarget stop
+			fi
+		fi
+	fi
+}
+
+
+function htvcenter_plugin_lvm-storage_uninstall() {
+	local USERNAME=$1
+	local PASSWORD=$2
+	if [ "$USERNAME" == "" ] && [ "$PASSWORD" == "" ]; then
+		echo -n "lvm-storage: Please give a username to uninstall the plugin : "
+		read USERNAME
+		echo
+		echo -n "lvm-storage: Please give the password for user $USERNAME : "
+		read PASSWORD
+		echo
+	fi
+	echo "Uninstalling the htvcenter lvm-storage-plugin"
+	htvcenter_plugin_lvm-storage_stop
+	htvcenter_server_remove_deployment_type $USERNAME $PASSWORD lvm-aoe-deployment
+	htvcenter_server_remove_deployment_type $USERNAME $PASSWORD lvm-iscsi-deployment
+	htvcenter_server_remove_deployment_type $USERNAME $PASSWORD lvm-nfs-deployment
+	rm -f $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/lvm-storage
+	rm -f $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/boot-service/boot-service-lvm-storage.tgz
+
+	rm -f $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/boot-service/root-mount.lvm-aoe-deployment
+	rm -f $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/boot-service/root-mount.lvm-iscsi-deployment
+	rm -f $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/boot-service/root-mount.lvm-nfs-deployment
+	rm -f $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/boot-service/image.lvm-aoe-deployment.php
+	rm -f $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/boot-service/image.lvm-iscsi-deployment.php
+	rm -f $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/boot-service/image.lvm-nfs-deployment.php
+
+	# remove only if nfs/iscsi/aoe is not enabled
+	if ! ls $htvcenter_SERVER_BASE_DIR/htvcenter/web/base/plugins | grep iscsi-storage 1>/dev/null 2>&1; then
+		if ! ls $htvcenter_SERVER_BASE_DIR/htvcenter/web/base/plugins | grep netapp-storage 1>/dev/null 2>&1; then
+			rm -f $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/boot-service/iscsid
+			rm -f $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/boot-service/iscsiadm
+		fi
+	fi
+	if ! ls $htvcenter_SERVER_BASE_DIR/htvcenter/web/base/plugins | grep aoe-storage 1>/dev/null 2>&1; then
+		rm -f $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/boot-service/aoe-interfaces
+		rm -f $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/boot-service/aoe-discover
+		rm -f $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/boot-service/aoe-stat
+		rm -f $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/boot-service/aoe-mkdevs
+		rm -f $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/boot-service/aoe-mkshelf
+	fi
+
+}
+
+function htvcenter_plugin_lvm-storage_init() {
+	local USERNAME=$1
+	local PASSWORD=$2
+	if [ "$USERNAME" == "" ] && [ "$PASSWORD" == "" ]; then
+		echo -n "lvm-storage: Please give a username to init the plugin : "
+		read USERNAME
+		echo
+		echo -n "lvm-storage: Please give the password for user $USERNAME : "
+		read PASSWORD
+		echo
+	fi
+	echo "Initializing the htvcenter lvm-storage-plugin"
+	htvcenter_server_add_deployment_type $USERNAME $PASSWORD lvm-aoe-deployment lvm-aoe-deployment "Lvm Aoe-root deployment" lvm-storage "Lvm Storage Server (Aoe)"
+	htvcenter_server_add_deployment_type $USERNAME $PASSWORD lvm-iscsi-deployment lvm-iscsi-deployment "Lvm Iscsi-root deployment" lvm-storage "Lvm Storage Server (Iscsi)"
+	htvcenter_server_add_deployment_type $USERNAME $PASSWORD lvm-nfs-deployment lvm-nfs-deployment "Lvm Nfs-root deployment" lvm-storage "Lvm Storage Server (Nfs)"
+
+	# linking the web dir
+	ln -sf $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/lvm-storage/web $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/lvm-storage
+	# link the boot-service
+	ln -sf $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/lvm-storage/web/boot-service-lvm-storage.tgz $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/boot-service/boot-service-lvm-storage.tgz
+	# linking the root mount hooks
+	ln -sf $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/lvm-storage/web/root-mount.lvm-aoe-deployment $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/boot-service/root-mount.lvm-aoe-deployment
+	ln -sf $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/lvm-storage/web/root-mount.lvm-iscsi-deployment $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/boot-service/root-mount.lvm-iscsi-deployment
+	ln -sf $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/lvm-storage/web/root-mount.lvm-nfs-deployment $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/boot-service/root-mount.lvm-nfs-deployment
+	# linking the image deployment parameters menu
+	ln -sf $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/lvm-storage/web/image.lvm-aoe-deployment.php $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/boot-service/image.lvm-aoe-deployment.php
+	ln -sf $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/lvm-storage/web/image.lvm-iscsi-deployment.php $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/boot-service/image.lvm-iscsi-deployment.php
+	ln -sf $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/lvm-storage/web/image.lvm-nfs-deployment.php $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/boot-service/image.lvm-nfs-deployment.php
+
+	# copying iscsid to boot-service dir
+	if [ ! -x $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/boot-service/iscsid ]; then
+		cp -f `which iscsid` $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/boot-service/
+	fi
+	# copying iscsiadm to boot-service dir
+	if [ ! -x $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/boot-service/iscsiadm ]; then
+		cp -f `which iscsiadm` $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/boot-service/
+	fi
+
+	# copying aoe-interfaces to boot-service dir
+	if [ ! -x $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/boot-service/aoe-interfaces ]; then
+		cp -f `which aoe-interfaces` $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/boot-service/
+	fi
+	# copying aoe-discover to boot-service dir
+	if [ ! -x $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/boot-service/aoe-discover ]; then
+		cp -f `which aoe-discover` $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/boot-service/
+	fi
+	# copying aoe-stat to boot-service dir
+	if [ ! -x $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/boot-service/aoe-stat ]; then
+		cp -f `which aoe-stat` $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/boot-service/
+	fi
+	# copying aoe-mkdevs to boot-service dir
+	if [ ! -x $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/boot-service/aoe-mkdevs ]; then
+		cp -f `which aoe-mkdevs` $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/boot-service/
+		# remove the axwwww from the ps cmd in aoe-mkdevs
+		sed -i -e "s/axwwww//g" $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/boot-service/aoe-mkdevs
+	fi
+	# copying aoe-mkshelf to boot-service dir
+	if [ ! -x $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/boot-service/aoe-mkshelf ]; then
+		cp -f `which aoe-mkshelf` $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/boot-service/
+		# remove the axwwww from the ps cmd in aoe-mkshelf
+		sed -i -e "s/axwwww//g" $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/boot-service/aoe-mkshelf
+	fi
+	# create storage dir for stat files
+	mkdir -p $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/lvm-storage/web/storage
+	chmod 777 $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/lvm-storage/web/storage
+	echo "Order deny,allow" > $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/lvm-storage/web/storage/.htaccess
+	echo "Deny from all" >> $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/lvm-storage/web/storage/.htaccess
+
+}
+
+USER=$2
+PASS=$3
+
+case "$1" in
+	start)
+		htvcenter_plugin_lvm-storage_start
+		;;
+	stop)
+		htvcenter_plugin_lvm-storage_stop
+		;;
+	restart)
+		htvcenter_plugin_lvm-storage_stop
+		sleep 1
+		htvcenter_plugin_lvm-storage_start
+		;;
+	init)
+		htvcenter_plugin_lvm-storage_init $USER $PASS
+		;;
+	uninstall)
+		htvcenter_plugin_lvm-storage_uninstall $USER $PASS
+		;;
+	*)
+		echo "Usage: $0 {start|stop|restart|init|uninstall}"
+		exit 1
+
+esac
+exit $?
+
+
+
+

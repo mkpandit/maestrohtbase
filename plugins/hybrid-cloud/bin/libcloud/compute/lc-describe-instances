@@ -1,0 +1,51 @@
+#!/usr/bin/python
+#
+# htvcenter Enterprise developed by htvcenter Enterprise GmbH.
+#
+# All source code and content (c) Copyright 2014, htvcenter Enterprise GmbH unless specifically noted otherwise.
+#
+# This source code is released under the htvcenter Enterprise Server and Client License, unless otherwise agreed with htvcenter Enterprise GmbH.
+# The latest version of this license can be found here: http://htvcenter-enterprise.com/license
+#
+# By using this software, you acknowledge having read this license and agree to be bound thereby.
+#
+#           http://htvcenter-enterprise.com
+#
+# Copyright 2014, htvcenter Enterprise GmbH <info@htvcenter-enterprise.com>
+#
+import sys
+from oqlibcloudcompute import *
+
+def main(argv):
+	cmdline = htvcenter_lc_parse_cmdline(argv)
+	conn = htvcenter_lc_get_connection(cmdline)
+
+	if cmdline['PROVIDER'] == 'AZURE':
+		instances = conn.list_nodes(ex_cloud_service_name=cmdline['SERVICENAME'])
+	else:
+		instances = conn.list_nodes()
+
+	for item in instances:
+		# OPENSTACK
+		if cmdline['PROVIDER'] == 'OPENSTACK':
+			if item.public_ips == []:
+				item.public_ips = item.private_ips;
+			if item.state == 0:
+				print "INSTANCE %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s" % (item.name, item.uuid, item.name, "-", 'running', "-", '-', '-', 'OpenStack', "-", "-", "-", "-", "-", "-",item.public_ips, item.private_ips, "-", "-", "-", "-", "-", "-", "-", "-", "-",)
+
+		# EC2
+		if (cmdline['PROVIDER'] == 'EC2_EU_WEST') or (cmdline['PROVIDER'] == 'EC2_US_EAST'):
+			if item.state == 0:
+				print "INSTANCE %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s" % (item.extra['instanceId'], item.extra['imageId'], item.extra['dns_name'], item.extra['private_dns'], item.extra['status'], item.extra['keyname'], "-", "-", item.extra['instancetype'], item.extra['launchdatetime'], item.extra['availability'], "-", "-", "-", "-", item.public_ips[0], "-", "-", "-", "-", "-", "-", "-", "-", "-", "-",)
+
+		if cmdline['PROVIDER'] == 'AZURE':
+			if item.public_ips == []:
+				item.public_ips = item.private_ips;
+			if item.state == 0:
+				print "INSTANCE %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s" % (item.name, item.uuid, item.name, "-", 'running', "-", '-', '-', 'Azure', "-", cmdline['SERVICENAME'], "-", "-", "-", "-",item.public_ips, item.private_ips, "-", "-", "-", "-", "-", "-", "-", "-", "-",)
+
+
+if __name__ == "__main__":
+	main(sys.argv[1:])
+
+

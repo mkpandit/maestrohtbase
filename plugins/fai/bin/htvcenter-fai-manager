@@ -1,0 +1,266 @@
+#!/bin/bash
+#
+# htvcenter Enterprise developed by htvcenter Enterprise GmbH.
+#
+# All source code and content (c) Copyright 2014, htvcenter Enterprise GmbH unless specifically noted otherwise.
+#
+# This source code is released under the htvcenter Enterprise Server and Client License, unless otherwise agreed with htvcenter Enterprise GmbH.
+# The latest version of this license can be found here: http://htvcenter-enterprise.com/license
+#
+# By using this software, you acknowledge having read this license and agree to be bound thereby.
+#
+#           http://htvcenter-enterprise.com
+#
+# Copyright 2014, htvcenter Enterprise GmbH <info@htvcenter-enterprise.com>
+
+# this script automatically manages fai
+# and runs on the htvcenter serer only
+htvcenter_SERVER_BASE_DIR=$(dirname $0)/../../../..
+htvcenter_SERVER_BASE_DIR=$(pushd $htvcenter_SERVER_BASE_DIR > /dev/null && echo $PWD && popd > /dev/null)
+. $htvcenter_SERVER_BASE_DIR/htvcenter/include/htvcenter-functions
+# unblock starting command queue early for non-blocking + ui commands
+# only blocking commands
+. $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/fai/include/htvcenter-plugin-fai-functions
+. $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/fai/etc/htvcenter-plugin-fai.conf
+. $htvcenter_SERVER_BASE_DIR/htvcenter/etc/htvcenter-server.conf
+. $htvcenter_SERVER_BASE_DIR/htvcenter/include/htvcenter-server-functions
+# get the ip config
+. $htvcenter_SERVER_BASE_DIR/htvcenter/etc/htvcenter-server.conf
+. $htvcenter_SERVER_BASE_DIR/htvcenter/include/htvcenter-server-functions
+htvcenter_server_get_config
+export LANG=C
+export resource_htvcenterserver=$htvcenter_SERVER_IP_ADDRESS
+
+DHCPD_CONF="$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/dhcpd/etc/dhcpd.conf"
+FAI_DHCPD_HOST_TEMPLATE="$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/fai/etc/templates/htvcenter-plugin-fai-host.template"
+DHCPD_HOST_TEMPLATE="$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/dhcpd/etc/templates/htvcenter-plugin-dhcpd-host.template"
+
+
+# functions running on the fai-server
+function fai_usage() {
+	echo "Usage : $0 transfer_to_fai -o <fai-server-ip> -i <resource-ip> -m <resource-mac> -n <resource-name>"
+	echo "        $0 take_over_from_fai -i <resource-ip> -m <resource-mac> -n <resource-name>"
+	echo "        $0 set_fai_client_to_local_boot -m <resource-mac>"
+	echo ""
+	echo "Optional parameters:"
+	echo "             [--htvcenter-ui-user <username>]"
+	echo "             [--htvcenter-internal-cmd <true/false>]"
+	echo "             [--htvcenter-cmd-mode <regular/background/fork>]"
+	exit 1
+}
+
+
+
+FULL_COMMANDLINE="$0 $@"
+FAI_COMMAND=$1
+shift
+
+while [ $# -ne 0 ]; do
+	case "$1" in
+		-i)
+			PARAM_RESOURCE_IP=$2
+			shift
+			;;
+		-m)
+			PARAM_RESOURCE_MAC=$2
+			shift
+			;;
+		-n)
+			PARAM_RESOURCE_NAME=$2
+			shift
+			;;
+		-o)
+			PARAM_FAI_SERVER_IP=$2
+			shift
+			;;
+		*)
+			if [ "$NON_BLOCKING" != "true" ]; then
+				htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			fi
+			echo "ERROR: Free commandline arguments are not allowed"
+			fai_usage
+			exit 6
+			;;
+	esac
+	shift
+done
+
+# checks
+if [ "$FAI_COMMAND" == "" ]; then
+	htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+	fai_usage
+fi
+if [ "$htvcenter_UI_USER" != "" ]; then
+	htvcenter_UI_USER_PARAMETER=" --htvcenter-ui-user $htvcenter_UI_USER"
+fi
+
+
+
+# main
+case "$FAI_COMMAND" in
+
+	transfer_to_fai)
+		if [ "$PARAM_RESOURCE_NAME" == "" ] || [ "$PARAM_RESOURCE_IP" == "" ] || [ "$PARAM_RESOURCE_MAC" == "" ] || [ "$PARAM_FAI_SERVER_IP" == "" ]; then
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			fai_usage
+		fi
+
+		# on purpose we are locking the dhcpd plugin here!
+		LOCK_TIME=`htvcenter_lock_queue aquire dhcpd`
+		trap "htvcenter_lock_queue release dhcpd $LOCK_TIME" EXIT
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+
+		if ! grep $PARAM_RESOURCE_NAME $DHCPD_CONF 1>/dev/null; then
+			htvcenter_post_event 0 "fai" 2 "htvcenter-fai-manager" "Resource $PARAM_RESOURCE_NAME not existing in the dhcpd-server."
+
+			htvcenter_lock_queue release dhcpd $LOCK_TIME
+			trap '' EXIT
+
+			exit 0
+		fi
+		if grep -A 1 $PARAM_RESOURCE_NAME $DHCPD_CONF | grep "# fai" 1>/dev/null; then
+			htvcenter_post_event 0 "fai" 2 "htvcenter-fai-manager" "Resource $PARAM_RESOURCE_NAME already assigned to Fai-server at $PARAM_FAI_SERVER_IP."
+
+			htvcenter_lock_queue release dhcpd $LOCK_TIME
+			trap '' EXIT
+
+			exit 0
+		fi
+
+		htvcenter_post_event 0 "fai" 5 "htvcenter-fai-manager" "Transfering $PARAM_RESOURCE_NAME/$PARAM_RESOURCE_IP/$PARAM_RESOURCE_MAC to Fai-server at $PARAM_FAI_SERVER_IP."
+		cp -f $DHCPD_CONF $DHCPD_CONF.htvcenter-dhcpd-manager
+		# find the resource entry + remove it
+		# first - resource
+		grep -B 10000 -A 4 "^host $PARAM_RESOURCE_NAME {" $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/dhcpd/etc/dhcpd.conf | sed -e :a -e '$d;N;2,5ba' -e 'P;D' > $DHCPD_CONF.first_part
+		# after resource
+		grep -A 10000 "^host $PARAM_RESOURCE_NAME {" $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/dhcpd/etc/dhcpd.conf | sed '1,5d' > $DHCPD_CONF.last_part
+
+		# now add the resource entry again with the new fai config
+		cat $FAI_DHCPD_HOST_TEMPLATE | \
+			sed -e "s/@@@@PARAM_RESOURCE_NAME@@@@/$PARAM_RESOURCE_NAME/g" |	\
+			sed -e "s/@@@@PARAM_RESOURCE_IP@@@@/$PARAM_RESOURCE_IP/g" |	\
+			sed -e "s/@@@@PARAM_RESOURCE_MAC@@@@/$PARAM_RESOURCE_MAC/g" |	\
+			sed -e "s/@@@@PARAM_FAI_SERVER_IP@@@@/$PARAM_FAI_SERVER_IP/g" > $DHCPD_CONF.fai_part
+
+		# create new config
+		cat $DHCPD_CONF.first_part $DHCPD_CONF.fai_part $DHCPD_CONF.last_part > $DHCPD_CONF
+		# restart dhcpd
+		if [ -f "$htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/dhcpd/.running" ]; then
+			$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/dhcpd/etc/init.d/htvcenter-plugin-dhcpd stop
+			if ! $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/dhcpd/etc/init.d/htvcenter-plugin-dhcpd start; then
+				htvcenter_post_event 0 "fai" 2 "htvcenter-fai-manager" "Adding Resource $PARAM_RESOURCE_NAME failed. Reverting dhcpd-configuration."
+				# restore previous version, better not to add it than to corrupt the config
+				cp -f $DHCPD_CONF.htvcenter-dhcpd-manager $DHCPD_CONF
+				$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/dhcpd/etc/init.d/htvcenter-plugin-dhcpd start
+			fi
+		fi
+
+		htvcenter_lock_queue release dhcpd $LOCK_TIME
+		trap '' EXIT
+
+		# wait a bit until the client started the fai auto-installation
+		htvcenter_post_event 0 "fai" 5 "htvcenter-fai-manager" "Waiting to take-over $PARAM_RESOURCE_NAME/$PARAM_RESOURCE_IP/$PARAM_RESOURCE_MAC from Fai-server at $PARAM_FAI_SERVER_IP."
+		sleep $htvcenter_PLUGIN_FAI_INSTALL_START_DELAY
+		# return the client to htvcenter PXE -> local-boot
+		htvcenter_post_event 0 "fai" 5 "htvcenter-fai-manager" "Taking over $PARAM_RESOURCE_NAME/$PARAM_RESOURCE_IP/$PARAM_RESOURCE_MAC from Fai-server at $PARAM_FAI_SERVER_IP."
+		$0 take_over_from_fai -o $PARAM_FAI_SERVER_IP -i $PARAM_RESOURCE_IP -m $PARAM_RESOURCE_MAC -n $PARAM_RESOURCE_NAME $htvcenter_UI_USER_PARAMETER --htvcenter-internal-cmd true
+		# set the clients pxe config to local-boot
+		RESOURCE_PXELINUXCFG_FILE=`echo 01-$PARAM_RESOURCE_MAC | sed -e "s/:/-/g" | tr '[:upper:]' '[:lower:]'`
+		sed -i -e "s/^default.*/default local/g" $htvcenter_SERVER_BASE_DIR/htvcenter/tftpboot/pxelinux.cfg/$RESOURCE_PXELINUXCFG_FILE
+		chmod 777 $htvcenter_SERVER_BASE_DIR/htvcenter/tftpboot/pxelinux.cfg/$RESOURCE_PXELINUXCFG_FILE
+		;;
+
+
+
+	take_over_from_fai)
+		if [ "$PARAM_RESOURCE_NAME" == "" ] || [ "$PARAM_RESOURCE_IP" == "" ] || [ "$PARAM_RESOURCE_MAC" == "" ]; then
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			fai_usage
+		fi
+
+		# on purpose we are locking the dhcpd plugin here!
+		LOCK_TIME=`htvcenter_lock_queue aquire dhcpd`
+		trap "htvcenter_lock_queue release dhcpd $LOCK_TIME" EXIT
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+
+		echo "NOTICE: Taking over resource $PARAM_RESOURCE_NAME/$PARAM_RESOURCE_IP/$PARAM_RESOURCE_MAC from Fai-server."
+		if ! grep $PARAM_RESOURCE_NAME $DHCPD_CONF 1>/dev/null; then
+			htvcenter_post_event 0 "fai" 2 "htvcenter-fai-manager" "Resource $PARAM_RESOURCE_NAME not existing in the dhcpd-server."
+
+			htvcenter_lock_queue release dhcpd $LOCK_TIME
+			trap '' EXIT
+
+			exit 0
+		fi
+		if ! grep -A 1 $PARAM_RESOURCE_NAME $DHCPD_CONF | grep "# fai" 1>/dev/null; then
+			htvcenter_post_event 0 "fai" 2 "htvcenter-fai-manager" "Resource  $PARAM_RESOURCE_NAME is not assigned to Fai-server."
+
+			htvcenter_lock_queue release dhcpd $LOCK_TIME
+			trap '' EXIT
+
+			exit 0
+		fi
+		htvcenter_post_event 0 "fai" 5 "htvcenter-fai-manager" "Taking over $PARAM_RESOURCE_NAME/$PARAM_RESOURCE_IP/$PARAM_RESOURCE_MAC"
+		cp -f $DHCPD_CONF $DHCPD_CONF.htvcenter-dhcpd-manager
+		# find the resource entry + remove it
+		# first - resource
+		grep -B 10000 -A 4 "^host $PARAM_RESOURCE_NAME {" $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/dhcpd/etc/dhcpd.conf | sed -e :a -e '$d;N;2,5ba' -e 'P;D' > $DHCPD_CONF.first_part
+		# after resource
+		grep -A 10000 "^host $PARAM_RESOURCE_NAME {" $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/dhcpd/etc/dhcpd.conf | sed '1,7d' > $DHCPD_CONF.last_part
+		cat $DHCPD_HOST_TEMPLATE | \
+			sed -e "s/DHCPD_RESOURCE_HOSTNAME/$PARAM_RESOURCE_NAME/g" |	\
+			sed -e "s/DHCPD_RESOURCE_MAC/$PARAM_RESOURCE_MAC/g" |	\
+			sed -e "s/DHCPD_RESOURCE_IP/$PARAM_RESOURCE_IP/g" > $DHCPD_CONF.host_part
+		# create new config
+		cat $DHCPD_CONF.first_part $DHCPD_CONF.host_part $DHCPD_CONF.last_part > $DHCPD_CONF
+		# restart dhcpd
+		if [ -f "$htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/dhcpd/.running" ]; then
+			$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/dhcpd/etc/init.d/htvcenter-plugin-dhcpd stop
+			if ! $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/dhcpd/etc/init.d/htvcenter-plugin-dhcpd start; then
+				htvcenter_post_event 0 "fai" 2 "htvcenter-fai-manager" "Adding Resource $PARAM_RESOURCE_NAME failed. Reverting dhcpd-configuration."
+				# restore previous version, better not to add it than to corrupt the config
+				cp -f $DHCPD_CONF $DHCPD_CONF.failed
+				cp -f $DHCPD_CONF.htvcenter-dhcpd-manager $DHCPD_CONF
+				$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/dhcpd/etc/init.d/htvcenter-plugin-dhcpd start
+			fi
+		fi
+
+		htvcenter_lock_queue release dhcpd $LOCK_TIME
+		trap '' EXIT
+
+		# set the clients pxe config to net-boot, this is for appliance stop
+		RESOURCE_PXELINUXCFG_FILE=`echo 01-$PARAM_RESOURCE_MAC | sed -e "s/:/-/g" | tr '[:upper:]' '[:lower:]'`
+		sed -i -e "s/^default.*/default linux/g" $htvcenter_SERVER_BASE_DIR/htvcenter/tftpboot/pxelinux.cfg/$RESOURCE_PXELINUXCFG_FILE
+		chmod 777 $htvcenter_SERVER_BASE_DIR/htvcenter/tftpboot/pxelinux.cfg/$RESOURCE_PXELINUXCFG_FILE
+		;;
+
+
+	set_fai_client_to_local_boot)
+		if [ "$PARAM_RESOURCE_MAC" == "" ]; then
+			fai_usage
+		fi
+		echo "NOTICE: Setting resource $PARAM_RESOURCE_MAC to local-boot."
+
+		LOCK_TIME=`htvcenter_lock_queue aquire dhcpd`
+		trap "htvcenter_lock_queue release dhcpd $LOCK_TIME" EXIT
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+
+		# set the clients pxe config to local-boot, this is for appliance start
+		RESOURCE_PXELINUXCFG_FILE=`echo 01-$PARAM_RESOURCE_MAC | sed -e "s/:/-/g" | tr '[:upper:]' '[:lower:]'`
+		sed -i -e "s/^default.*/default local/g" $htvcenter_SERVER_BASE_DIR/htvcenter/tftpboot/pxelinux.cfg/$RESOURCE_PXELINUXCFG_FILE
+		chmod 777 $htvcenter_SERVER_BASE_DIR/htvcenter/tftpboot/pxelinux.cfg/$RESOURCE_PXELINUXCFG_FILE
+
+		htvcenter_lock_queue release dhcpd $LOCK_TIME
+		trap '' EXIT
+		;;
+
+
+
+	*)
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+		fai_usage
+		;;
+
+
+esac
+

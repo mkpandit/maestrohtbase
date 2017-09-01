@@ -1,0 +1,130 @@
+#!/bin/bash
+# init script for the htvcenter highavailability plugin
+#
+# htvcenter Enterprise developed by htvcenter Enterprise GmbH.
+#
+# All source code and content (c) Copyright 2014, htvcenter Enterprise GmbH unless specifically noted otherwise.
+#
+# This source code is released under the htvcenter Enterprise Server and Client License, unless otherwise agreed with htvcenter Enterprise GmbH.
+# The latest version of this license can be found here: http://htvcenter-enterprise.com/license
+#
+# By using this software, you acknowledge having read this license and agree to be bound thereby.
+#
+#           http://htvcenter-enterprise.com
+#
+# Copyright 2014, htvcenter Enterprise GmbH <info@htvcenter-enterprise.com>
+#
+htvcenter_SERVER_BASE_DIR=$(pushd $(dirname $0)/../../../../.. > /dev/null; echo $PWD; popd > /dev/null)
+. $htvcenter_SERVER_BASE_DIR/htvcenter/etc/htvcenter-server.conf
+. $htvcenter_SERVER_BASE_DIR/htvcenter/include/htvcenter-functions
+. $htvcenter_SERVER_BASE_DIR/htvcenter/include/htvcenter-server-functions
+. $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/highavailability/include/htvcenter-plugin-highavailability-functions
+. $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/highavailability/etc/htvcenter-plugin-highavailability.conf
+htvcenter_server_get_config
+export resource_htvcenterserver=$htvcenter_SERVER_IP_ADDRESS
+export LANG=C
+# define wget to use with https
+if [ "$htvcenter_WEB_PROTOCOL" == "https" ]; then
+	WGET_NO_CERT_CHECK="--no-check-certificate"
+fi
+
+function htvcenter_plugin_highavailability_start() {
+	echo "Starting the htvcenter highavailability-plugin"
+	htvcenter_plugin_highavailability_stop 1>/dev/null 2>&1
+	touch $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/highavailability/.running
+}
+
+
+function htvcenter_plugin_highavailability_stop() {
+	echo "Stopping the htvcenter highavailability-plugin"
+	rm -f $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/highavailability/.running
+	return 0
+}
+
+
+function htvcenter_plugin_highavailability_init() {
+	local USERNAME=$1
+	local PASSWORD=$2
+	if [ "$USERNAME" == "" ] && [ "$PASSWORD" == "" ]; then
+		echo -n "ansible: Please give a username to uninstall the plugin : "
+		read USERNAME
+		echo
+		echo -n "ansible: Please give the password for user $USERNAME : "
+		read PASSWORD
+		echo
+	fi
+
+	echo "Initializing the htvcenter highavailability-plugin"
+	# linking the web dir
+	ln -sf $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/highavailability/web $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/highavailability
+	# create lockdir
+	mkdir -p $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/highavailability/lock/
+	chmod 777 $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/highavailability/lock/
+
+	# trigger init action to eventually add cloud products
+	if [ -e $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/cloud ]; then
+		if ! wget -q $WGET_NO_CERT_CHECK -O /dev/null --http-user=$USERNAME --http-password=$PASSWORD "$htvcenter_WEB_PROTOCOL://$resource_htvcenterserver/htvcenter/base/plugins/highavailability/highavailability-action.php?highavailability_command=init"; then
+			htvcenter_post_event 0 "htvcenter_plugin_highavailability_start" 3 "htvcenter-plugin-highavailability" "Could not trigger database hook. Please manually add Highavailability Cloud products!"
+		fi
+	fi
+	return 0
+}
+
+
+function htvcenter_plugin_highavailability_uninstall() {
+	local USERNAME=$1
+	local PASSWORD=$2
+	if [ "$USERNAME" == "" ] && [ "$PASSWORD" == "" ]; then
+		echo -n "ansible: Please give a username to uninstall the plugin : "
+		read USERNAME
+		echo
+		echo -n "ansible: Please give the password for user $USERNAME : "
+		read PASSWORD
+		echo
+	fi
+
+	echo "Uninstalling the htvcenter highavailability-plugin"
+	htvcenter_plugin_highavailability_stop
+
+	# trigger init action to eventually remove cloud products
+	if [ -e $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/cloud ]; then
+		if ! wget -q $WGET_NO_CERT_CHECK -O /dev/null --http-user=$USERNAME --http-password=$PASSWORD "$htvcenter_WEB_PROTOCOL://$resource_htvcenterserver/htvcenter/base/plugins/highavailability/highavailability-action.php?highavailability_command=uninstall"; then
+			htvcenter_post_event 0 "htvcenter_plugin_highavailability_start" 3 "htvcenter-plugin-highavailability" "Could not trigger database hook. Please manually remove any Highavailability Cloud products!"
+		fi
+	fi
+
+	# unlinking the web dir
+	rm -rf $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/highavailability/lock
+	rm -f $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/highavailability
+	return 0
+}
+
+
+USER=$2
+PASS=$3
+case "$1" in
+	start)
+		htvcenter_plugin_highavailability_start
+		;;
+	stop)
+		htvcenter_plugin_highavailability_stop
+		;;
+	restart)
+		htvcenter_plugin_highavailability_stop
+		sleep 1
+		htvcenter_plugin_highavailability_start
+		;;
+	init)
+		htvcenter_plugin_highavailability_init $USER $PASS
+		;;
+	uninstall)
+		htvcenter_plugin_highavailability_uninstall $USER $PASS
+		;;
+	*)
+		echo "Usage: $0 {start|stop|restart|init|uninstall}"
+		exit 1
+
+esac
+exit $?
+
+

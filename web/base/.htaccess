@@ -1,0 +1,4 @@
+AuthType Basic
+AuthName "htvcenter-Server Login"
+AuthUserFile /var/www/htvcenter/base/.htpasswd
+require valid-user

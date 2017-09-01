@@ -1,0 +1,113 @@
+#!/bin/bash
+# this is the boot-service init script for the NFS-Storage-hosts
+#
+# htvcenter Enterprise developed by htvcenter Enterprise GmbH.
+#
+# All source code and content (c) Copyright 2014, htvcenter Enterprise GmbH unless specifically noted otherwise.
+#
+# This source code is released under the htvcenter Enterprise Server and Client License, unless otherwise agreed with htvcenter Enterprise GmbH.
+# The latest version of this license can be found here: http://htvcenter-enterprise.com/license
+#
+# By using this software, you acknowledge having read this license and agree to be bound thereby.
+#
+#           http://htvcenter-enterprise.com
+#
+# Copyright 2014, htvcenter Enterprise GmbH <info@htvcenter-enterprise.com>
+#
+
+htvcenter_SERVER_BASE_DIR=$(pushd $(dirname $0)/../../../../.. > /dev/null; echo $PWD; popd > /dev/null)
+. $htvcenter_SERVER_BASE_DIR/htvcenter/include/htvcenter-functions
+. $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/nfs-storage/include/htvcenter-plugin-nfs-storage-functions
+. $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/nfs-storage/etc/htvcenter-plugin-nfs-storage.conf
+
+# do not start on the intitrd
+if [ -f /etc/initrd-devices.conf ]; then
+	exit 0
+fi
+
+function nfs_storage_start() {
+	echo "Starting the htvcenter nfs-storage-plugin"
+	if [ "$NFS_STORAGE_AUTO_START" == "yes" ]; then
+		if [ -x "/etc/init.d/nfs-kernel-server" ]; then
+			if [ -x "`which invoke-rc.d 2>/dev/null`" ]; then
+				invoke-rc.d nfs-kernel-server start
+			else
+				/etc/init.d/nfs-kernel-server start
+			fi
+		fi
+		if [ -x "/etc/init.d/nfs" ]; then
+			if [ -x "`which invoke-rc.d 2>/dev/null`" ]; then
+				invoke-rc.d nfs start
+			else
+				/etc/init.d/nfs start
+			fi
+		fi
+		if [ -x "/etc/init.d/nfslock" ]; then
+			if [ -x "`which invoke-rc.d 2>/dev/null`" ]; then
+				invoke-rc.d nfslock start
+			else
+				/etc/init.d/nfslock start
+			fi
+		fi
+		# for Suse
+		if [ -x /etc/init.d/nfsserver ]; then
+			/etc/init.d/nfsserver start
+		fi
+	fi
+}
+
+
+function nfs_storage_stop() {
+	echo "Stopping the htvcenter nfs-storage-plugin"
+	if [ "$NFS_STORAGE_AUTO_START" == "yes" ]; then
+		if [ -x "/etc/init.d/nfs-kernel-server" ]; then
+			if [ -x "`which invoke-rc.d 2>/dev/null`" ]; then
+				invoke-rc.d nfs-kernel-server stop
+			else
+				/etc/init.d/nfs-kernel-server stop
+			fi
+		fi
+		if [ -x "/etc/init.d/nfs" ]; then
+			if [ -x "`which invoke-rc.d 2>/dev/null`" ]; then
+				invoke-rc.d nfs stop
+			else
+				/etc/init.d/nfs stop
+			fi
+		fi
+		if [ -x "/etc/init.d/nfslock" ]; then
+			if [ -x "`which invoke-rc.d 2>/dev/null`" ]; then
+				invoke-rc.d nfslock stop
+			else
+				/etc/init.d/nfslock stop
+			fi
+		fi
+		# for Suse
+		if [ -x /etc/init.d/nfsserver ]; then
+			/etc/init.d/nfsserver stop
+		fi
+	fi
+}
+
+
+
+
+
+case "$1" in
+	start)
+		nfs_storage_start
+		;;
+	stop)
+		nfs_storage_stop
+		;;
+	restart)
+		nfs_storage_stop
+		sleep 1
+		nfs_storage_start
+		;;
+	*)
+		echo "Usage: $0 {start|stop|restart}"
+		exit 1
+
+esac
+exit $?
+

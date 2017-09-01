@@ -1,0 +1,342 @@
+#!/bin/bash
+#
+# htvcenter Enterprise developed by htvcenter Enterprise GmbH.
+#
+# All source code and content (c) Copyright 2014, htvcenter Enterprise GmbH unless specifically noted otherwise.
+#
+# This source code is released under the htvcenter Enterprise Server and Client License, unless otherwise agreed with htvcenter Enterprise GmbH.
+# The latest version of this license can be found here: http://htvcenter-enterprise.com/license
+#
+# By using this software, you acknowledge having read this license and agree to be bound thereby.
+#
+#           http://htvcenter-enterprise.com
+#
+# Copyright 2014, htvcenter Enterprise GmbH <info@htvcenter-enterprise.com>
+
+# this script automatically manages opsi
+htvcenter_SERVER_BASE_DIR=$(dirname $0)/../../../..
+htvcenter_SERVER_BASE_DIR=$(pushd $htvcenter_SERVER_BASE_DIR > /dev/null && echo $PWD && popd > /dev/null)
+. $htvcenter_SERVER_BASE_DIR/htvcenter/include/htvcenter-functions
+# unblock starting command queue early for non-blocking + ui commands
+OPSI_COMMAND=$1
+if [ "$OPSI_COMMAND" == "post_netboot_products" ]; then
+	htvcenter_unblock_starting_queue $@
+	NON_BLOCKING=true
+fi
+
+. $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/opsi/include/htvcenter-plugin-opsi-functions
+htvcenter_POSTENCODE="$htvcenter_SERVER_BASE_DIR/htvcenter/sbin/htvcenter-postencode"
+if [ -f $htvcenter_RESOURCE_PARAMETER_FILE ]; then
+	. $htvcenter_RESOURCE_PARAMETER_FILE
+	htvcenter_SERVER_IP=$resource_htvcenterserver
+else
+	if [ "$NON_BLOCKING" != "true" ]; then
+		htvcenter_unblock_starting_queue $@
+	fi
+	echo "ERROR: This script runs on an integrated Opsi-Server only!"
+	exit 6
+fi
+# location on the opsi server to store the install-info file
+# used by the htvcenter client auto-installation
+htvcenter_CLIENT_OPSI_INSTALL_DIR="/opt/pcbin/install/htvcenter-client"
+
+
+# let only root run this script
+WHOAMI=`whoami`
+if [ "$WHOAMI" != "root" ]; then
+	echo "ERROR: Please run this script as root!"
+	exit 6
+fi
+# this script runs on the integrated opsi-server only
+if [ -f "$htvcenter_SERVER_BASE_DIR/htvcenter/etc/htvcenter-server.conf" ]; then
+	if [ "$NON_BLOCKING" != "true" ]; then
+		htvcenter_unblock_starting_queue $@
+	fi
+	echo "ERROR: This script runs on an integrated Opsi-Server only!"
+	exit 6
+fi
+# run only on opsi-servers
+if ! which opsi-admin &>/dev/null; then
+	if [ "$NON_BLOCKING" != "true" ]; then
+		htvcenter_unblock_starting_queue $@
+	fi
+	exit 0
+else
+	OPSI_ADMIN=`which opsi-admin`
+fi
+# define wget to use with https
+if [ "$htvcenter_web_protocol" == "https" ]; then
+	WGET_NO_CERT_CHECK="--no-check-certificate"
+fi
+
+# functions running on the opsi-server
+function opsi_usage() {
+	echo "Usage : $0 add_opsi_client -i <resource-ip> -m <resource-mac> -d <resource-domain> -n <opsi-resource-name>"
+	echo "        $0 remove_opsi_client -n <opsi-resource-name> -d <resource-domain>"
+	echo "        $0 add_opsi_product_to_client -n <opsi-resource-name> -d <resource-domain> -o <opsi-product-list, comma-separated>"
+	echo "        $0 add_opsi_product_key -n <opsi-resource-name> -d <resource-domain> -o <opsi-product> -k <opsi-product-key>"
+	echo "        $0 add_client_install_info -n <opsi-resource-name> -d <resource-domain> -x <resource-id>"
+	echo "        $0 post_netboot_products -u <htvcenter-user-name> -p <htvcenter-password>"
+	echo ""
+	echo "Optional parameters:"
+	echo "             [--htvcenter-ui-user <username>]"
+	echo "             [--htvcenter-internal-cmd <true/false>]"
+	echo "             [--htvcenter-cmd-mode <regular/background/fork>]"
+	exit 1
+}
+
+
+FULL_COMMANDLINE="$0 $@"
+OPSI_COMMAND=$1
+shift
+
+while [ $# -ne 0 ]; do
+	case "$1" in
+		-i)
+			PARAM_RESOURCE_IP=$2
+			shift
+			;;
+		-x)
+			PARAM_RESOURCE_ID=$2
+			shift
+			;;
+		-m)
+			PARAM_RESOURCE_MAC=$2
+			shift
+			;;
+		-n)
+			PARAM_RESOURCE_NAME=$2
+			shift
+			;;
+		-d)
+			PARAM_RESOURCE_DOMAIN=$2
+			shift
+			;;
+		-o)
+			PARAM_OPSI_PRODUCTS=$2
+			shift
+			;;
+		-k)
+			PARAM_OPSI_PRODUCT_KEY=$2
+			shift
+			;;
+		-u)
+			PARAM_htvcenter_USER=$2
+			shift
+			;;
+		-p)
+			PARAM_htvcenter_PASS=$2
+			shift
+			;;
+		--htvcenter-ui-user)
+			htvcenter_UI_USER=$2
+			shift
+			;;
+		--htvcenter-internal-cmd)
+			htvcenter_INTERNAL_CMD=$2
+			shift
+			;;
+		--htvcenter-cmd-mode)
+			htvcenter_CMD_MODE=$2
+			shift
+			;;
+		*)
+			if [ "$NON_BLOCKING" != "true" ]; then
+				htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			fi
+			echo "ERROR: Free commandline arguments are not allowed"
+			opsi_usage
+			exit 6
+			;;
+	esac
+	shift
+done
+
+# checks
+if [ "$OPSI_COMMAND" == "" ]; then
+	htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+	opsi_usage
+fi
+if [ "$htvcenter_UI_USER" != "" ]; then
+	htvcenter_UI_USER_PARAMETER=" --htvcenter-ui-user $htvcenter_UI_USER"
+fi
+
+# main
+case "$OPSI_COMMAND" in
+
+	add_opsi_client)
+		if [ "$PARAM_RESOURCE_NAME" == "" ] || [ "$PARAM_RESOURCE_DOMAIN" == "" ] || [ "$PARAM_RESOURCE_IP" == "" ] || [ "$PARAM_RESOURCE_MAC" == "" ]; then
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			opsi_usage
+		fi
+
+		LOCK_TIME=`htvcenter_lock_queue aquire opsi`
+		trap "htvcenter_lock_queue release opsi $LOCK_TIME" EXIT
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+
+#		htvcenter_post_event 0 "opsi" 5 "htvcenter-opsi" "Adding Opsi-Client $PARAM_RESOURCE_NAME/$PARAM_RESOURCE_IP/$PARAM_RESOURCE_MAC."
+		echo "NOTICE: Adding Opsi-Client $PARAM_RESOURCE_NAME/$PARAM_RESOURCE_IP/$PARAM_RESOURCE_MAC."
+		if ! $OPSI_ADMIN -d method createClient $PARAM_RESOURCE_NAME $PARAM_RESOURCE_DOMAIN "$PARAM_RESOURCE_DESCRIPTION" "" $PARAM_RESOURCE_IP $PARAM_RESOURCE_MAC; then
+			htvcenter_post_event 0 "opsi" 2 "htvcenter-opsi" "Could not add $PARAM_RESOURCE_NAME/$PARAM_RESOURCE_IP/$PARAM_RESOURCE_MAC to Opsi-server $resource_id/$resource_ip."
+
+			htvcenter_lock_queue release opsi $LOCK_TIME
+			trap '' EXIT
+
+			exit 1
+		fi
+		htvcenter_lock_queue release opsi $LOCK_TIME
+		trap '' EXIT
+		;;
+
+	remove_opsi_client)
+		if [ "$PARAM_RESOURCE_NAME" == "" ] || [ "$PARAM_RESOURCE_DOMAIN" == "" ]; then
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			opsi_usage
+		fi
+
+		LOCK_TIME=`htvcenter_lock_queue aquire opsi`
+		trap "htvcenter_lock_queue release opsi $LOCK_TIME" EXIT
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+
+#		htvcenter_post_event 0 "opsi" 5 "htvcenter-opsi" "Adding Opsi-Client $PARAM_RESOURCE_NAME/$PARAM_RESOURCE_IP/$PARAM_RESOURCE_MAC."
+		echo "NOTICE: Removing Opsi-Client $PARAM_RESOURCE_NAME/$PARAM_RESOURCE_IP/$PARAM_RESOURCE_MAC."
+		if ! $OPSI_ADMIN -d method deleteClient $PARAM_RESOURCE_NAME.$PARAM_RESOURCE_DOMAIN; then
+			htvcenter_post_event 0 "opsi" 2 "htvcenter-opsi" "Could not remove $PARAM_RESOURCE_NAME/$PARAM_RESOURCE_IP/$PARAM_RESOURCE_MAC from Opsi-server $resource_id/$resource_ip."
+
+			htvcenter_lock_queue release opsi $LOCK_TIME
+			trap '' EXIT
+
+			exit 1
+		fi
+		htvcenter_lock_queue release opsi $LOCK_TIME
+		trap '' EXIT
+		;;
+
+	add_opsi_product_to_client)
+		if [ "$PARAM_RESOURCE_NAME" == "" ] || [ "$PARAM_RESOURCE_DOMAIN" == "" ] || [ "$PARAM_OPSI_PRODUCTS" == "" ]; then
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			opsi_usage
+		fi
+
+		LOCK_TIME=`htvcenter_lock_queue aquire opsi`
+		trap "htvcenter_lock_queue release opsi $LOCK_TIME" EXIT
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+
+#		htvcenter_post_event 0 "opsi" 5 "htvcenter-opsi" "Adding Products to Opsi-Client $PARAM_RESOURCE_NAME/$PARAM_RESOURCE_IP/$PARAM_RESOURCE_MAC."
+		for OPSI_PRODUCT in `echo $PARAM_OPSI_PRODUCTS | sed -e "s/,//g"`; do
+			echo "NOTICE: Adding Opsi-product $OPSI_PRODUCT to Opsi-client $PARAM_RESOURCE_NAME"
+			if ! $OPSI_ADMIN -d method setProductActionRequest $OPSI_PRODUCT $PARAM_RESOURCE_NAME.$PARAM_RESOURCE_DOMAIN setup; then
+				htvcenter_post_event 0 "opsi" 2 "htvcenter-opsi" "Could not add Opsi-product $OPSI_PRODUCT to $PARAM_RESOURCE_NAME on Opsi-server $resource_id/$resource_ip."
+
+				htvcenter_lock_queue release opsi $LOCK_TIME
+				trap '' EXIT
+
+				exit 1
+			fi
+		done
+		htvcenter_lock_queue release opsi $LOCK_TIME
+		trap '' EXIT
+		;;
+
+
+	add_opsi_product_key)
+		if [ "$PARAM_RESOURCE_NAME" == "" ] || [ "$PARAM_RESOURCE_DOMAIN" == "" ] || [ "$PARAM_OPSI_PRODUCTS" == "" ] || [ "$PARAM_OPSI_PRODUCT_KEY" == "" ]; then
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			opsi_usage
+		fi
+
+		LOCK_TIME=`htvcenter_lock_queue aquire opsi`
+		trap "htvcenter_lock_queue release opsi $LOCK_TIME" EXIT
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+
+#		htvcenter_post_event 0 "opsi" 5 "htvcenter-opsi" "Adding Product key to Opsi-Client $PARAM_RESOURCE_NAME/$PARAM_RESOURCE_IP/$PARAM_RESOURCE_MAC."
+		if ! $OPSI_ADMIN -d method setProductProperty "$PARAM_OPSI_PRODUCTS" "askbeforeinst" "False" "$PARAM_RESOURCE_NAME.$PARAM_RESOURCE_DOMAIN"; then
+			htvcenter_post_event 0 "opsi" 2 "htvcenter-opsi" "Could not add Opsi-product key to $PARAM_OPSI_PRODUCTS on Opsi-server $resource_id/$resource_ip."
+
+			htvcenter_lock_queue release opsi $LOCK_TIME
+			trap '' EXIT
+
+			exit 1
+		fi
+		# setting aksbeforeinst to False
+		if ! $OPSI_ADMIN -d method setProductProperty "$PARAM_OPSI_PRODUCTS" "productkey" "$PARAM_OPSI_PRODUCT_KEY" "$PARAM_RESOURCE_NAME.$PARAM_RESOURCE_DOMAIN"; then
+			htvcenter_post_event 0 "opsi" 2 "htvcenter-opsi" "Could not set askbeforeinstall to False on Opsi-server $resource_id/$resource_ip."
+
+			htvcenter_lock_queue release opsi $LOCK_TIME
+			trap '' EXIT
+
+			exit 1
+		fi
+
+		htvcenter_lock_queue release opsi $LOCK_TIME
+		trap '' EXIT
+		;;
+
+
+
+	post_netboot_products)
+		if [ "$PARAM_RESOURCE_DOMAIN" == "" ] || [ "$PARAM_htvcenter_USER" == "" ] || [ "$PARAM_htvcenter_PASS" == "" ]; then
+			opsi_usage
+		fi
+		OPSI_SERVER_HOSTNAME=`hostname`
+		#echo "Posting current $LOCAL_IMAGE_TYPE logical volume identifier to the htvcenter-server"
+		OPSI_STATUS_TMP=$resource_id.opsi-netboot-products.list
+		> $OPSI_STATUS_TMP
+		for NETBOOT_PRODUCT in `opsi-admin -d method getProvidedNetBootProductIds_list $OPSI_SERVER_HOSTNAME.$PARAM_RESOURCE_DOMAIN`; do
+				if [ "$NETBOOT_PRODUCT" == "[" ] || [ "$NETBOOT_PRODUCT" == "]" ]; then
+						continue
+				fi
+				if ! echo $NETBOOT_PRODUCT | grep -i win &>/dev/null; then
+						continue
+				fi
+				NETBOOT_PRODUCT=`echo $NETBOOT_PRODUCT | sed -e "s/,//g" | sed -e "s/\"//g"`
+				echo "$NETBOOT_PRODUCT,$NETBOOT_PRODUCT" >> $OPSI_STATUS_TMP
+		done
+		if ! wget -q $WGET_NO_CERT_CHECK -O /dev/null --http-user=$PARAM_htvcenter_USER --http-password=$PARAM_htvcenter_PASS  --post-file=`$htvcenter_POSTENCODE $OPSI_STATUS_TMP` $htvcenter_web_protocol://$htvcenter_SERVER_IP/htvcenter/base/plugins/opsi/opsi-action.php?opsi_command=get_netboot_products; then
+			htvcenter_post_event 0 "post_netboot_products" 3 "htvcenter-opsi" "Could not post list of templates to the htvcenter-server at $htvcenter_SERVER_IP!"
+		fi
+		rm -f $OPSI_STATUS_TMP
+		rm -f $OPSI_STATUS_TMP.post
+		;;
+
+
+
+
+	add_client_install_info)
+		if [ "$PARAM_RESOURCE_NAME" == "" ] || [ "$PARAM_RESOURCE_DOMAIN" == "" ] || [ "$PARAM_RESOURCE_ID" == "" ]; then
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			opsi_usage
+		fi
+		if [ ! -d "$htvcenter_CLIENT_OPSI_INSTALL_DIR" ]; then
+			htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+			htvcenter_post_event 0 "post_netboot_products" 3 "htvcenter-opsi" "Opsi directory $htvcenter_CLIENT_OPSI_INSTALL_DIR does not exists!"
+			exit 1
+		fi
+
+		LOCK_TIME=`htvcenter_lock_queue aquire opsi`
+		trap "htvcenter_lock_queue release opsi $LOCK_TIME" EXIT
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+
+		echo "htvcenter_SERVER=$htvcenter_SERVER_IP" > $htvcenter_CLIENT_OPSI_INSTALL_DIR/$PARAM_RESOURCE_NAME.htvcenter-client.conf
+		echo "RESOURCE_ID=$PARAM_RESOURCE_ID" >> $htvcenter_CLIENT_OPSI_INSTALL_DIR/$PARAM_RESOURCE_NAME.htvcenter-client.conf
+		# starte opsi-monitord to send transition to htvcenter while the system is installing
+		if [ -x /usr/bin/screen.real ]; then
+			RUNSCREEN="/usr/bin/screen.real"
+		else
+			RUNSCREEN=`which screen`
+		fi
+		$RUNSCREEN -dmS $PARAM_RESOURCE_NAME $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/opsi/sbin/htvcenter-opsi-monitord $PARAM_RESOURCE_ID $PARAM_RESOURCE_NAME $PARAM_RESOURCE_DOMAIN
+
+		htvcenter_lock_queue release opsi $LOCK_TIME
+		trap '' EXIT
+		;;
+
+
+	*)
+		htvcenter_unblock_starting_queue $FULL_COMMANDLINE
+		opsi_usage
+		;;
+
+
+esac
+

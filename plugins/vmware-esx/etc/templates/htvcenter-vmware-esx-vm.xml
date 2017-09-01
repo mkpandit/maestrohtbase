@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<Virtual-Machines>
+         <Virtual-Machine>
+            <Name>@@htvcenter_VMWARE_ESX_VM_NAME@@</Name>
+           	<Host>@@htvcenter_VMWARE_ESX_HOST@@</Host>
+	        <Datacenter>@@htvcenter_VMWARE_ESX_DATACENTER_NAME@@</Datacenter>
+           	<Guest-Id>@@htvcenter_VMWARE_ESX_GUEST_ID@@</Guest-Id>
+           	<Datastore>@@htvcenter_VMWARE_ESX_DATASTORE@@</Datastore>
+           	<Disksize>@@htvcenter_VMWARE_ESX_VM_DISK_SIZE@@</Disksize>
+           	<Memory>@@htvcenter_VMWARE_ESX_VM_MEMORY_SIZE@@</Memory>
+           	<Number-of-Processor>@@htvcenter_VMWARE_ESX_VM_CPUS@@</Number-of-Processor>
+           	<Nic-Network>@@htvcenter_VMWARE_ESX_INTERNAL_BRIDGE@@</Nic-Network>
+           	<Nic-Poweron>0</Nic-Poweron>
+         </Virtual-Machine>
+</Virtual-Machines>

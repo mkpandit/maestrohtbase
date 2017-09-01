@@ -1,0 +1,28 @@
+htvcenter-server.conf setup for postgres database :
+
+htvcenter_DATABASE_TYPE="postgres"                  # supported are : mysql, oracle, db2, ...
+htvcenter_DATABASE_SERVER="localhost"               # ip-address of the database server
+htvcenter_DATABASE_NAME="htvcenter"                   # database name
+htvcenter_DATABASE_USER="htvcenter"                   # database user
+htvcenter_DATABASE_PASSWORD="test"                  # database password
+
+
+Hints for compiling php + postgress support :
+
+Use the standart php with postgres support
+start postgres and create db by :
+
+su - postgres
+-bash-2.05b$ dropdb htvcenter
+DROP DATABASE
+-bash-2.05b$ createdb htvcenter
+CREATE DATABASE
+-bash-2.05b$ dropuser htvcenter
+DROP USER
+-bash-2.05b$ createuser -a -D -P htvcenter
+Enter password for user "htvcenter":
+Enter it again:
+CREATE USER
+-bash-2.05b$
+
+

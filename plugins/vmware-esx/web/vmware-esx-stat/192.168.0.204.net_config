@@ -1,0 +1,5 @@
+vs@vSwitch0@2352@6@2352@1500@vmnic0
+pg@vSwitch0@VM Network@0@0@vmnic0
+pg@vSwitch0@Management Network@0@1@vmnic0
+pn@vmnic0
+pn@vmnic1

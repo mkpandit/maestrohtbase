@@ -1,0 +1,1567 @@
+Azure Sucks!
+{
+  "py/object": "azure.mgmt.compute.compute_management_client.ComputeManagementClient", 
+  "virtual_machine_extensions": {
+    "py/object": "azure.mgmt.compute.operations.virtual_machine_extensions_operations.VirtualMachineExtensionsOperations", 
+    "_deserialize": {
+      "py/id": 23
+    }, 
+    "_client": {
+      "py/id": 1
+    }, 
+    "_serialize": {
+      "py/id": 24
+    }, 
+    "config": {
+      "py/id": 6
+    }, 
+    "api_version": "2016-03-30"
+  }, 
+  "virtual_machine_sizes": {
+    "py/object": "azure.mgmt.compute.operations.virtual_machine_sizes_operations.VirtualMachineSizesOperations", 
+    "_deserialize": {
+      "py/id": 23
+    }, 
+    "_client": {
+      "py/id": 1
+    }, 
+    "_serialize": {
+      "py/id": 24
+    }, 
+    "config": {
+      "py/id": 6
+    }, 
+    "api_version": "2016-03-30"
+  }, 
+  "container_service": {
+    "py/object": "azure.mgmt.compute.operations.container_service_operations.ContainerServiceOperations", 
+    "_deserialize": {
+      "py/id": 23
+    }, 
+    "_client": {
+      "py/id": 1
+    }, 
+    "_serialize": {
+      "py/id": 24
+    }, 
+    "config": {
+      "py/id": 6
+    }, 
+    "api_version": "2016-03-30"
+  }, 
+  "virtual_machine_scale_sets": {
+    "py/object": "azure.mgmt.compute.operations.virtual_machine_scale_sets_operations.VirtualMachineScaleSetsOperations", 
+    "_deserialize": {
+      "py/id": 23
+    }, 
+    "_client": {
+      "py/id": 1
+    }, 
+    "_serialize": {
+      "py/id": 24
+    }, 
+    "config": {
+      "py/id": 6
+    }, 
+    "api_version": "2016-03-30"
+  }, 
+  "_deserialize": {
+    "py/object": "msrest.serialization.Deserializer", 
+    "deserialize_type": {
+      "bytearray": {
+        "py/function": "msrest.serialization.deserialize_bytearray"
+      }, 
+      "rfc-1123": {
+        "py/function": "msrest.serialization.deserialize_rfc"
+      }, 
+      "decimal": {
+        "py/function": "msrest.serialization.deserialize_decimal"
+      }, 
+      "base64": {
+        "py/function": "msrest.serialization.deserialize_base64"
+      }, 
+      "unix-time": {
+        "py/function": "msrest.serialization.deserialize_unix"
+      }, 
+      "long": {
+        "py/function": "msrest.serialization.deserialize_long"
+      }, 
+      "iso-8601": {
+        "py/function": "msrest.serialization.deserialize_iso"
+      }, 
+      "date": {
+        "py/function": "msrest.serialization.deserialize_date"
+      }, 
+      "duration": {
+        "py/function": "msrest.serialization.deserialize_duration"
+      }
+    }, 
+    "dependencies": {
+      "Sku": {
+        "py/type": "azure.mgmt.compute.models.sku.Sku"
+      }, 
+      "ContainerServiceVMSizeTypes": {
+        "py/type": "azure.mgmt.compute.models.compute_management_client_enums.ContainerServiceVMSizeTypes"
+      }, 
+      "VirtualMachineScaleSetVM": {
+        "py/type": "azure.mgmt.compute.models.virtual_machine_scale_set_vm.VirtualMachineScaleSetVM"
+      }, 
+      "Usage": {
+        "py/type": "azure.mgmt.compute.models.usage.Usage"
+      }, 
+      "VirtualMachineScaleSetSkuScaleType": {
+        "py/type": "azure.mgmt.compute.models.compute_management_client_enums.VirtualMachineScaleSetSkuScaleType"
+      }, 
+      "VirtualMachineScaleSetVMExtensionsSummary": {
+        "py/type": "azure.mgmt.compute.models.virtual_machine_scale_set_vm_extensions_summary.VirtualMachineScaleSetVMExtensionsSummary"
+      }, 
+      "HardwareProfile": {
+        "py/type": "azure.mgmt.compute.models.hardware_profile.HardwareProfile"
+      }, 
+      "OSProfile": {
+        "py/type": "azure.mgmt.compute.models.os_profile.OSProfile"
+      }, 
+      "VirtualMachineScaleSet": {
+        "py/type": "azure.mgmt.compute.models.virtual_machine_scale_set.VirtualMachineScaleSet"
+      }, 
+      "VirtualMachineScaleSetNetworkProfile": {
+        "py/type": "azure.mgmt.compute.models.virtual_machine_scale_set_network_profile.VirtualMachineScaleSetNetworkProfile"
+      }, 
+      "VirtualMachineImage": {
+        "py/type": "azure.mgmt.compute.models.virtual_machine_image.VirtualMachineImage"
+      }, 
+      "VirtualMachineCaptureResult": {
+        "py/type": "azure.mgmt.compute.models.virtual_machine_capture_result.VirtualMachineCaptureResult"
+      }, 
+      "InstanceViewTypes": {
+        "py/type": "azure.mgmt.compute.models.compute_management_client_enums.InstanceViewTypes"
+      }, 
+      "ContainerServicePaged": {
+        "py/type": "azure.mgmt.compute.models.container_service_paged.ContainerServicePaged"
+      }, 
+      "ContainerServiceSshPublicKey": {
+        "py/type": "azure.mgmt.compute.models.container_service_ssh_public_key.ContainerServiceSshPublicKey"
+      }, 
+      "VirtualMachine": {
+        "py/type": "azure.mgmt.compute.models.virtual_machine.VirtualMachine"
+      }, 
+      "VaultSecretGroup": {
+        "py/type": "azure.mgmt.compute.models.vault_secret_group.VaultSecretGroup"
+      }, 
+      "SshPublicKey": {
+        "py/type": "azure.mgmt.compute.models.ssh_public_key.SshPublicKey"
+      }, 
+      "ContainerServiceWindowsProfile": {
+        "py/type": "azure.mgmt.compute.models.container_service_windows_profile.ContainerServiceWindowsProfile"
+      }, 
+      "WindowsConfiguration": {
+        "py/type": "azure.mgmt.compute.models.windows_configuration.WindowsConfiguration"
+      }, 
+      "WinRMConfiguration": {
+        "py/type": "azure.mgmt.compute.models.win_rm_configuration.WinRMConfiguration"
+      }, 
+      "VirtualMachineScaleSetInstanceViewStatusesSummary": {
+        "py/type": "azure.mgmt.compute.models.virtual_machine_scale_set_instance_view_statuses_summary.VirtualMachineScaleSetInstanceViewStatusesSummary"
+      }, 
+      "DiagnosticsProfile": {
+        "py/type": "azure.mgmt.compute.models.diagnostics_profile.DiagnosticsProfile"
+      }, 
+      "Plan": {
+        "py/type": "azure.mgmt.compute.models.plan.Plan"
+      }, 
+      "ContainerServiceAgentPoolProfile": {
+        "py/type": "azure.mgmt.compute.models.container_service_agent_pool_profile.ContainerServiceAgentPoolProfile"
+      }, 
+      "VirtualMachineScaleSetVMInstanceRequiredIDs": {
+        "py/type": "azure.mgmt.compute.models.virtual_machine_scale_set_vm_instance_required_ids.VirtualMachineScaleSetVMInstanceRequiredIDs"
+      }, 
+      "InstanceViewStatus": {
+        "py/type": "azure.mgmt.compute.models.instance_view_status.InstanceViewStatus"
+      }, 
+      "DataDiskImage": {
+        "py/type": "azure.mgmt.compute.models.data_disk_image.DataDiskImage"
+      }, 
+      "VaultCertificate": {
+        "py/type": "azure.mgmt.compute.models.vault_certificate.VaultCertificate"
+      }, 
+      "ApiEntityReference": {
+        "py/type": "azure.mgmt.compute.models.api_entity_reference.ApiEntityReference"
+      }, 
+      "VirtualMachineScaleSetIPConfiguration": {
+        "py/type": "azure.mgmt.compute.models.virtual_machine_scale_set_ip_configuration.VirtualMachineScaleSetIPConfiguration"
+      }, 
+      "SubResource": {
+        "py/type": "azure.mgmt.compute.models.sub_resource.SubResource"
+      }, 
+      "InnerError": {
+        "py/type": "azure.mgmt.compute.models.inner_error.InnerError"
+      }, 
+      "StatusLevelTypes": {
+        "py/type": "azure.mgmt.compute.models.compute_management_client_enums.StatusLevelTypes"
+      }, 
+      "PurchasePlan": {
+        "py/type": "azure.mgmt.compute.models.purchase_plan.PurchasePlan"
+      }, 
+      "VirtualMachinePaged": {
+        "py/type": "azure.mgmt.compute.models.virtual_machine_paged.VirtualMachinePaged"
+      }, 
+      "VirtualHardDisk": {
+        "py/type": "azure.mgmt.compute.models.virtual_hard_disk.VirtualHardDisk"
+      }, 
+      "ContainerServiceOrchestratorProfile": {
+        "py/type": "azure.mgmt.compute.models.container_service_orchestrator_profile.ContainerServiceOrchestratorProfile"
+      }, 
+      "AvailabilitySet": {
+        "py/type": "azure.mgmt.compute.models.availability_set.AvailabilitySet"
+      }, 
+      "VirtualMachineScaleSetNetworkConfiguration": {
+        "py/type": "azure.mgmt.compute.models.virtual_machine_scale_set_network_configuration.VirtualMachineScaleSetNetworkConfiguration"
+      }, 
+      "ContainerServiceDiagnosticsProfile": {
+        "py/type": "azure.mgmt.compute.models.container_service_diagnostics_profile.ContainerServiceDiagnosticsProfile"
+      }, 
+      "VirtualMachineScaleSetSkuPaged": {
+        "py/type": "azure.mgmt.compute.models.virtual_machine_scale_set_sku_paged.VirtualMachineScaleSetSkuPaged"
+      }, 
+      "VirtualMachineScaleSetSkuCapacity": {
+        "py/type": "azure.mgmt.compute.models.virtual_machine_scale_set_sku_capacity.VirtualMachineScaleSetSkuCapacity"
+      }, 
+      "DiskCreateOptionTypes": {
+        "py/type": "azure.mgmt.compute.models.compute_management_client_enums.DiskCreateOptionTypes"
+      }, 
+      "DataDisk": {
+        "py/type": "azure.mgmt.compute.models.data_disk.DataDisk"
+      }, 
+      "SshConfiguration": {
+        "py/type": "azure.mgmt.compute.models.ssh_configuration.SshConfiguration"
+      }, 
+      "OperatingSystemTypes": {
+        "py/type": "azure.mgmt.compute.models.compute_management_client_enums.OperatingSystemTypes"
+      }, 
+      "AvailabilitySetPaged": {
+        "py/type": "azure.mgmt.compute.models.availability_set_paged.AvailabilitySetPaged"
+      }, 
+      "VirtualMachineSizeTypes": {
+        "py/type": "azure.mgmt.compute.models.compute_management_client_enums.VirtualMachineSizeTypes"
+      }, 
+      "ContainerServiceVMDiagnostics": {
+        "py/type": "azure.mgmt.compute.models.container_service_vm_diagnostics.ContainerServiceVMDiagnostics"
+      }, 
+      "OSDiskImage": {
+        "py/type": "azure.mgmt.compute.models.os_disk_image.OSDiskImage"
+      }, 
+      "StorageProfile": {
+        "py/type": "azure.mgmt.compute.models.storage_profile.StorageProfile"
+      }, 
+      "KeyVaultKeyReference": {
+        "py/type": "azure.mgmt.compute.models.key_vault_key_reference.KeyVaultKeyReference"
+      }, 
+      "AdditionalUnattendContent": {
+        "py/type": "azure.mgmt.compute.models.additional_unattend_content.AdditionalUnattendContent"
+      }, 
+      "UpgradeMode": {
+        "py/type": "azure.mgmt.compute.models.compute_management_client_enums.UpgradeMode"
+      }, 
+      "VirtualMachineScaleSetOSDisk": {
+        "py/type": "azure.mgmt.compute.models.virtual_machine_scale_set_os_disk.VirtualMachineScaleSetOSDisk"
+      }, 
+      "WinRMListener": {
+        "py/type": "azure.mgmt.compute.models.win_rm_listener.WinRMListener"
+      }, 
+      "ContainerService": {
+        "py/type": "azure.mgmt.compute.models.container_service.ContainerService"
+      }, 
+      "KeyVaultSecretReference": {
+        "py/type": "azure.mgmt.compute.models.key_vault_secret_reference.KeyVaultSecretReference"
+      }, 
+      "VirtualMachineAgentInstanceView": {
+        "py/type": "azure.mgmt.compute.models.virtual_machine_agent_instance_view.VirtualMachineAgentInstanceView"
+      }, 
+      "ComputeLongRunningOperationProperties": {
+        "py/type": "azure.mgmt.compute.models.compute_long_running_operation_properties.ComputeLongRunningOperationProperties"
+      }, 
+      "ApiErrorBase": {
+        "py/type": "azure.mgmt.compute.models.api_error_base.ApiErrorBase"
+      }, 
+      "UpgradePolicy": {
+        "py/type": "azure.mgmt.compute.models.upgrade_policy.UpgradePolicy"
+      }, 
+      "VirtualMachineScaleSetVMPaged": {
+        "py/type": "azure.mgmt.compute.models.virtual_machine_scale_set_vm_paged.VirtualMachineScaleSetVMPaged"
+      }, 
+      "UsagePaged": {
+        "py/type": "azure.mgmt.compute.models.usage_paged.UsagePaged"
+      }, 
+      "VirtualMachineScaleSetOSProfile": {
+        "py/type": "azure.mgmt.compute.models.virtual_machine_scale_set_os_profile.VirtualMachineScaleSetOSProfile"
+      }, 
+      "ContainerServiceLinuxProfile": {
+        "py/type": "azure.mgmt.compute.models.container_service_linux_profile.ContainerServiceLinuxProfile"
+      }, 
+      "VirtualMachineScaleSetSku": {
+        "py/type": "azure.mgmt.compute.models.virtual_machine_scale_set_sku.VirtualMachineScaleSetSku"
+      }, 
+      "VirtualMachineExtensionInstanceView": {
+        "py/type": "azure.mgmt.compute.models.virtual_machine_extension_instance_view.VirtualMachineExtensionInstanceView"
+      }, 
+      "VirtualMachineExtensionImage": {
+        "py/type": "azure.mgmt.compute.models.virtual_machine_extension_image.VirtualMachineExtensionImage"
+      }, 
+      "VirtualMachineInstanceView": {
+        "py/type": "azure.mgmt.compute.models.virtual_machine_instance_view.VirtualMachineInstanceView"
+      }, 
+      "VirtualMachineCaptureParameters": {
+        "py/type": "azure.mgmt.compute.models.virtual_machine_capture_parameters.VirtualMachineCaptureParameters"
+      }, 
+      "ContainerServiceSshConfiguration": {
+        "py/type": "azure.mgmt.compute.models.container_service_ssh_configuration.ContainerServiceSshConfiguration"
+      }, 
+      "ImageReference": {
+        "py/type": "azure.mgmt.compute.models.image_reference.ImageReference"
+      }, 
+      "BootDiagnosticsInstanceView": {
+        "py/type": "azure.mgmt.compute.models.boot_diagnostics_instance_view.BootDiagnosticsInstanceView"
+      }, 
+      "VirtualMachineExtension": {
+        "py/type": "azure.mgmt.compute.models.virtual_machine_extension.VirtualMachineExtension"
+      }, 
+      "PassNames": {
+        "py/type": "azure.mgmt.compute.models.compute_management_client_enums.PassNames"
+      }, 
+      "DiskInstanceView": {
+        "py/type": "azure.mgmt.compute.models.disk_instance_view.DiskInstanceView"
+      }, 
+      "UsageName": {
+        "py/type": "azure.mgmt.compute.models.usage_name.UsageName"
+      }, 
+      "NetworkInterfaceReference": {
+        "py/type": "azure.mgmt.compute.models.network_interface_reference.NetworkInterfaceReference"
+      }, 
+      "ContainerServiceMasterProfile": {
+        "py/type": "azure.mgmt.compute.models.container_service_master_profile.ContainerServiceMasterProfile"
+      }, 
+      "VirtualMachineScaleSetExtension": {
+        "py/type": "azure.mgmt.compute.models.virtual_machine_scale_set_extension.VirtualMachineScaleSetExtension"
+      }, 
+      "LinuxConfiguration": {
+        "py/type": "azure.mgmt.compute.models.linux_configuration.LinuxConfiguration"
+      }, 
+      "VirtualMachineSizePaged": {
+        "py/type": "azure.mgmt.compute.models.virtual_machine_size_paged.VirtualMachineSizePaged"
+      }, 
+      "VirtualMachineImageResource": {
+        "py/type": "azure.mgmt.compute.models.virtual_machine_image_resource.VirtualMachineImageResource"
+      }, 
+      "CachingTypes": {
+        "py/type": "azure.mgmt.compute.models.compute_management_client_enums.CachingTypes"
+      }, 
+      "ContainerServiceOchestratorTypes": {
+        "py/type": "azure.mgmt.compute.models.compute_management_client_enums.ContainerServiceOchestratorTypes"
+      }, 
+      "VirtualMachineExtensionHandlerInstanceView": {
+        "py/type": "azure.mgmt.compute.models.virtual_machine_extension_handler_instance_view.VirtualMachineExtensionHandlerInstanceView"
+      }, 
+      "Resource": {
+        "py/type": "azure.mgmt.compute.models.resource.Resource"
+      }, 
+      "VirtualMachineStatusCodeCount": {
+        "py/type": "azure.mgmt.compute.models.virtual_machine_status_code_count.VirtualMachineStatusCodeCount"
+      }, 
+      "SettingNames": {
+        "py/type": "azure.mgmt.compute.models.compute_management_client_enums.SettingNames"
+      }, 
+      "ApiError": {
+        "py/type": "azure.mgmt.compute.models.api_error.ApiError"
+      }, 
+      "ComponentNames": {
+        "py/type": "azure.mgmt.compute.models.compute_management_client_enums.ComponentNames"
+      }, 
+      "VirtualMachineSize": {
+        "py/type": "azure.mgmt.compute.models.virtual_machine_size.VirtualMachineSize"
+      }, 
+      "VirtualMachineScaleSetVMProfile": {
+        "py/type": "azure.mgmt.compute.models.virtual_machine_scale_set_vm_profile.VirtualMachineScaleSetVMProfile"
+      }, 
+      "VirtualMachineScaleSetVMInstanceView": {
+        "py/type": "azure.mgmt.compute.models.virtual_machine_scale_set_vm_instance_view.VirtualMachineScaleSetVMInstanceView"
+      }, 
+      "VirtualMachineScaleSetExtensionProfile": {
+        "py/type": "azure.mgmt.compute.models.virtual_machine_scale_set_extension_profile.VirtualMachineScaleSetExtensionProfile"
+      }, 
+      "VirtualMachineScaleSetPaged": {
+        "py/type": "azure.mgmt.compute.models.virtual_machine_scale_set_paged.VirtualMachineScaleSetPaged"
+      }, 
+      "DiskEncryptionSettings": {
+        "py/type": "azure.mgmt.compute.models.disk_encryption_settings.DiskEncryptionSettings"
+      }, 
+      "NetworkProfile": {
+        "py/type": "azure.mgmt.compute.models.network_profile.NetworkProfile"
+      }, 
+      "OSDisk": {
+        "py/type": "azure.mgmt.compute.models.os_disk.OSDisk"
+      }, 
+      "ProtocolTypes": {
+        "py/type": "azure.mgmt.compute.models.compute_management_client_enums.ProtocolTypes"
+      }, 
+      "VirtualMachineScaleSetStorageProfile": {
+        "py/type": "azure.mgmt.compute.models.virtual_machine_scale_set_storage_profile.VirtualMachineScaleSetStorageProfile"
+      }, 
+      "VirtualMachineScaleSetVMInstanceIDs": {
+        "py/type": "azure.mgmt.compute.models.virtual_machine_scale_set_vm_instance_ids.VirtualMachineScaleSetVMInstanceIDs"
+      }, 
+      "VirtualMachineScaleSetInstanceView": {
+        "py/type": "azure.mgmt.compute.models.virtual_machine_scale_set_instance_view.VirtualMachineScaleSetInstanceView"
+      }, 
+      "BootDiagnostics": {
+        "py/type": "azure.mgmt.compute.models.boot_diagnostics.BootDiagnostics"
+      }
+    }
+  }, 
+  "_client": {
+    "py/object": "msrest.service_client.ServiceClient", 
+    "_adapter": {
+      "py/object": "msrest.pipeline.ClientHTTPAdapter", 
+      "py/state": {
+        "_pool_block": false, 
+        "config": {}, 
+        "max_retries": {
+          "py/object": "requests.packages.urllib3.util.retry.Retry", 
+          "redirect": null, 
+          "read": false, 
+          "backoff_factor": 0, 
+          "respect_retry_after_header": true, 
+          "raise_on_status": true, 
+          "connect": null, 
+          "method_whitelist": {
+            "py/object": "__builtin__.frozenset", 
+            "py/reduce": [
+              {
+                "py/type": "__builtin__.frozenset"
+              }, 
+              {
+                "py/tuple": [
+                  [
+                    "HEAD", 
+                    "TRACE", 
+                    "GET", 
+                    "PUT", 
+                    "OPTIONS", 
+                    "DELETE"
+                  ]
+                ]
+              }, 
+              null, 
+              null, 
+              null
+            ]
+          }, 
+          "status_forcelist": {
+            "py/set": []
+          }, 
+          "total": 0, 
+          "raise_on_redirect": true, 
+          "history": {
+            "py/tuple": []
+          }
+        }, 
+        "_pool_maxsize": 10, 
+        "_pool_connections": 10
+      }
+    }, 
+    "_headers": {}, 
+    "config": {
+      "py/object": "azure.mgmt.compute.compute_management_client.ComputeManagementClientConfiguration", 
+      "_config": {
+        "py/object": "ConfigParser.ConfigParser", 
+        "_optcre": {
+          "py/object": "_sre.SRE_Pattern", 
+          "pattern": "(?P<option>[^:=\\s][^:=]*)\\s*(?P<vi>[:=])\\s*(?P<value>.*)$"
+        }, 
+        "_dict": {
+          "py/type": "collections.OrderedDict"
+        }, 
+        "_defaults": {
+          "py/object": "collections.OrderedDict", 
+          "__reduce__": [
+            {
+              "py/type": "collections.OrderedDict"
+            }, 
+            {
+              "py/tuple": [
+                []
+              ]
+            }
+          ]
+        }, 
+        "_sections": {
+          "py/object": "collections.OrderedDict", 
+          "__reduce__": [
+            {
+              "py/type": "collections.OrderedDict"
+            }, 
+            {
+              "py/tuple": [
+                []
+              ]
+            }
+          ]
+        }, 
+        "optionxform": {
+          "py/type": "__builtin__.str"
+        }
+      }, 
+      "proxies": {
+        "py/object": "msrest.pipeline.ClientProxies", 
+        "use_env_settings": true, 
+        "proxies": {}
+      }, 
+      "generate_client_request_id": true, 
+      "redirect_policy": {
+        "py/object": "msrest.pipeline.ClientRedirectPolicy", 
+        "max_redirects": 30, 
+        "allow": true
+      }, 
+      "_user_agent": "python/2.7.6 (Linux-4.4.0-31-generic-x86_64-with-Ubuntu-14.04-trusty) requests/2.13.0 msrest/0.4.6 msrest_azure/0.4.7 computemanagementclient/0.30.0rc6 Azure-SDK-For-Python", 
+      "base_url": "https://management.azure.com", 
+      "retry_policy": {
+        "py/object": "msrest.pipeline.ClientRetryPolicy", 
+        "policy": {
+          "py/object": "msrest.pipeline.ClientRetry", 
+          "redirect": null, 
+          "BACKOFF_MAX": 90, 
+          "backoff_factor": 0.8, 
+          "retry_cookie": null, 
+          "read": 3, 
+          "raise_on_status": true, 
+          "connect": 3, 
+          "respect_retry_after_header": true, 
+          "method_whitelist": [
+            "HEAD", 
+            "TRACE", 
+            "GET", 
+            "PUT", 
+            "OPTIONS", 
+            "DELETE", 
+            "POST", 
+            "PATCH"
+          ], 
+          "status_forcelist": [
+            408, 
+            500, 
+            502, 
+            503, 
+            504, 
+            506, 
+            507, 
+            508, 
+            509, 
+            510, 
+            511, 
+            512, 
+            513, 
+            514, 
+            515, 
+            516, 
+            517, 
+            518, 
+            519, 
+            520, 
+            521, 
+            522, 
+            523, 
+            524, 
+            525, 
+            526, 
+            527, 
+            528, 
+            529, 
+            530, 
+            531, 
+            532, 
+            533, 
+            534, 
+            535, 
+            536, 
+            537, 
+            538, 
+            539, 
+            540, 
+            541, 
+            542, 
+            543, 
+            544, 
+            545, 
+            546, 
+            547, 
+            548, 
+            549, 
+            550, 
+            551, 
+            552, 
+            553, 
+            554, 
+            555, 
+            556, 
+            557, 
+            558, 
+            559, 
+            560, 
+            561, 
+            562, 
+            563, 
+            564, 
+            565, 
+            566, 
+            567, 
+            568, 
+            569, 
+            570, 
+            571, 
+            572, 
+            573, 
+            574, 
+            575, 
+            576, 
+            577, 
+            578, 
+            579, 
+            580, 
+            581, 
+            582, 
+            583, 
+            584, 
+            585, 
+            586, 
+            587, 
+            588, 
+            589, 
+            590, 
+            591, 
+            592, 
+            593, 
+            594, 
+            595, 
+            596, 
+            597, 
+            598, 
+            599, 
+            600, 
+            601, 
+            602, 
+            603, 
+            604, 
+            605, 
+            606, 
+            607, 
+            608, 
+            609, 
+            610, 
+            611, 
+            612, 
+            613, 
+            614, 
+            615, 
+            616, 
+            617, 
+            618, 
+            619, 
+            620, 
+            621, 
+            622, 
+            623, 
+            624, 
+            625, 
+            626, 
+            627, 
+            628, 
+            629, 
+            630, 
+            631, 
+            632, 
+            633, 
+            634, 
+            635, 
+            636, 
+            637, 
+            638, 
+            639, 
+            640, 
+            641, 
+            642, 
+            643, 
+            644, 
+            645, 
+            646, 
+            647, 
+            648, 
+            649, 
+            650, 
+            651, 
+            652, 
+            653, 
+            654, 
+            655, 
+            656, 
+            657, 
+            658, 
+            659, 
+            660, 
+            661, 
+            662, 
+            663, 
+            664, 
+            665, 
+            666, 
+            667, 
+            668, 
+            669, 
+            670, 
+            671, 
+            672, 
+            673, 
+            674, 
+            675, 
+            676, 
+            677, 
+            678, 
+            679, 
+            680, 
+            681, 
+            682, 
+            683, 
+            684, 
+            685, 
+            686, 
+            687, 
+            688, 
+            689, 
+            690, 
+            691, 
+            692, 
+            693, 
+            694, 
+            695, 
+            696, 
+            697, 
+            698, 
+            699, 
+            700, 
+            701, 
+            702, 
+            703, 
+            704, 
+            705, 
+            706, 
+            707, 
+            708, 
+            709, 
+            710, 
+            711, 
+            712, 
+            713, 
+            714, 
+            715, 
+            716, 
+            717, 
+            718, 
+            719, 
+            720, 
+            721, 
+            722, 
+            723, 
+            724, 
+            725, 
+            726, 
+            727, 
+            728, 
+            729, 
+            730, 
+            731, 
+            732, 
+            733, 
+            734, 
+            735, 
+            736, 
+            737, 
+            738, 
+            739, 
+            740, 
+            741, 
+            742, 
+            743, 
+            744, 
+            745, 
+            746, 
+            747, 
+            748, 
+            749, 
+            750, 
+            751, 
+            752, 
+            753, 
+            754, 
+            755, 
+            756, 
+            757, 
+            758, 
+            759, 
+            760, 
+            761, 
+            762, 
+            763, 
+            764, 
+            765, 
+            766, 
+            767, 
+            768, 
+            769, 
+            770, 
+            771, 
+            772, 
+            773, 
+            774, 
+            775, 
+            776, 
+            777, 
+            778, 
+            779, 
+            780, 
+            781, 
+            782, 
+            783, 
+            784, 
+            785, 
+            786, 
+            787, 
+            788, 
+            789, 
+            790, 
+            791, 
+            792, 
+            793, 
+            794, 
+            795, 
+            796, 
+            797, 
+            798, 
+            799, 
+            800, 
+            801, 
+            802, 
+            803, 
+            804, 
+            805, 
+            806, 
+            807, 
+            808, 
+            809, 
+            810, 
+            811, 
+            812, 
+            813, 
+            814, 
+            815, 
+            816, 
+            817, 
+            818, 
+            819, 
+            820, 
+            821, 
+            822, 
+            823, 
+            824, 
+            825, 
+            826, 
+            827, 
+            828, 
+            829, 
+            830, 
+            831, 
+            832, 
+            833, 
+            834, 
+            835, 
+            836, 
+            837, 
+            838, 
+            839, 
+            840, 
+            841, 
+            842, 
+            843, 
+            844, 
+            845, 
+            846, 
+            847, 
+            848, 
+            849, 
+            850, 
+            851, 
+            852, 
+            853, 
+            854, 
+            855, 
+            856, 
+            857, 
+            858, 
+            859, 
+            860, 
+            861, 
+            862, 
+            863, 
+            864, 
+            865, 
+            866, 
+            867, 
+            868, 
+            869, 
+            870, 
+            871, 
+            872, 
+            873, 
+            874, 
+            875, 
+            876, 
+            877, 
+            878, 
+            879, 
+            880, 
+            881, 
+            882, 
+            883, 
+            884, 
+            885, 
+            886, 
+            887, 
+            888, 
+            889, 
+            890, 
+            891, 
+            892, 
+            893, 
+            894, 
+            895, 
+            896, 
+            897, 
+            898, 
+            899, 
+            900, 
+            901, 
+            902, 
+            903, 
+            904, 
+            905, 
+            906, 
+            907, 
+            908, 
+            909, 
+            910, 
+            911, 
+            912, 
+            913, 
+            914, 
+            915, 
+            916, 
+            917, 
+            918, 
+            919, 
+            920, 
+            921, 
+            922, 
+            923, 
+            924, 
+            925, 
+            926, 
+            927, 
+            928, 
+            929, 
+            930, 
+            931, 
+            932, 
+            933, 
+            934, 
+            935, 
+            936, 
+            937, 
+            938, 
+            939, 
+            940, 
+            941, 
+            942, 
+            943, 
+            944, 
+            945, 
+            946, 
+            947, 
+            948, 
+            949, 
+            950, 
+            951, 
+            952, 
+            953, 
+            954, 
+            955, 
+            956, 
+            957, 
+            958, 
+            959, 
+            960, 
+            961, 
+            962, 
+            963, 
+            964, 
+            965, 
+            966, 
+            967, 
+            968, 
+            969, 
+            970, 
+            971, 
+            972, 
+            973, 
+            974, 
+            975, 
+            976, 
+            977, 
+            978, 
+            979, 
+            980, 
+            981, 
+            982, 
+            983, 
+            984, 
+            985, 
+            986, 
+            987, 
+            988, 
+            989, 
+            990, 
+            991, 
+            992, 
+            993, 
+            994, 
+            995, 
+            996, 
+            997, 
+            998
+          ], 
+          "total": 3, 
+          "raise_on_redirect": true, 
+          "history": {
+            "py/tuple": []
+          }
+        }
+      }, 
+      "connection": {
+        "py/object": "msrest.pipeline.ClientConnection", 
+        "verify": true, 
+        "cert": null, 
+        "data_block_size": 4096, 
+        "timeout": 100
+      }, 
+      "accept_language": "en-US", 
+      "credentials": {
+        "py/object": "msrestazure.azure_active_directory.ServicePrincipalCredentials", 
+        "store_key": "login.microsoftonline.com_5dcf6682-68f1-4295-a439-cdb49d97ae9b", 
+        "resource": "https://management.core.windows.net/", 
+        "token_uri": "https://login.microsoftonline.com/1df86eff-830c-4778-ba7a-1c1bd1d4a01a/oauth2/token", 
+        "secret": "/2caJj+ADd/WZw0nGUDHlQUKCM+SFxOFhTxxUrhWjss=", 
+        "cred_store": "AzureAAD", 
+        "auth_uri": "https://login.microsoftonline.com/1df86eff-830c-4778-ba7a-1c1bd1d4a01a/oauth2/authorize", 
+        "state": "lWLls2SEUoxZsUxxbc94DhF7xnbob9", 
+        "client": {
+          "py/object": "oauthlib.oauth2.rfc6749.clients.backend_application.BackendApplicationClient", 
+          "mac_algorithm": null, 
+          "default_token_placement": "auth_header", 
+          "access_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsIng1dCI6ImEzUU4wQlpTN3M0bk4tQmRyamJGMFlfTGRNTSIsImtpZCI6ImEzUU4wQlpTN3M0bk4tQmRyamJGMFlfTGRNTSJ9.eyJhdWQiOiJodHRwczovL21hbmFnZW1lbnQuY29yZS53aW5kb3dzLm5ldC8iLCJpc3MiOiJodHRwczovL3N0cy53aW5kb3dzLm5ldC8xZGY4NmVmZi04MzBjLTQ3NzgtYmE3YS0xYzFiZDFkNGEwMWEvIiwiaWF0IjoxNDkxNDg1NTc3LCJuYmYiOjE0OTE0ODU1NzcsImV4cCI6MTQ5MTQ4OTQ3NywiYWlvIjoiWTJaZ1lBaXJ2TWFkZE1yUnFhbkNjZ2ZIbWVVTUFBPT0iLCJhcHBpZCI6IjVkY2Y2NjgyLTY4ZjEtNDI5NS1hNDM5LWNkYjQ5ZDk3YWU5YiIsImFwcGlkYWNyIjoiMSIsImdyb3VwcyI6WyJmZjRmMmQ0YS1iMmVmLTQzMjktOWIwOC0zYTgwZTliMDk0OTMiLCI3ZmYwMTIwMi1iMWE2LTRmMjUtYjI5Mi02ODQ3NWJmNDQ4NDUiLCIwNmEzZDU3NC0xZWVlLTQ0MjAtYmVkZi1mZWZhZDhjZGQxMjIiXSwiaWRwIjoiaHR0cHM6Ly9zdHMud2luZG93cy5uZXQvMWRmODZlZmYtODMwYy00Nzc4LWJhN2EtMWMxYmQxZDRhMDFhLyIsIm9pZCI6Ijc2MWUwYzRkLThhN2EtNDNlYi04YTE5LTQ2MDQ4YjY2ZjNkYiIsInN1YiI6Ijc2MWUwYzRkLThhN2EtNDNlYi04YTE5LTQ2MDQ4YjY2ZjNkYiIsInRpZCI6IjFkZjg2ZWZmLTgzMGMtNDc3OC1iYTdhLTFjMWJkMWQ0YTAxYSIsInZlciI6IjEuMCJ9.J74nIulmRBCM0bQfaUhnphV6Zz5qxgdQGXniBWdawZAk5fbGadxnGenQxE86MShy5CyG3kjIXhgqMIvVpTLvNEIv2PNIR8CbfD9QmjXUNoGy86vKb0gg7lNQ0zP2uWHKnOARdkyI71z1-kJa6zK0GUwpO3HW8qIjgdFf3eTMagzezPqWlNYxcmr3wKvpNXq3eLLNk71ZzyIEj49L24iQpD_GNuw2XKKLA3yXfOYN2oUY6y_wJOsS7SbO83ET27mqB3RcdkNjMtLBISEFlXuLO0DDtfOHKzVQavuUPny5o9-8LQAx2zFI0Isz3oHIRgTBlFQo_ySc055wpwSnJdsX-w", 
+          "expires_in": "3600", 
+          "state": null, 
+          "mac_key": null, 
+          "token_type": "Bearer", 
+          "token": {
+            "py/object": "oauthlib.oauth2.rfc6749.tokens.OAuth2Token", 
+            "resource": "https://management.core.windows.net/", 
+            "access_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsIng1dCI6ImEzUU4wQlpTN3M0bk4tQmRyamJGMFlfTGRNTSIsImtpZCI6ImEzUU4wQlpTN3M0bk4tQmRyamJGMFlfTGRNTSJ9.eyJhdWQiOiJodHRwczovL21hbmFnZW1lbnQuY29yZS53aW5kb3dzLm5ldC8iLCJpc3MiOiJodHRwczovL3N0cy53aW5kb3dzLm5ldC8xZGY4NmVmZi04MzBjLTQ3NzgtYmE3YS0xYzFiZDFkNGEwMWEvIiwiaWF0IjoxNDkxNDg1NTc3LCJuYmYiOjE0OTE0ODU1NzcsImV4cCI6MTQ5MTQ4OTQ3NywiYWlvIjoiWTJaZ1lBaXJ2TWFkZE1yUnFhbkNjZ2ZIbWVVTUFBPT0iLCJhcHBpZCI6IjVkY2Y2NjgyLTY4ZjEtNDI5NS1hNDM5LWNkYjQ5ZDk3YWU5YiIsImFwcGlkYWNyIjoiMSIsImdyb3VwcyI6WyJmZjRmMmQ0YS1iMmVmLTQzMjktOWIwOC0zYTgwZTliMDk0OTMiLCI3ZmYwMTIwMi1iMWE2LTRmMjUtYjI5Mi02ODQ3NWJmNDQ4NDUiLCIwNmEzZDU3NC0xZWVlLTQ0MjAtYmVkZi1mZWZhZDhjZGQxMjIiXSwiaWRwIjoiaHR0cHM6Ly9zdHMud2luZG93cy5uZXQvMWRmODZlZmYtODMwYy00Nzc4LWJhN2EtMWMxYmQxZDRhMDFhLyIsIm9pZCI6Ijc2MWUwYzRkLThhN2EtNDNlYi04YTE5LTQ2MDQ4YjY2ZjNkYiIsInN1YiI6Ijc2MWUwYzRkLThhN2EtNDNlYi04YTE5LTQ2MDQ4YjY2ZjNkYiIsInRpZCI6IjFkZjg2ZWZmLTgzMGMtNDc3OC1iYTdhLTFjMWJkMWQ0YTAxYSIsInZlciI6IjEuMCJ9.J74nIulmRBCM0bQfaUhnphV6Zz5qxgdQGXniBWdawZAk5fbGadxnGenQxE86MShy5CyG3kjIXhgqMIvVpTLvNEIv2PNIR8CbfD9QmjXUNoGy86vKb0gg7lNQ0zP2uWHKnOARdkyI71z1-kJa6zK0GUwpO3HW8qIjgdFf3eTMagzezPqWlNYxcmr3wKvpNXq3eLLNk71ZzyIEj49L24iQpD_GNuw2XKKLA3yXfOYN2oUY6y_wJOsS7SbO83ET27mqB3RcdkNjMtLBISEFlXuLO0DDtfOHKzVQavuUPny5o9-8LQAx2zFI0Isz3oHIRgTBlFQo_ySc055wpwSnJdsX-w", 
+            "expires_in": 3596.351171016693, 
+            "ext_expires_in": "0", 
+            "expires_at": 1491489435.213313, 
+            "token_type": "Bearer", 
+            "not_before": "1491485577", 
+            "expires_on": "1491489477"
+          }, 
+          "client_id": "5dcf6682-68f1-4295-a439-cdb49d97ae9b", 
+          "state_generator": {
+            "py/function": "oauthlib.common.generate_token"
+          }, 
+          "redirect_url": null, 
+          "_expires_at": 1491489435, 
+          "scope": null, 
+          "refresh_token": null
+        }, 
+        "token": {
+          "py/id": 16
+        }, 
+        "verify": true, 
+        "scheme": "Bearer", 
+        "id": "5dcf6682-68f1-4295-a439-cdb49d97ae9b"
+      }, 
+      "subscription_id": "dd19825f-8f3d-4be8-9851-9f49a268dadb", 
+      "long_running_operation_retry_timeout": 30, 
+      "long_running_operation_timeout": 30
+    }, 
+    "creds": {
+      "py/id": 14
+    }
+  }, 
+  "virtual_machines": {
+    "py/object": "azure.mgmt.compute.operations.virtual_machines_operations.VirtualMachinesOperations", 
+    "_deserialize": {
+      "py/id": 23
+    }, 
+    "_client": {
+      "py/id": 1
+    }, 
+    "_serialize": {
+      "py/id": 24
+    }, 
+    "config": {
+      "py/id": 6
+    }, 
+    "api_version": "2016-03-30"
+  }, 
+  "virtual_machine_scale_set_vms": {
+    "py/object": "azure.mgmt.compute.operations.virtual_machine_scale_set_vms_operations.VirtualMachineScaleSetVMsOperations", 
+    "_deserialize": {
+      "py/id": 23
+    }, 
+    "_client": {
+      "py/id": 1
+    }, 
+    "_serialize": {
+      "py/id": 24
+    }, 
+    "config": {
+      "py/id": 6
+    }, 
+    "api_version": "2016-03-30"
+  }, 
+  "usage": {
+    "py/object": "azure.mgmt.compute.operations.usage_operations.UsageOperations", 
+    "_deserialize": {
+      "py/id": 23
+    }, 
+    "_client": {
+      "py/id": 1
+    }, 
+    "_serialize": {
+      "py/id": 24
+    }, 
+    "config": {
+      "py/id": 6
+    }, 
+    "api_version": "2016-03-30"
+  }, 
+  "_serialize": {
+    "py/object": "msrest.serialization.Serializer", 
+    "dependencies": {
+      "Sku": {
+        "py/type": "azure.mgmt.compute.models.sku.Sku"
+      }, 
+      "ContainerServiceVMSizeTypes": {
+        "py/type": "azure.mgmt.compute.models.compute_management_client_enums.ContainerServiceVMSizeTypes"
+      }, 
+      "VirtualMachineScaleSetVM": {
+        "py/type": "azure.mgmt.compute.models.virtual_machine_scale_set_vm.VirtualMachineScaleSetVM"
+      }, 
+      "Usage": {
+        "py/type": "azure.mgmt.compute.models.usage.Usage"
+      }, 
+      "VirtualMachineScaleSetSkuScaleType": {
+        "py/type": "azure.mgmt.compute.models.compute_management_client_enums.VirtualMachineScaleSetSkuScaleType"
+      }, 
+      "VirtualMachineScaleSetVMExtensionsSummary": {
+        "py/type": "azure.mgmt.compute.models.virtual_machine_scale_set_vm_extensions_summary.VirtualMachineScaleSetVMExtensionsSummary"
+      }, 
+      "HardwareProfile": {
+        "py/type": "azure.mgmt.compute.models.hardware_profile.HardwareProfile"
+      }, 
+      "OSProfile": {
+        "py/type": "azure.mgmt.compute.models.os_profile.OSProfile"
+      }, 
+      "VirtualMachineScaleSet": {
+        "py/type": "azure.mgmt.compute.models.virtual_machine_scale_set.VirtualMachineScaleSet"
+      }, 
+      "VirtualMachineScaleSetNetworkProfile": {
+        "py/type": "azure.mgmt.compute.models.virtual_machine_scale_set_network_profile.VirtualMachineScaleSetNetworkProfile"
+      }, 
+      "VirtualMachineImage": {
+        "py/type": "azure.mgmt.compute.models.virtual_machine_image.VirtualMachineImage"
+      }, 
+      "VirtualMachineCaptureResult": {
+        "py/type": "azure.mgmt.compute.models.virtual_machine_capture_result.VirtualMachineCaptureResult"
+      }, 
+      "InstanceViewTypes": {
+        "py/type": "azure.mgmt.compute.models.compute_management_client_enums.InstanceViewTypes"
+      }, 
+      "ContainerServicePaged": {
+        "py/type": "azure.mgmt.compute.models.container_service_paged.ContainerServicePaged"
+      }, 
+      "ContainerServiceSshPublicKey": {
+        "py/type": "azure.mgmt.compute.models.container_service_ssh_public_key.ContainerServiceSshPublicKey"
+      }, 
+      "VirtualMachine": {
+        "py/type": "azure.mgmt.compute.models.virtual_machine.VirtualMachine"
+      }, 
+      "VaultSecretGroup": {
+        "py/type": "azure.mgmt.compute.models.vault_secret_group.VaultSecretGroup"
+      }, 
+      "SshPublicKey": {
+        "py/type": "azure.mgmt.compute.models.ssh_public_key.SshPublicKey"
+      }, 
+      "ContainerServiceWindowsProfile": {
+        "py/type": "azure.mgmt.compute.models.container_service_windows_profile.ContainerServiceWindowsProfile"
+      }, 
+      "WindowsConfiguration": {
+        "py/type": "azure.mgmt.compute.models.windows_configuration.WindowsConfiguration"
+      }, 
+      "WinRMConfiguration": {
+        "py/type": "azure.mgmt.compute.models.win_rm_configuration.WinRMConfiguration"
+      }, 
+      "VirtualMachineScaleSetInstanceViewStatusesSummary": {
+        "py/type": "azure.mgmt.compute.models.virtual_machine_scale_set_instance_view_statuses_summary.VirtualMachineScaleSetInstanceViewStatusesSummary"
+      }, 
+      "DiagnosticsProfile": {
+        "py/type": "azure.mgmt.compute.models.diagnostics_profile.DiagnosticsProfile"
+      }, 
+      "Plan": {
+        "py/type": "azure.mgmt.compute.models.plan.Plan"
+      }, 
+      "ContainerServiceAgentPoolProfile": {
+        "py/type": "azure.mgmt.compute.models.container_service_agent_pool_profile.ContainerServiceAgentPoolProfile"
+      }, 
+      "VirtualMachineScaleSetVMInstanceRequiredIDs": {
+        "py/type": "azure.mgmt.compute.models.virtual_machine_scale_set_vm_instance_required_ids.VirtualMachineScaleSetVMInstanceRequiredIDs"
+      }, 
+      "InstanceViewStatus": {
+        "py/type": "azure.mgmt.compute.models.instance_view_status.InstanceViewStatus"
+      }, 
+      "DataDiskImage": {
+        "py/type": "azure.mgmt.compute.models.data_disk_image.DataDiskImage"
+      }, 
+      "VaultCertificate": {
+        "py/type": "azure.mgmt.compute.models.vault_certificate.VaultCertificate"
+      }, 
+      "ApiEntityReference": {
+        "py/type": "azure.mgmt.compute.models.api_entity_reference.ApiEntityReference"
+      }, 
+      "VirtualMachineScaleSetIPConfiguration": {
+        "py/type": "azure.mgmt.compute.models.virtual_machine_scale_set_ip_configuration.VirtualMachineScaleSetIPConfiguration"
+      }, 
+      "SubResource": {
+        "py/type": "azure.mgmt.compute.models.sub_resource.SubResource"
+      }, 
+      "InnerError": {
+        "py/type": "azure.mgmt.compute.models.inner_error.InnerError"
+      }, 
+      "StatusLevelTypes": {
+        "py/type": "azure.mgmt.compute.models.compute_management_client_enums.StatusLevelTypes"
+      }, 
+      "PurchasePlan": {
+        "py/type": "azure.mgmt.compute.models.purchase_plan.PurchasePlan"
+      }, 
+      "VirtualMachinePaged": {
+        "py/type": "azure.mgmt.compute.models.virtual_machine_paged.VirtualMachinePaged"
+      }, 
+      "VirtualHardDisk": {
+        "py/type": "azure.mgmt.compute.models.virtual_hard_disk.VirtualHardDisk"
+      }, 
+      "ContainerServiceOrchestratorProfile": {
+        "py/type": "azure.mgmt.compute.models.container_service_orchestrator_profile.ContainerServiceOrchestratorProfile"
+      }, 
+      "AvailabilitySet": {
+        "py/type": "azure.mgmt.compute.models.availability_set.AvailabilitySet"
+      }, 
+      "VirtualMachineScaleSetNetworkConfiguration": {
+        "py/type": "azure.mgmt.compute.models.virtual_machine_scale_set_network_configuration.VirtualMachineScaleSetNetworkConfiguration"
+      }, 
+      "ContainerServiceDiagnosticsProfile": {
+        "py/type": "azure.mgmt.compute.models.container_service_diagnostics_profile.ContainerServiceDiagnosticsProfile"
+      }, 
+      "VirtualMachineScaleSetSkuPaged": {
+        "py/type": "azure.mgmt.compute.models.virtual_machine_scale_set_sku_paged.VirtualMachineScaleSetSkuPaged"
+      }, 
+      "VirtualMachineScaleSetSkuCapacity": {
+        "py/type": "azure.mgmt.compute.models.virtual_machine_scale_set_sku_capacity.VirtualMachineScaleSetSkuCapacity"
+      }, 
+      "DiskCreateOptionTypes": {
+        "py/type": "azure.mgmt.compute.models.compute_management_client_enums.DiskCreateOptionTypes"
+      }, 
+      "DataDisk": {
+        "py/type": "azure.mgmt.compute.models.data_disk.DataDisk"
+      }, 
+      "SshConfiguration": {
+        "py/type": "azure.mgmt.compute.models.ssh_configuration.SshConfiguration"
+      }, 
+      "OperatingSystemTypes": {
+        "py/type": "azure.mgmt.compute.models.compute_management_client_enums.OperatingSystemTypes"
+      }, 
+      "AvailabilitySetPaged": {
+        "py/type": "azure.mgmt.compute.models.availability_set_paged.AvailabilitySetPaged"
+      }, 
+      "VirtualMachineSizeTypes": {
+        "py/type": "azure.mgmt.compute.models.compute_management_client_enums.VirtualMachineSizeTypes"
+      }, 
+      "ContainerServiceVMDiagnostics": {
+        "py/type": "azure.mgmt.compute.models.container_service_vm_diagnostics.ContainerServiceVMDiagnostics"
+      }, 
+      "OSDiskImage": {
+        "py/type": "azure.mgmt.compute.models.os_disk_image.OSDiskImage"
+      }, 
+      "StorageProfile": {
+        "py/type": "azure.mgmt.compute.models.storage_profile.StorageProfile"
+      }, 
+      "KeyVaultKeyReference": {
+        "py/type": "azure.mgmt.compute.models.key_vault_key_reference.KeyVaultKeyReference"
+      }, 
+      "AdditionalUnattendContent": {
+        "py/type": "azure.mgmt.compute.models.additional_unattend_content.AdditionalUnattendContent"
+      }, 
+      "UpgradeMode": {
+        "py/type": "azure.mgmt.compute.models.compute_management_client_enums.UpgradeMode"
+      }, 
+      "VirtualMachineScaleSetOSDisk": {
+        "py/type": "azure.mgmt.compute.models.virtual_machine_scale_set_os_disk.VirtualMachineScaleSetOSDisk"
+      }, 
+      "WinRMListener": {
+        "py/type": "azure.mgmt.compute.models.win_rm_listener.WinRMListener"
+      }, 
+      "ContainerService": {
+        "py/type": "azure.mgmt.compute.models.container_service.ContainerService"
+      }, 
+      "KeyVaultSecretReference": {
+        "py/type": "azure.mgmt.compute.models.key_vault_secret_reference.KeyVaultSecretReference"
+      }, 
+      "VirtualMachineAgentInstanceView": {
+        "py/type": "azure.mgmt.compute.models.virtual_machine_agent_instance_view.VirtualMachineAgentInstanceView"
+      }, 
+      "ComputeLongRunningOperationProperties": {
+        "py/type": "azure.mgmt.compute.models.compute_long_running_operation_properties.ComputeLongRunningOperationProperties"
+      }, 
+      "ApiErrorBase": {
+        "py/type": "azure.mgmt.compute.models.api_error_base.ApiErrorBase"
+      }, 
+      "UpgradePolicy": {
+        "py/type": "azure.mgmt.compute.models.upgrade_policy.UpgradePolicy"
+      }, 
+      "VirtualMachineScaleSetVMPaged": {
+        "py/type": "azure.mgmt.compute.models.virtual_machine_scale_set_vm_paged.VirtualMachineScaleSetVMPaged"
+      }, 
+      "UsagePaged": {
+        "py/type": "azure.mgmt.compute.models.usage_paged.UsagePaged"
+      }, 
+      "VirtualMachineScaleSetOSProfile": {
+        "py/type": "azure.mgmt.compute.models.virtual_machine_scale_set_os_profile.VirtualMachineScaleSetOSProfile"
+      }, 
+      "ContainerServiceLinuxProfile": {
+        "py/type": "azure.mgmt.compute.models.container_service_linux_profile.ContainerServiceLinuxProfile"
+      }, 
+      "VirtualMachineScaleSetSku": {
+        "py/type": "azure.mgmt.compute.models.virtual_machine_scale_set_sku.VirtualMachineScaleSetSku"
+      }, 
+      "VirtualMachineExtensionInstanceView": {
+        "py/type": "azure.mgmt.compute.models.virtual_machine_extension_instance_view.VirtualMachineExtensionInstanceView"
+      }, 
+      "VirtualMachineExtensionImage": {
+        "py/type": "azure.mgmt.compute.models.virtual_machine_extension_image.VirtualMachineExtensionImage"
+      }, 
+      "VirtualMachineInstanceView": {
+        "py/type": "azure.mgmt.compute.models.virtual_machine_instance_view.VirtualMachineInstanceView"
+      }, 
+      "VirtualMachineCaptureParameters": {
+        "py/type": "azure.mgmt.compute.models.virtual_machine_capture_parameters.VirtualMachineCaptureParameters"
+      }, 
+      "ContainerServiceSshConfiguration": {
+        "py/type": "azure.mgmt.compute.models.container_service_ssh_configuration.ContainerServiceSshConfiguration"
+      }, 
+      "ImageReference": {
+        "py/type": "azure.mgmt.compute.models.image_reference.ImageReference"
+      }, 
+      "BootDiagnosticsInstanceView": {
+        "py/type": "azure.mgmt.compute.models.boot_diagnostics_instance_view.BootDiagnosticsInstanceView"
+      }, 
+      "VirtualMachineExtension": {
+        "py/type": "azure.mgmt.compute.models.virtual_machine_extension.VirtualMachineExtension"
+      }, 
+      "PassNames": {
+        "py/type": "azure.mgmt.compute.models.compute_management_client_enums.PassNames"
+      }, 
+      "DiskInstanceView": {
+        "py/type": "azure.mgmt.compute.models.disk_instance_view.DiskInstanceView"
+      }, 
+      "UsageName": {
+        "py/type": "azure.mgmt.compute.models.usage_name.UsageName"
+      }, 
+      "NetworkInterfaceReference": {
+        "py/type": "azure.mgmt.compute.models.network_interface_reference.NetworkInterfaceReference"
+      }, 
+      "ContainerServiceMasterProfile": {
+        "py/type": "azure.mgmt.compute.models.container_service_master_profile.ContainerServiceMasterProfile"
+      }, 
+      "VirtualMachineScaleSetExtension": {
+        "py/type": "azure.mgmt.compute.models.virtual_machine_scale_set_extension.VirtualMachineScaleSetExtension"
+      }, 
+      "LinuxConfiguration": {
+        "py/type": "azure.mgmt.compute.models.linux_configuration.LinuxConfiguration"
+      }, 
+      "VirtualMachineSizePaged": {
+        "py/type": "azure.mgmt.compute.models.virtual_machine_size_paged.VirtualMachineSizePaged"
+      }, 
+      "VirtualMachineImageResource": {
+        "py/type": "azure.mgmt.compute.models.virtual_machine_image_resource.VirtualMachineImageResource"
+      }, 
+      "CachingTypes": {
+        "py/type": "azure.mgmt.compute.models.compute_management_client_enums.CachingTypes"
+      }, 
+      "ContainerServiceOchestratorTypes": {
+        "py/type": "azure.mgmt.compute.models.compute_management_client_enums.ContainerServiceOchestratorTypes"
+      }, 
+      "VirtualMachineExtensionHandlerInstanceView": {
+        "py/type": "azure.mgmt.compute.models.virtual_machine_extension_handler_instance_view.VirtualMachineExtensionHandlerInstanceView"
+      }, 
+      "Resource": {
+        "py/type": "azure.mgmt.compute.models.resource.Resource"
+      }, 
+      "VirtualMachineStatusCodeCount": {
+        "py/type": "azure.mgmt.compute.models.virtual_machine_status_code_count.VirtualMachineStatusCodeCount"
+      }, 
+      "SettingNames": {
+        "py/type": "azure.mgmt.compute.models.compute_management_client_enums.SettingNames"
+      }, 
+      "ApiError": {
+        "py/type": "azure.mgmt.compute.models.api_error.ApiError"
+      }, 
+      "ComponentNames": {
+        "py/type": "azure.mgmt.compute.models.compute_management_client_enums.ComponentNames"
+      }, 
+      "VirtualMachineSize": {
+        "py/type": "azure.mgmt.compute.models.virtual_machine_size.VirtualMachineSize"
+      }, 
+      "VirtualMachineScaleSetVMProfile": {
+        "py/type": "azure.mgmt.compute.models.virtual_machine_scale_set_vm_profile.VirtualMachineScaleSetVMProfile"
+      }, 
+      "VirtualMachineScaleSetVMInstanceView": {
+        "py/type": "azure.mgmt.compute.models.virtual_machine_scale_set_vm_instance_view.VirtualMachineScaleSetVMInstanceView"
+      }, 
+      "VirtualMachineScaleSetExtensionProfile": {
+        "py/type": "azure.mgmt.compute.models.virtual_machine_scale_set_extension_profile.VirtualMachineScaleSetExtensionProfile"
+      }, 
+      "VirtualMachineScaleSetPaged": {
+        "py/type": "azure.mgmt.compute.models.virtual_machine_scale_set_paged.VirtualMachineScaleSetPaged"
+      }, 
+      "DiskEncryptionSettings": {
+        "py/type": "azure.mgmt.compute.models.disk_encryption_settings.DiskEncryptionSettings"
+      }, 
+      "NetworkProfile": {
+        "py/type": "azure.mgmt.compute.models.network_profile.NetworkProfile"
+      }, 
+      "OSDisk": {
+        "py/type": "azure.mgmt.compute.models.os_disk.OSDisk"
+      }, 
+      "ProtocolTypes": {
+        "py/type": "azure.mgmt.compute.models.compute_management_client_enums.ProtocolTypes"
+      }, 
+      "VirtualMachineScaleSetStorageProfile": {
+        "py/type": "azure.mgmt.compute.models.virtual_machine_scale_set_storage_profile.VirtualMachineScaleSetStorageProfile"
+      }, 
+      "VirtualMachineScaleSetVMInstanceIDs": {
+        "py/type": "azure.mgmt.compute.models.virtual_machine_scale_set_vm_instance_ids.VirtualMachineScaleSetVMInstanceIDs"
+      }, 
+      "VirtualMachineScaleSetInstanceView": {
+        "py/type": "azure.mgmt.compute.models.virtual_machine_scale_set_instance_view.VirtualMachineScaleSetInstanceView"
+      }, 
+      "BootDiagnostics": {
+        "py/type": "azure.mgmt.compute.models.boot_diagnostics.BootDiagnostics"
+      }
+    }, 
+    "serialize_type": {
+      "bytearray": {
+        "py/function": "msrest.serialization.serialize_bytearray"
+      }, 
+      "rfc-1123": {
+        "py/function": "msrest.serialization.serialize_rfc"
+      }, 
+      "decimal": {
+        "py/function": "msrest.serialization.serialize_decimal"
+      }, 
+      "base64": {
+        "py/function": "msrest.serialization.serialize_base64"
+      }, 
+      "unix-time": {
+        "py/function": "msrest.serialization.serialize_unix"
+      }, 
+      "long": {
+        "py/function": "msrest.serialization.serialize_long"
+      }, 
+      "iso-8601": {
+        "py/function": "msrest.serialization.serialize_iso"
+      }, 
+      "date": {
+        "py/function": "msrest.serialization.serialize_date"
+      }, 
+      "duration": {
+        "py/function": "msrest.serialization.serialize_duration"
+      }
+    }
+  }, 
+  "virtual_machine_extension_images": {
+    "py/object": "azure.mgmt.compute.operations.virtual_machine_extension_images_operations.VirtualMachineExtensionImagesOperations", 
+    "_deserialize": {
+      "py/id": 23
+    }, 
+    "_client": {
+      "py/id": 1
+    }, 
+    "_serialize": {
+      "py/id": 24
+    }, 
+    "config": {
+      "py/id": 6
+    }, 
+    "api_version": "2016-03-30"
+  }, 
+  "config": {
+    "py/id": 6
+  }, 
+  "virtual_machine_images": {
+    "py/object": "azure.mgmt.compute.operations.virtual_machine_images_operations.VirtualMachineImagesOperations", 
+    "_deserialize": {
+      "py/id": 23
+    }, 
+    "_client": {
+      "py/id": 1
+    }, 
+    "_serialize": {
+      "py/id": 24
+    }, 
+    "config": {
+      "py/id": 6
+    }, 
+    "api_version": "2016-03-30"
+  }, 
+  "availability_sets": {
+    "py/object": "azure.mgmt.compute.operations.availability_sets_operations.AvailabilitySetsOperations", 
+    "_deserialize": {
+      "py/id": 23
+    }, 
+    "_client": {
+      "py/id": 1
+    }, 
+    "_serialize": {
+      "py/id": 24
+    }, 
+    "config": {
+      "py/id": 6
+    }, 
+    "api_version": "2016-03-30"
+  }
+}

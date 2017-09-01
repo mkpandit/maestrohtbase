@@ -1,0 +1,255 @@
+#!/bin/bash
+#
+# htvcenter Enterprise developed by htvcenter Enterprise GmbH.
+#
+# All source code and content (c) Copyright 2014, htvcenter Enterprise GmbH unless specifically noted otherwise.
+#
+# This source code is released under the htvcenter Enterprise Server and Client License, unless otherwise agreed with htvcenter Enterprise GmbH.
+# The latest version of this license can be found here: http://htvcenter-enterprise.com/license
+#
+# By using this software, you acknowledge having read this license and agree to be bound thereby.
+#
+#           http://htvcenter-enterprise.com
+#
+# Copyright 2014, htvcenter Enterprise GmbH <info@htvcenter-enterprise.com>
+
+htvcenter_SERVER_BASE_DIR=$(pushd $(dirname $0)/../../../../.. > /dev/null; echo $PWD; popd > /dev/null)
+. $htvcenter_SERVER_BASE_DIR/htvcenter/etc/htvcenter-server.conf
+. $htvcenter_SERVER_BASE_DIR/htvcenter/include/htvcenter-functions
+. $htvcenter_SERVER_BASE_DIR/htvcenter/include/htvcenter-server-functions
+. $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/ldap/include/htvcenter-plugin-ldap-functions
+. $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/ldap/etc/htvcenter-plugin-ldap.conf
+
+APACHE_BASE_LDAP_CONFIG="$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/ldap/config-backup/htvcenter-httpd.conf"
+APACHE_CLOUD_LDAP_CONFIG="$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/ldap/config-backup/htvcenter-cloud.conf"
+APACHE_cloud_nephos_LDAP_CONFIG="$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/ldap/config-backup/htvcenter-cloud-nephos.conf"
+
+
+function htvcenter_plugin_ldap_start() {
+	echo "Starting the htvcenter ldap-plugin"
+	htvcenter_plugin_ldap_stop 1>/dev/null 2>&1
+	touch $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/ldap/.running
+}
+
+
+function htvcenter_plugin_ldap_stop() {
+	echo "Stopping the htvcenter ldap-plugin"
+	rm -f $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/ldap/.running
+	return 0
+}
+
+
+function htvcenter_plugin_ldap_activate() {
+	local USERNAME=$1
+	local PASSWORD=$2
+	if [ "$USERNAME" == "" ] && [ "$PASSWORD" == "" ]; then
+		echo -n "ldap: Please give a username to deactivate the plugin : "
+		read USERNAME
+		echo
+		echo -n "ldap: Please give the password for user $USERNAME : "
+		read PASSWORD
+		echo
+	fi
+	echo "Activating the htvcenter ldap-plugin" | logger
+	# get the ldap config from htvcenter
+	if ! wget -q -O $APACHE_BASE_LDAP_CONFIG --http-user=$USERNAME --http-password=$PASSWORD "http://localhost/htvcenter/base/plugins/ldap/ldap-action.php?ldap_command=get-httpd-base-config"; then
+		echo "ERROR: Could not get the httpd-ldap-base config from htvcenter!" | logger
+		exit 1
+	fi
+	if ! wget -q -O $APACHE_CLOUD_LDAP_CONFIG --http-user=$USERNAME --http-password=$PASSWORD "http://localhost/htvcenter/base/plugins/ldap/ldap-action.php?ldap_command=get-httpd-cloud-config"; then
+		echo "ERROR: Could not the httpd-ldap-cloud config from htvcenter!" | logger
+		exit 1
+	fi
+	if ! wget -q -O $APACHE_cloud_nephos_LDAP_CONFIG --http-user=$USERNAME --http-password=$PASSWORD "http://localhost/htvcenter/base/plugins/ldap/ldap-action.php?ldap_command=get-httpd-cloud-nephos-config"; then
+		echo "ERROR: Could not the httpd-ldap-cloud zones config from htvcenter!" | logger
+		exit 1
+	fi
+
+	mkdir -p $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/ldap/config-backup/
+	if [ -f /etc/debian_version ]; then
+		APACHE_CUSTOM_CONFIG_DIR="/etc/apache2/conf.d"
+	elif [ -f /etc/redhat-release ]; then
+		APACHE_CUSTOM_CONFIG_DIR="/etc/httpd/conf.d"
+	elif [ -f /etc/SuSE-release ]; then
+		APACHE_CUSTOM_CONFIG_DIR="/etc/apache2/conf.d"
+	else
+		echo "ERROR: Could not the httpd-config dir on this system! Please apply the ldap-http.conf manually" | logger
+		exit 1
+	fi
+	APACHE_CUSTOM_BASE_CONFIG="$APACHE_CUSTOM_CONFIG_DIR/htvcenter-httpd.conf"
+	APACHE_CUSTOM_CLOUD_CONFIG="$APACHE_CUSTOM_CONFIG_DIR/htvcenter-cloud.conf"
+	APACHE_CUSTOM_cloud_nephos_CONFIG="$APACHE_CUSTOM_CONFIG_DIR/htvcenter-cloud-nephos.conf"
+	# backup origin httpd config for htvcenter base + cloud
+	/bin/cp -f $APACHE_CUSTOM_BASE_CONFIG $APACHE_BASE_LDAP_CONFIG.htpasswd_auth
+	/bin/cp -f $APACHE_CUSTOM_CLOUD_CONFIG $APACHE_CLOUD_LDAP_CONFIG.htpasswd_auth
+	/bin/cp -f $APACHE_CUSTOM_cloud_nephos_CONFIG $APACHE_cloud_nephos_LDAP_CONFIG.htpasswd_auth
+	# move new templates
+	/bin/mv -f $APACHE_BASE_LDAP_CONFIG $APACHE_CUSTOM_BASE_CONFIG
+	/bin/mv -f $APACHE_CLOUD_LDAP_CONFIG $APACHE_CUSTOM_CLOUD_CONFIG
+	/bin/mv -f $APACHE_cloud_nephos_LDAP_CONFIG $APACHE_CUSTOM_cloud_nephos_CONFIG
+	# try enabling the needed ldap modules
+	if [ -f /etc/debian_version ]; then
+		if ! a2enmod authnz_ldap; then
+			echo "ERROR: Could not enable authnz_ldap in the Apache webserver. Please activate it manually!." | logger
+		fi
+		if ! a2enmod ldap; then
+			echo "ERROR: Could not enable ldap in the Apache webserver. Please activate it manually!." | logger
+		fi
+	fi
+	# try reload
+	if ! $htvcenter_WEBSERVER_INIT reload; then
+		# restore old config
+		/bin/cp -f $APACHE_BASE_LDAP_CONFIG.htpasswd_auth $APACHE_CUSTOM_BASE_CONFIG
+		/bin/cp -f $APACHE_CLOUD_LDAP_CONFIG.htpasswd_auth $APACHE_CUSTOM_CLOUD_CONFIG
+		/bin/cp -f $APACHE_cloud_nephos_LDAP_CONFIG.htpasswd_auth $APACHE_CUSTOM_cloud_nephos_CONFIG
+		if ! $htvcenter_WEBSERVER_INIT reload; then
+			# try restart
+			$htvcenter_WEBSERVER_INIT stop
+			if $htvcenter_WEBSERVER_INIT start; then
+				echo "ERROR: Could not apply the new httpd-configuration. Please apply manually!" | logger
+				exit 1
+			fi
+			echo "ERROR: Could not apply the new httpd-configuration. Please apply manually!" | logger
+			exit 1
+		fi
+		echo "ERROR: Could not apply the new httpd-configuration. Please apply manually!" | logger
+		exit 1
+	fi
+	echo "SUCCESS: Applied the new httpd-configuration!" | logger
+	exit 0
+}
+
+
+function htvcenter_plugin_ldap_deactivate() {
+	local USERNAME=$1
+	local PASSWORD=$2
+	if [ "$USERNAME" == "" ] && [ "$PASSWORD" == "" ]; then
+		echo -n "ldap: Please give a username to deactivate the plugin : "
+		read USERNAME
+		echo
+		echo -n "ldap: Please give the password for user $USERNAME : "
+		read PASSWORD
+		echo
+	fi
+	echo "De-Activating the htvcenter ldap-plugin" | logger
+	if [ -f /etc/debian_version ]; then
+		APACHE_CUSTOM_CONFIG_DIR="/etc/apache2/conf.d"
+	elif [ -f /etc/redhat-release ]; then
+		APACHE_CUSTOM_CONFIG_DIR="/etc/httpd/conf.d"
+	elif [ -f /etc/SuSE-release ]; then
+		APACHE_CUSTOM_CONFIG_DIR="/etc/apache2/conf.d"
+	else
+		echo "ERROR: Could not the httpd-config dir on this system! Please apply the ldap-http.conf manually" | logger
+		exit 1
+	fi
+	APACHE_CUSTOM_BASE_CONFIG="$APACHE_CUSTOM_CONFIG_DIR/htvcenter-httpd.conf"
+	APACHE_CUSTOM_CLOUD_CONFIG="$APACHE_CUSTOM_CONFIG_DIR/htvcenter-cloud.conf"
+	APACHE_CUSTOM_cloud_nephos_CONFIG="$APACHE_CUSTOM_CONFIG_DIR/htvcenter-cloud-nephos.conf"
+	if [ -f $APACHE_BASE_LDAP_CONFIG.htpasswd_auth ]; then
+		/bin/cp -f $APACHE_BASE_LDAP_CONFIG.htpasswd_auth $APACHE_CUSTOM_BASE_CONFIG
+	fi
+	if [ -f $APACHE_CLOUD_LDAP_CONFIG.htpasswd_auth ]; then
+		/bin/cp -f $APACHE_CLOUD_LDAP_CONFIG.htpasswd_auth $APACHE_CUSTOM_CLOUD_CONFIG
+	fi
+	if [ -f $APACHE_cloud_nephos_LDAP_CONFIG.htpasswd_auth ]; then
+		/bin/cp -f $APACHE_cloud_nephos_LDAP_CONFIG.htpasswd_auth $APACHE_CUSTOM_cloud_nephos_CONFIG
+	fi
+	$htvcenter_WEBSERVER_INIT reload
+
+}
+
+
+
+function htvcenter_plugin_ldap_init() {
+	local USERNAME=$1
+	local PASSWORD=$2
+	if [ "$USERNAME" == "" ] && [ "$PASSWORD" == "" ]; then
+		echo -n "ldap: Please give a username to init the plugin : "
+		read USERNAME
+		echo
+		echo -n "ldap: Please give the password for user $USERNAME : "
+		read PASSWORD
+		echo
+	fi
+	echo "Initializing the htvcenter ldap-plugin"
+	# linking the web dir
+	ln -sf $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/ldap/web $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/ldap
+
+	# creating the ldap tables
+	if ! wget -q -O /dev/null --http-user=$USERNAME --http-password=$PASSWORD "http://localhost/htvcenter/base/plugins/ldap/ldap-action.php?ldap_command=init"; then
+		echo "ERROR: Could not create the ldap-plugin tables in the database!" | logger
+		exit 1
+	fi
+
+	# create the directory for the ldap network-config of the appliances
+	mkdir -p $htvcenter_SERVER_BASE_DIR/htvcenter/web/action/ldap-conf/
+	chmod 777 $htvcenter_SERVER_BASE_DIR/htvcenter/web/action/ldap-conf/
+	# create config backup dir
+	mkdir -p $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/ldap/config-backup/
+
+	return 0
+}
+
+
+function htvcenter_plugin_ldap_uninstall() {
+	local USERNAME=$1
+	local PASSWORD=$2
+	if [ "$USERNAME" == "" ] && [ "$PASSWORD" == "" ]; then
+		echo -n "ldap: Please give a username to uninstall the plugin : "
+		read USERNAME
+		echo
+		echo -n "ldap: Please give the password for user $USERNAME : "
+		read PASSWORD
+		echo
+	fi
+	echo "Uninstalling the htvcenter ldap-plugin"
+	htvcenter_plugin_ldap_stop
+	rm -rf $htvcenter_SERVER_BASE_DIR/htvcenter/web/action/ldap-conf/
+
+	# removing the ldap tables
+	if ! wget -q -O /dev/null --http-user=$USERNAME --http-password=$PASSWORD "http://localhost/htvcenter/base/plugins/ldap/ldap-action.php?ldap_command=uninstall"; then
+		echo "ERROR: Could not drop the ldap-plugin tables in the database!" | logger
+	fi
+
+	# unlinking the web dir
+	rm -f $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/ldap
+
+
+}
+
+
+USER=$2
+PASS=$3
+
+case "$1" in
+	start)
+		htvcenter_plugin_ldap_start
+		;;
+	stop)
+		htvcenter_plugin_ldap_stop
+		;;
+	restart)
+		htvcenter_plugin_ldap_stop
+		sleep 1
+		htvcenter_plugin_ldap_start
+		;;
+	activate)
+		htvcenter_plugin_ldap_activate $USER $PASS
+		;;
+	deactivate)
+		htvcenter_plugin_ldap_deactivate $USER $PASS
+		;;
+	init)
+		htvcenter_plugin_ldap_init $USER $PASS
+		;;
+	uninstall)
+		htvcenter_plugin_ldap_uninstall $USER $PASS
+		;;
+	*)
+		echo "Usage: $0 {start|stop|activate|deactivate|restart|init|uninstall}"
+		exit 1
+
+esac
+exit $?
+
+

@@ -1,0 +1,98 @@
+#!/bin/bash
+#  htvcenter-exec, an htvcenter-util for remote exection of htvcenter-commands
+#
+# htvcenter Enterprise developed by htvcenter Enterprise GmbH.
+#
+# All source code and content (c) Copyright 2014, htvcenter Enterprise GmbH unless specifically noted otherwise.
+#
+# This source code is released under the htvcenter Enterprise Server and Client License, unless otherwise agreed with htvcenter Enterprise GmbH.
+# The latest version of this license can be found here: http://htvcenter-enterprise.com/license
+#
+# By using this software, you acknowledge having read this license and agree to be bound thereby.
+#
+#           http://htvcenter-enterprise.com
+#
+# Copyright 2014, htvcenter Enterprise GmbH <info@htvcenter-enterprise.com>
+#
+
+if [ "$htvcenter_SERVER_BASE_DIR" == "" ]; then
+	htvcenter_SERVER_BASE_DIR=$(dirname $0)/../..
+	htvcenter_SERVER_BASE_DIR=$(pushd $htvcenter_SERVER_BASE_DIR > /dev/null && echo $PWD && popd > /dev/null)
+fi
+export htvcenter_SERVER_BASE_DIR
+. $htvcenter_SERVER_BASE_DIR/htvcenter/etc/htvcenter-server.conf
+DB_IDLE=0
+DB_TIMEOUT=10
+htvcenter_COMMAND_QUEUE="$htvcenter_SERVER_BASE_DIR/htvcenter/var/spool/htvcenter-queue"
+WHOAMI=`whoami`
+OQLOCKFILE="$htvcenter_SERVER_BASE_DIR/htvcenter/var/lock/htvcenter-queue"
+
+
+
+function lockit() {
+	LOCKLOOP=0
+	MAXLOCKLOOP=4
+	while (:); do
+		if ( set -o noclobber; echo "locked" > "$OQLOCKFILE") 2> /dev/null; then
+			trap 'rm -f "$OQLOCKFILE"; exit $?' INT TERM EXIT
+			break
+		else
+			LOCKLOOP=$(( LOCKLOOP + 1 ))
+			if (( $LOCKLOOP > $MAXLOCKLOOP )); then
+				unlockit
+			fi
+		fi
+		sleep 1
+	done
+}
+
+function unlockit() {
+	rm -f "$OQLOCKFILE"
+}
+
+
+
+# parse commandline args
+while [ $# -ne 0 ]; do
+	case "$1" in
+		-i)
+			RESOURCE_IP=$2
+			shift
+			;;
+		-t)
+			COMMAND_TOKEN=$2
+			shift
+			;;
+		-l)
+			COMMAND_LOCAL=$2
+			shift
+			;;
+		-c)
+			shift
+			htvcenter_COMMAND=$@
+			shift
+			;;
+	esac
+	shift
+done
+# checks
+if [ "$RESOURCE_IP" == "0.0.0.0" ]; then
+	echo "htvcenter-exec ERROR: Not running command on invalid ip address 0.0.0.0" | logger
+	exit 0
+fi
+if [ "$RESOURCE_IP" == "" ]; then
+	echo "htvcenter-exec ERROR: Not running command on empty ip address" | logger
+	exit 0
+fi
+# run
+if [ "$COMMAND_LOCAL" == "true" ]; then
+	FULL_COMMAND="$htvcenter_SERVER_BASE_DIR/htvcenter/bin/htvcenter-cmd $htvcenter_COMMAND"
+else
+	FULL_COMMAND="dbclient -K $DB_TIMEOUT -y -i $htvcenter_SERVER_BASE_DIR/htvcenter/etc/dropbear/dropbear_rsa_host_key -p $htvcenter_EXEC_PORT root@$RESOURCE_IP \"$htvcenter_SERVER_BASE_DIR/htvcenter/bin/htvcenter-cmd $htvcenter_COMMAND\""
+fi
+# echo "htvcenter engine (as $WHOAMI) queuing : $FULL_COMMAND" | logger
+lockit
+echo "$FULL_COMMAND" >> $htvcenter_COMMAND_QUEUE.$COMMAND_TOKEN
+sleep 0.1
+unlockit
+
