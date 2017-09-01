@@ -1,0 +1,9 @@
+default linux
+
+label linux
+kernel boot/htvcenter_BOOTIMAGE_KERNEL
+append ramdisk_size=131072 apm=off initrd=boot/htvcenter_BOOTIMAGE_INITRD id=htvcenter_RESOURCE_ID htvcenter=htvcenter_SERVER_IP_ADDRESS selinux=0
+ipappend 3
+
+label local
+LOCALBOOT 0

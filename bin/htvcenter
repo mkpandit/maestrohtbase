@@ -1,0 +1,562 @@
+#!/bin/bash
+# this is the htvcenter commandline client
+#
+# htvcenter Enterprise developed by HTBase Corp.
+#
+# All source code and content (c) Copyright 2015, HTBase Corp unless specifically noted otherwise.
+#
+# This source code is released under the htvcenter Enterprise Server and Client License, unless otherwise agreed with HTBase Corp.
+#
+# By using this software, you acknowledge having read this license and agree to be bound thereby.
+#
+# Copyright 2015, HTBase Corp <contact@htbase.com>
+#
+
+if [ "$htvcenter_SERVER_BASE_DIR" == "" ]; then
+	htvcenter_SERVER_BASE_DIR=$(dirname $0)/../..
+	htvcenter_SERVER_BASE_DIR=$(pushd $htvcenter_SERVER_BASE_DIR > /dev/null && echo $PWD && popd > /dev/null)
+fi
+. $htvcenter_SERVER_BASE_DIR/htvcenter/etc/htvcenter-server.conf
+. $htvcenter_SERVER_BASE_DIR/htvcenter/include/htvcenter-functions
+# unblock starting command queue early for non-blocking + ui commands
+htvcenter_COMMAND=$1
+if [ "$htvcenter_COMMAND" == "license" ] || [ "$htvcenter_COMMAND" == "boot-service" ]; then
+	htvcenter_unblock_starting_queue $@
+	NON_BLOCKING=true
+fi
+
+. $htvcenter_SERVER_BASE_DIR/htvcenter/include/htvcenter-server-functions
+export htvcenter_SERVER_BASE_DIR
+
+# let only root run this script
+WHOAMI=`whoami`
+if [ "$WHOAMI" != "root" ]; then
+	echo "ERROR: Please run this script as root!"
+	exit 6
+fi
+
+
+function htvcenter_usage() {
+	echo
+	echo "Usage:"
+	echo "`basename $0` help			- This help screen"
+	echo
+	echo "- htvcenter Console -"
+	echo "`basename $0` console"
+	echo
+	echo "- Managing boot-images -"
+	echo "`basename $0` kernel add -n <name> -v <version> -u <username> -p <password> [-l <location> -i <initramfs/ext2> -t <path-to-initrd-template-file>]"
+	echo "`basename $0` kernel remove -n <name> -u <username> -p <password>"
+	echo
+	echo "- Managing server-states -"
+	echo "`basename $0` state backup -n <name>"
+	echo "`basename $0` state restore -n <name>"
+	echo "`basename $0` state remove -n <name>"
+	echo "`basename $0` state list"
+	echo
+	echo "- Managing server-configuration -"
+	echo "`basename $0` init_config [restore]"
+	echo
+	echo "- Managing Plugin Boot-Services -"
+	echo "`basename $0` boot-service configure -n <plugin-name> -a default -k <key> -v <value>"
+	echo "`basename $0` boot-service configure -n <plugin-name> -a <appliance-name> -k <key> -v <value>"
+	echo
+	echo "`basename $0` boot-service view -n <plugin-name> -a default"
+	echo "`basename $0` boot-service view -n <plugin-name> -a <appliance-name>"
+	echo
+	echo "- Login to resources -"
+	echo "`basename $0` login -i <resource-ip>"
+	echo
+	echo "- Managing Licenses -"
+	echo "`basename $0` license -l <path-to-license-file>"
+
+
+}
+
+# logs for init_config
+function init_config_log() {
+	local MESSAGE=$@
+	logger -i -t "htvcenter init-config" "$MESSAGE"
+}
+
+
+
+# main
+case "$1" in
+	kernel)
+		shift
+		if [ $# == 0 ]; then
+			htvcenter_usage
+			exit 0
+		fi
+
+		case "$1" in
+			add)
+				shift
+				if [ $# == 0 ]; then
+					htvcenter_usage
+					exit 0
+				fi
+				while [ $# -ne 0 ]; do
+					case "$1" in
+						-n)
+							BOOT_IMAGE_NAME=$2
+							shift
+							;;
+						-v)
+							BOOT_IMAGE_VERSION=$2
+							shift
+							;;			
+						-l)
+							BOOT_IMAGE_LOCATION=$2
+							shift
+							;;
+						-i)
+							BOOT_IMAGE_INITRD_TYPE=$2
+							shift
+							;;
+						-t)
+							BOOT_IMAGE_INITRD_TEMPLATE=$2
+							shift
+							;;
+						-u)
+							htvcenter_USERNAME=$2
+							shift
+							;;
+						-p)
+							htvcenter_PASSWORD=$2
+							shift
+							;;
+					esac
+					shift
+				done
+				if [ "$BOOT_IMAGE_NAME" == "" ] || [ "$BOOT_IMAGE_VERSION" == "" ] || [ "$htvcenter_USERNAME" == "" ] || [ "$htvcenter_PASSWORD" == "" ]; then
+					htvcenter_usage
+					exit 1
+				fi
+				if [ "$BOOT_IMAGE_LOCATION" == "" ]; then
+					BOOT_IMAGE_LOCATION=/
+				fi
+				if [ "$BOOT_IMAGE_INITRD_TYPE" == "" ]; then
+					BOOT_IMAGE_INITRD_TYPE="initramfs"
+				fi
+				if [ "$BOOT_IMAGE_INITRD_TEMPLATE" == "" ]; then
+					BOOT_IMAGE_INITRD_TEMPLATE=$htvcenter_DEFAULT_INITRD_TEMPLATE
+				fi
+				htvcenter_server_create_kernel $BOOT_IMAGE_NAME $BOOT_IMAGE_VERSION $BOOT_IMAGE_LOCATION $BOOT_IMAGE_INITRD_TYPE $BOOT_IMAGE_INITRD_TEMPLATE
+				if ! htvcenter_server_manage_kernel add $htvcenter_USERNAME $htvcenter_PASSWORD $BOOT_IMAGE_NAME $BOOT_IMAGE_VERSION; then
+					echo "WARNING: Could not add the kernel to the htvcenter-server!"
+					exit -1
+				fi
+				;;
+
+			remove)
+				shift
+				if [ $# == 0 ]; then
+					htvcenter_usage
+					exit 0
+				fi
+				while [ $# -ne 0 ]; do
+					case "$1" in
+						-n)
+							BOOT_IMAGE_NAME=$2
+							shift
+							;;
+						-u)
+							htvcenter_USERNAME=$2
+							shift
+							;;
+						-p)
+							htvcenter_PASSWORD=$2
+							shift
+							;;
+					esac
+					shift
+				done
+				if [ "$BOOT_IMAGE_NAME" == "" ] || [ "$htvcenter_USERNAME" == "" ] || [ "$htvcenter_PASSWORD" == "" ]; then
+					htvcenter_usage
+					exit 1
+				fi
+				rm -f $htvcenter_SERVER_BASE_DIR/htvcenter/tftpboot/boot/vmlinuz-$BOOT_IMAGE_NAME
+				rm -f $htvcenter_SERVER_BASE_DIR/htvcenter/tftpboot/boot/System.map-$BOOT_IMAGE_NAME
+				rm -f $htvcenter_SERVER_BASE_DIR/htvcenter/tftpboot/boot/modules-$BOOT_IMAGE_NAME.tgz
+				rm -f $htvcenter_SERVER_BASE_DIR/htvcenter/tftpboot/boot/initrd-$BOOT_IMAGE_NAME.img
+				if ! htvcenter_server_manage_kernel remove $htvcenter_USERNAME $htvcenter_PASSWORD $BOOT_IMAGE_NAME $BOOT_IMAGE_VERSION; then
+					echo "WARNING: Could not remove the kernel to the htvcenter-server!"
+					exit -1
+				fi
+				;;
+
+		esac
+		;;
+
+
+	state)
+		shift
+		if [ $# == 0 ]; then
+			htvcenter_usage
+			exit 0
+		fi
+		export htvcenter_SERVER_BASE_DIR
+
+		case "$1" in
+			backup)
+				shift
+				if [ $# == 0 ]; then
+					htvcenter_usage
+					exit 0
+				fi
+				while [ $# -ne 0 ]; do
+					case "$1" in
+						-n)
+							BACKUP_STATE_NAME=$2
+							shift
+							;;
+					esac
+					shift
+				done
+				if [ "$BACKUP_STATE_NAME" == "" ]; then
+					htvcenter_usage
+					exit 1
+				fi
+				htvcenter_server_state backup $BACKUP_STATE_NAME
+				;;
+
+			restore)
+				shift
+				if [ $# == 0 ]; then
+					htvcenter_usage
+					exit 0
+				fi
+				while [ $# -ne 0 ]; do
+					case "$1" in
+						-n)
+							BACKUP_STATE_NAME=$2
+							shift
+							;;
+					esac
+					shift
+				done
+				if [ "$BACKUP_STATE_NAME" == "" ]; then
+					htvcenter_usage
+					exit 1
+				fi
+				htvcenter_server_state restore $BACKUP_STATE_NAME
+				;;
+
+			remove)
+				shift
+				if [ $# == 0 ]; then
+					htvcenter_usage
+					exit 0
+				fi
+				while [ $# -ne 0 ]; do
+					case "$1" in
+						-n)
+							BACKUP_STATE_NAME=$2
+							shift
+							;;
+					esac
+					shift
+				done
+				if [ "$BACKUP_STATE_NAME" == "" ]; then
+					htvcenter_usage
+					exit 1
+				fi
+				htvcenter_server_state remove $BACKUP_STATE_NAME
+				;;
+
+			list)
+				htvcenter_server_state list
+				;;
+		esac
+		;;
+
+
+	login)
+		shift
+		if [ $# == 0 ]; then
+			htvcenter_usage
+			exit 0
+		fi
+		while [ $# -ne 0 ]; do
+			case "$1" in
+				-i)
+					RESOURCE_IP_ADDRESS=$2
+					shift
+					;;
+			esac
+			shift
+		done
+		if [ "$RESOURCE_IP_ADDRESS" == "" ]; then
+			htvcenter_usage
+			exit 1
+		fi
+		echo "Login to resource $RESOURCE_IP_ADDRESS ..."
+		dbclient -K 10 -y -i $htvcenter_SERVER_BASE_DIR/htvcenter/etc/dropbear/dropbear_rsa_host_key -p $htvcenter_EXEC_PORT root@$RESOURCE_IP_ADDRESS
+		;;
+
+
+	license)
+		shift
+		if [ $# == 0 ]; then
+			htvcenter_usage
+			exit 0
+		fi
+		while [ $# -ne 0 ]; do
+			case "$1" in
+				-l)
+					LICENSE_FILE=$2
+					shift
+					;;
+			esac
+			shift
+		done
+		if [ "$LICENSE_FILE" == "" ]; then
+			htvcenter_usage
+			exit 1
+		fi
+		if [ ! -f "$LICENSE_FILE" ]; then
+			echo "ERROR: License file $LICENSE_FILE does not exist!"
+			exit 1
+		fi
+		if [ ! -d $htvcenter_SERVER_BASE_DIR/htvcenter/etc/license ]; then
+			mkdir -p $htvcenter_SERVER_BASE_DIR/htvcenter/etc/license
+		fi
+		if /bin/cp -f $LICENSE_FILE $htvcenter_SERVER_BASE_DIR/htvcenter/etc/license/; then
+			echo "Activating License file $LICENSE_FILE"
+			rm -f $LICENSE_FILE
+		else
+			echo "ERROR: Could not activate License file $LICENSE_FILE"
+			rm -f $LICENSE_FILE
+			exit 1
+		fi
+
+		;;
+
+
+	console)
+		echo "starting the htvcenter Console"
+		export htvcenter_SOURCE_DIR="$htvcenter_SERVER_BASE_DIR/htvcenter/"
+		. $htvcenter_SERVER_BASE_DIR/htvcenter/include/htvcenter-package-functions
+		export FORCE_INSTALL=true
+		htvcenter_install_os_dependency lynx
+		lynx http://localhost/htvcenter
+		;;
+
+
+	init_config)
+		shift
+		RESTORE_LAST_STATE=$1
+		INIT_CONFIG_LOCK="$htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/running_init_config"
+		if [ -f $INIT_CONFIG_LOCK ]; then
+			init_config_log "init_config already running. Skipping re-init"
+			exit 0
+		fi
+		if [ -f $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/unconfigured ]; then
+			# setup traps, make sure we do not get stopped by timeout
+			trap "" HUP
+			trap "" INT
+			trap "" QUIT
+			trap "" KILL
+			trap "" TSTP
+			# create lock
+			touch $INIT_CONFIG_LOCK
+			init_config_log "Initializing the htvcenter Database"
+
+			# initialize the database
+			chmod +x $htvcenter_SERVER_BASE_DIR/htvcenter/etc/db/$htvcenter_DATABASE_TYPE/htvcenter-$htvcenter_DATABASE_TYPE-functions
+			if ! $htvcenter_SERVER_BASE_DIR/htvcenter/etc/db/$htvcenter_DATABASE_TYPE/htvcenter-$htvcenter_DATABASE_TYPE-functions init; then
+				init_config_log "ERROR: Initializing the htvcenter Database failed !"
+				rm -f $INIT_CONFIG_LOCK
+				exit -1
+			fi
+
+			# check if we should restore the last state
+			if [ "$RESTORE_LAST_STATE" == "restore" ]; then
+				init_config_log "Restoring last htvcenter state backup"
+				# check if backups are not locked
+				if [ ! -f $htvcenter_SERVER_STATE_DIR/locked ]; then
+					if [ "$htvcenter_RESTORE_STATE" != "false" ]; then
+						# check if there is a server state to restore
+						LAST_SERVER_STATE_BACKUP=`ls -tr $htvcenter_SERVER_STATE_DIR/uninstall-* 2>/dev/null | tail -n1 | sed -s "s/\.tgz//g"`
+						if [ "$LAST_SERVER_STATE_BACKUP" != "" ]; then
+							LAST_SERVER_STATE_BACKUP=`basename $LAST_SERVER_STATE_BACKUP`
+							init_config_log "Found backup of last htvcenter Server state $LAST_SERVER_STATE_BACKUP, restoring it"
+							htvcenter_server_state restore $LAST_SERVER_STATE_BACKUP
+						fi
+					fi
+				else
+					init_config_log "Found htvcenter Server state backups locked by $htvcenter_SERVER_STATE_DIR/locked"
+				fi
+			fi
+
+			# create $htvcenter_SERVER_BASE_DIR/htvcenter/tftpboot/pxelinux.cfg/default
+			init_config_log "Creating default PXE-configuration"
+			mkdir -p $htvcenter_SERVER_BASE_DIR/htvcenter/tftpboot/pxelinux.cfg/
+			htvcenter_server_create_pxe_config -1 default default
+
+			# add automatic startup to init
+			htvcenter_chkconfig add htvcenter
+
+			# here we create + add the default kernel+kernel-version to the htvcenter Server
+			# via the kernel-action.form. If this returns bad something is wrong
+			DEFAULT_KERNEL_VERSION=`uname -r`
+			init_config_log "Creating the default kernel version $DEFAULT_KERNEL_VERSION"
+			INITRD_TYPE="initramfs"
+			htvcenter_server_create_kernel default $DEFAULT_KERNEL_VERSION / $INITRD_TYPE
+			if ! htvcenter_server_manage_kernel add htvcenter htvcenter default $DEFAULT_KERNEL_VERSION; then
+				init_config_log "Could not create/add the default kernel ! Initialization failed !"
+				exit -1
+				rm -f $INIT_CONFIG_LOCK
+			fi
+
+			# remove configure lock
+			rm -f $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/unconfigured
+
+			# start monitoring subsystem and plugins
+			if [ -x /usr/bin/screen.real ]; then
+				RUNSCREEN="/usr/bin/screen.real"
+			else
+				RUNSCREEN=`which screen`
+			fi
+			SCREEN_NAME=`date +%T%x | sed -e "s/://g" | sed -e "s#/##g"`
+			$RUNSCREEN -dmS $SCREEN_NAME $htvcenter_SERVER_BASE_DIR/htvcenter/sbin/htvcenter-monitord
+			if [ -d $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/ ]; then
+				for htvcenter_PLUGIN in `ls $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/`; do
+					if [ -x $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/$htvcenter_PLUGIN/etc/init.d/htvcenter-plugin-$htvcenter_PLUGIN ]; then
+						$RUNSCREEN -dmS $htvcenter_PLUGIN $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/$htvcenter_PLUGIN/etc/init.d/htvcenter-plugin-$htvcenter_PLUGIN start
+					fi
+				done
+			fi
+			init_config_log "Successfully initialized and started the htvcenter Server"
+			rm -f $INIT_CONFIG_LOCK
+			exit 0
+
+		else
+			init_config_log "This htvcenter Server is already configured. Skipping re-init"
+			exit 0
+		fi
+		;;
+
+
+
+	boot-service)
+		shift
+		if [ $# == 0 ]; then
+			htvcenter_usage
+			exit 0
+		fi
+		BOOT_SERVICE_COMMAND=$1
+		shift
+		while [ $# -ne 0 ]; do
+			case "$1" in
+				-a)
+					APPLIANCE_NAME=$2
+					shift
+					;;
+				-n)
+					PLUGIN_NAME=$2
+					shift
+					;;
+				-v)
+					BOOT_SERVICE_VALUE=$2
+					shift
+					;;
+				-k)
+					BOOT_SERVICE_KEY=$2
+					shift
+					;;
+			esac
+			shift
+		done
+
+		case "$BOOT_SERVICE_COMMAND" in
+			configure)
+				if [ "$APPLIANCE_NAME" == "" ] || [ "$PLUGIN_NAME" == "" ] || [ "$BOOT_SERVICE_VALUE" == "" ] || [ "$BOOT_SERVICE_KEY" == "" ]; then
+					htvcenter_usage
+					exit 1
+				fi
+				# create empty value
+				if [ $BOOT_SERVICE_VALUE == "NoValue" ]; then
+					BOOT_SERVICE_VALUE=""
+				fi
+				if [ ! -f "$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/$PLUGIN_NAME/etc/htvcenter-plugin-$PLUGIN_NAME.conf" ]; then
+					echo "ERROR: Cannot find Boot-Service configuration of Plugin $PLUGIN_NAME!"
+					exit -1
+				fi
+				if ! grep -w ^$BOOT_SERVICE_KEY $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/$PLUGIN_NAME/etc/htvcenter-plugin-$PLUGIN_NAME.conf 2>&1 1>/dev/null; then
+					echo "ERROR: Cannot find key in Boot-Service configuration of Plugin $PLUGIN_NAME!"
+					exit -1
+				fi
+
+				if [ "$APPLIANCE_NAME" == "default" ]; then
+					echo "Setting up default Boot-Service Konfiguration of plugin $PLUGIN_NAME"
+					BOOT_SERVICE_CONFIG_FILE="$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/$PLUGIN_NAME/etc/htvcenter-plugin-$PLUGIN_NAME.conf"
+					if [ -f "$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/$PLUGIN_NAME/web/boot-service-$PLUGIN_NAME.tgz" ]; then
+						# adjust the config in the boot-service.tgz file
+						echo "- adjusting boot-service of plugin $PLUGIN_NAME at $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/$PLUGIN_NAME/web/boot-service-$PLUGIN_NAME.tgz"
+						rm -rf $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/$PLUGIN_NAME/web/boot-service.tmp
+						mkdir $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/$PLUGIN_NAME/web/boot-service.tmp
+						if ! tar -C $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/$PLUGIN_NAME/web/boot-service.tmp -xzf $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/$PLUGIN_NAME/web/boot-service-$PLUGIN_NAME.tgz; then
+							echo "ERROR: Could not unpack boot-service of of Plugin $PLUGIN_NAME at $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/$PLUGIN_NAME/web/boot-service-$PLUGIN_NAME.tgz!"
+							exit -1
+						fi
+						if [ -f "$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/$PLUGIN_NAME/web/boot-service.tmp/etc/htvcenter-plugin-$PLUGIN_NAME.conf" ]; then
+							sed -i -e "s#$BOOT_SERVICE_KEY.*#$BOOT_SERVICE_KEY=\"$BOOT_SERVICE_VALUE\"#g" $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/$PLUGIN_NAME/web/boot-service.tmp/etc/htvcenter-plugin-$PLUGIN_NAME.conf
+							TIMESTAMP=`date +%s`
+							mv -f $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/$PLUGIN_NAME/web/boot-service-$PLUGIN_NAME.tgz $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/$PLUGIN_NAME/web/boot-service-$PLUGIN_NAME.tgz.$TIMESTAMP
+							cd $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/$PLUGIN_NAME/web/boot-service.tmp/ && tar -czf $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/$PLUGIN_NAME/web/boot-service-$PLUGIN_NAME.tgz * && cd -
+							rm -rf $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/$PLUGIN_NAME/web/boot-service.tmp
+						fi
+					fi
+				else
+					echo "Setting up custom Boot-Service Konfiguration of plugin $PLUGIN_NAME for Appliance $APPLIANCE_NAME"
+					if [ ! -f "$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/$PLUGIN_NAME/etc/appliances/htvcenter-plugin-$PLUGIN_NAME.$APPLIANCE_NAME.conf" ]; then
+						mkdir -p $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/$PLUGIN_NAME/etc/appliances
+						/bin/cp -f $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/$PLUGIN_NAME/etc/htvcenter-plugin-$PLUGIN_NAME.conf $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/$PLUGIN_NAME/etc/appliances/htvcenter-plugin-$PLUGIN_NAME.$APPLIANCE_NAME.conf
+					fi
+					mkdir -p $htvcenter_SERVER_BASE_DIR/htvcenter/web/boot-service/plugins
+					if [ ! -h $htvcenter_SERVER_BASE_DIR/htvcenter/web/boot-service/plugins/$PLUGIN_NAME ]; then
+						rm -f $htvcenter_SERVER_BASE_DIR/htvcenter/web/boot-service/plugins/$PLUGIN_NAME
+						ln -s $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/$PLUGIN_NAME/etc/appliances $htvcenter_SERVER_BASE_DIR/htvcenter/web/boot-service/plugins/$PLUGIN_NAME
+					fi
+					BOOT_SERVICE_CONFIG_FILE="$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/$PLUGIN_NAME/etc/appliances/htvcenter-plugin-$PLUGIN_NAME.$APPLIANCE_NAME.conf"
+				fi
+				sed -i -e "s#$BOOT_SERVICE_KEY.*#$BOOT_SERVICE_KEY=\"$BOOT_SERVICE_VALUE\"#g" $BOOT_SERVICE_CONFIG_FILE
+				;;
+
+
+			view)
+				if [ "$APPLIANCE_NAME" == "" ] || [ "$PLUGIN_NAME" == "" ]; then
+					htvcenter_usage
+					exit 1
+				fi
+
+				if [ "$APPLIANCE_NAME" == "default" ]; then
+					if [ ! -f "$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/$PLUGIN_NAME/etc/htvcenter-plugin-$PLUGIN_NAME.conf" ]; then
+						echo "ERROR: Cannot find Boot-Service configuration of Plugin $PLUGIN_NAME!"
+						exit -1
+					fi
+					BOOT_SERVICE_CONFIG_FILE="$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/$PLUGIN_NAME/etc/htvcenter-plugin-$PLUGIN_NAME.conf"
+				else
+					if [ ! -f "$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/$PLUGIN_NAME/etc/appliances/htvcenter-plugin-$PLUGIN_NAME.$APPLIANCE_NAME.conf" ]; then
+						echo "NOTCIE: Boot-Service configuration of Plugin $PLUGIN_NAME for Appliance $APPLIANCE_NAME not configured yet"
+						exit 0
+					fi
+					BOOT_SERVICE_CONFIG_FILE="$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/$PLUGIN_NAME/etc/appliances/htvcenter-plugin-$PLUGIN_NAME.$APPLIANCE_NAME.conf"
+				fi
+				cat $BOOT_SERVICE_CONFIG_FILE
+				;;
+		esac
+		;;
+
+
+
+	*)
+		htvcenter_usage
+		;;
+
+esac
+
+

@@ -1,0 +1,83 @@
+#!/bin/bash
+# htvcenter oracle-specfic functions
+#
+# htvcenter Enterprise developed by htvcenter Enterprise GmbH.
+#
+# All source code and content (c) Copyright 2014, htvcenter Enterprise GmbH unless specifically noted otherwise.
+#
+# This source code is released under the htvcenter Enterprise Server and Client License, unless otherwise agreed with htvcenter Enterprise GmbH.
+# The latest version of this license can be found here: http://htvcenter-enterprise.com/license
+#
+# By using this software, you acknowledge having read this license and agree to be bound thereby.
+#
+#           http://htvcenter-enterprise.com
+#
+# Copyright 2014, htvcenter Enterprise GmbH <info@htvcenter-enterprise.com>
+#
+
+if [ "$htvcenter_SERVER_BASE_DIR" == "" ]; then
+	echo "ERROR: Please export htvcenter_SERVER_BASE_DIR before sourcing $0"
+	exit 1
+fi
+
+. $htvcenter_SERVER_BASE_DIR/htvcenter/etc/htvcenter-server.conf
+htvcenter_DATABASE_INIT="$htvcenter_SERVER_BASE_DIR/htvcenter/etc/db/oracle/htvcenter-oracle-init.sql"
+htvcenter_DATABASE_INIT_TMP="/tmp/htvcenter-oracle-init.sql"
+
+
+function initialize_database() {
+
+	if ! which sqlplus 1>/dev/null 2>&1; then
+		echo "ERROR: Oracle client 'sqlplus' not installed/found on this system"
+		return 1
+	else
+		ORACLE_CLIENT=`which sqlplus`
+	fi
+
+	echo "Initializing the htvcenter-database"
+	cat $htvcenter_DATABASE_INIT |	\
+		sed -e "s/htvcenter_SERVER_IP_ADDRESS/$htvcenter_SERVER_IP_ADDRESS/g"	\
+		> $htvcenter_DATABASE_INIT_TMP
+	$ORACLE_CLIENT $htvcenter_DATABASE_USER/$htvcenter_DATABASE_PASSWORD@$htvcenter_DATABASE_NAME @$htvcenter_DATABASE_INIT_TMP
+	return $?
+}
+
+
+function backup_database() {
+	local SQL=$1
+	echo "Creating backup of the htvcenter-database at $SQL"
+	echo "NOTICE: Backup for Oracle databases not yet implemented"
+	return $RET
+
+}
+
+function restore_database() {
+	local SQL=$1
+	echo "Restoring the htvcenter-database from $SQL"
+	echo "NOTICE: Restore for Oracle databases not yet implemented"
+	return $RET
+
+}
+
+function drop_database() {
+	echo "Dropping the htvcenter-database"
+	echo "NOTICE: Drop for Oracle databases not yet implemented"
+	return $RET
+}
+
+
+
+case "$1" in
+	init)
+		initialize_database
+		;;
+	backup)
+		backup_database $2
+		;;
+	restore)
+		restore_database $2
+		;;
+	drop)
+		drop_database
+		;;
+esac

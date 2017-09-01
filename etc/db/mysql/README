@@ -1,0 +1,7 @@
+LAMP setup for htvcenter-server.conf :
+
+htvcenter_DATABASE_TYPE="mysql"                     # supported are : mysql, oracle, db2 and postgres
+htvcenter_DATABASE_SERVER="localhost"               # ip-address of the database server
+htvcenter_DATABASE_NAME="htvcenter"                   # database name
+htvcenter_DATABASE_USER="root"                      # database user
+htvcenter_DATABASE_PASSWORD=""                      # database password

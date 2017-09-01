@@ -1,0 +1,625 @@
+#!/bin/bash
+# htvcenter	htvcenter init script
+#
+# chkconfig: 2345 98 24
+# description: htvcenter is the next generation Linux Data Center management
+
+# support for LSB init script
+### BEGIN INIT INFO
+# Provides: htvcenter
+# Required-Start: $local_fs $network $remote_fs
+# Required-Stop: $local_fs $network $remote_fs
+# Default-Start:  2 3 4 5
+# Default-Stop: 0 1 6
+# Short-Description: htvcenter init script
+# Description: htvcenter init script
+### END INIT INFO
+
+#
+# htvcenter Enterprise developed by htvcenter Enterprise GmbH.
+#
+# All source code and content (c) Copyright 2014, htvcenter Enterprise GmbH unless specifically noted otherwise.
+#
+# This source code is released under the htvcenter Enterprise Server and Client License, unless otherwise agreed with htvcenter Enterprise GmbH.
+# The latest version of this license can be found here: http://htvcenter-enterprise.com/license
+#
+# By using this software, you acknowledge having read this license and agree to be bound thereby.
+#
+#           http://htvcenter-enterprise.com
+#
+# Copyright 2014, htvcenter Enterprise GmbH <info@htvcenter-enterprise.com>
+#
+
+export LANG=C
+PATH=/usr/bin:/sbin:/bin:/usr/sbin:$PATH
+export PATH
+LOCKFILE=/var/lock/subsys/htvcenter
+mkdir -p $(dirname $LOCKFILE)
+# a new line for sed
+NEWLINE='
+'
+
+# find the htvcenter-base-dir
+readlink() {
+	local path=$1 ll
+	if [ -L "$path" ]; then
+		ll="$(LC_ALL=C ls -l "$path" 2> /dev/null)" &&
+		echo "${ll/* -> }"
+	else
+		return 1
+	fi
+}
+
+SCRIPT=$0
+while [ -L "$SCRIPT" ]; do
+	SRC=$(readlink $SCRIPT)
+	if [ "${SRC:0:1}" != "/" ]; then
+		SRC=$(dirname $SCRIPT)/$SRC
+	fi
+	SCRIPT=$SRC
+done
+export htvcenter_SERVER_BASE_DIR=`pushd \`dirname $SCRIPT\`/../../../ 1>/dev/null && pwd && popd 1>/dev/null`
+
+# get the htvcenter configuration + functions
+. $htvcenter_SERVER_BASE_DIR/htvcenter/etc/htvcenter-server.conf
+. $htvcenter_SERVER_BASE_DIR/htvcenter/include/htvcenter-functions
+. $htvcenter_SERVER_BASE_DIR/htvcenter/include/htvcenter-server-functions
+. $htvcenter_SERVER_BASE_DIR/htvcenter/etc/db/$htvcenter_DATABASE_TYPE/htvcenter-$htvcenter_DATABASE_TYPE-functions
+
+# 64bit ?
+if ! uname -i | grep -i x86_64 1>/dev/null; then
+	echo "ERROR: htvcenter requires a 64bit operating system!!"
+	exit 1
+fi
+
+
+# functions
+
+function stop_exec_subsystem_force() {
+	kill `ps ax | grep dropbear | grep -v grep | grep htvcenter | awk {' print $1 '}` 2>/dev/null || true
+	kill `ps ax | grep htvcenter-cmd-queue | grep -v grep | awk {' print $1 '}` 2>/dev/null || true
+	kill `ps ax | grep htvcenter-monitord | grep -v grep | awk {' print $1 '}` 2>/dev/null || true
+	return 0
+}
+
+
+
+function htvcenter_server_init() {
+
+	echo "First startup detected. Running initialization."
+	# make sure to have all enabled plugins stopped and uninstalled
+	if [ -d $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/ ]; then
+		for htvcenter_PLUGIN in `ls $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/`; do
+			if [ -x $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/$htvcenter_PLUGIN/etc/init.d/htvcenter-plugin-$htvcenter_PLUGIN ]; then
+				$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/$htvcenter_PLUGIN/etc/init.d/htvcenter-plugin-$htvcenter_PLUGIN stop
+				rm -f $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/$htvcenter_PLUGIN
+			fi
+		done
+	fi
+
+	# do some extra checks for redhat/centos regarding selinux + firewall
+	if [ -f /etc/redhat-release ]; then
+		# selinux disabled ?
+		if selinuxenabled; then
+			echo "ERROR: Found SELinux enabled!"
+			echo "ERROR: Please set SELINUX=disabled in /etc/selinux/config and reboot!"
+			exit 1
+		fi
+		# iptables ?
+		if which iptables 1>/dev/null; then
+			if iptables -L | grep REJECT 1>/dev/null; then
+				echo "NOTICE: Found iptables firewall enabled!"
+				echo "NOTICE: An active firewall may cause troubles during the initialization!"
+				echo "NOTICE: htvcenter at least needs access to the following ports : 80, 443, $htvcenter_EXEC_PORT"
+				echo
+				echo "NOTICE: Press 'c' to continue with the current iptables firewall configuration"
+				echo "NOTICE: Press 's' to stop the iptables firewall for the initialization"
+				while (:); do
+					read -n1 IPTABLES
+					if [ "$IPTABLES" == "c" ]; then
+						break
+					fi
+					if [ "$IPTABLES" == "s" ]; then
+						break
+					fi
+				done
+				if [ "$IPTABLES" == "c" ]; then
+					echo "... continuing with the current iptables firewall configuration"
+				elif [ "$IPTABLES" == "s" ]; then
+					echo "NOTICE: Stopping the iptables firewall"
+					if [ -x /etc/init.d/iptables ]; then
+						/etc/init.d/iptables stop
+					else
+						iptables --flush
+					fi
+				else
+					echo "ERROR: No such option!"
+					exit 1
+				fi
+
+
+			fi
+		fi
+	fi
+
+	# need to copy pxelinux.0 to the tftpboot dir
+	# sym-linking it does not work because the tftpd-server does not support symlinks
+	echo -n " Looking for syslinux/pxelinux.0.."
+	mkdir -p $htvcenter_SERVER_BASE_DIR/htvcenter/tftpboot/boot
+	if [ ! -f $htvcenter_SERVER_BASE_DIR/htvcenter/tftpboot/pxelinux.0 ]; then
+		if [ -f /usr/lib/syslinux/pxelinux.0 ]; then
+			echo ".found: /usr/lib/syslinux/pxelinux.0"
+			cp -a /usr/lib/syslinux/pxelinux.0 $htvcenter_SERVER_BASE_DIR/htvcenter/tftpboot/pxelinux.0
+		elif [ -f /usr/share/syslinux/pxelinux.0 ]; then
+			echo ".found: /usr/share/syslinux/pxelinux.0"
+			cp -a /usr/share/syslinux/pxelinux.0 $htvcenter_SERVER_BASE_DIR/htvcenter/tftpboot/pxelinux.0
+		else
+			echo "[ERROR] Could not find syslinux pxelinux.0 file!"
+			echo "Please copy it manually to $htvcenter_SERVER_BASE_DIR/htvcenter/tftpboot/ and try again..."
+			exit 1
+		fi
+	fi
+
+	# link the web application directory to the documentroot
+	HTPASSWD="htpasswd"
+	echo -n " Creating custom apache config.."
+	if [ -f /etc/debian_version ]; then
+		ln -sf $htvcenter_SERVER_BASE_DIR/htvcenter/web/ $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter
+		# the default apache config normally does not allow to override the authconfig (needed for basic auth)
+		# so we allow it for the htvcenter directory
+		APACHE_CUSTOM_CONFIG_DIR="/etc/apache2/conf.d"
+		# support for Ubuntu 14.04 - new apache enabled-conf dir
+		if [ -d /etc/apache2/conf-enabled ]; then
+			APACHE_CUSTOM_CONFIG_DIR="/etc/apache2/conf-enabled"
+			# preserve backwards compatibility for other projects e.g. linuxcoe
+			ln -sf /etc/apache2/conf-enabled /etc/apache2/conf.d
+			cat $htvcenter_SERVER_BASE_DIR/htvcenter/etc/httpd/htvcenter-httpd-vhost.conf | \
+				sed -e "s#@@htvcenter_SERVER_BASE_DIR@@#$htvcenter_SERVER_BASE_DIR#g" | \
+				sed -e "s#@@htvcenter_WEBSERVER_DOCUMENT_ROOT@@#$htvcenter_WEBSERVER_DOCUMENT_ROOT#g" \
+				> $APACHE_CUSTOM_CONFIG_DIR/htvcenter-httpd.conf
+		else
+			cat $htvcenter_SERVER_BASE_DIR/htvcenter/etc/httpd/htvcenter-httpd.conf | sed -e "s#htvcenter_WEBSERVER_DOCUMENT_ROOT#$htvcenter_WEBSERVER_DOCUMENT_ROOT#g" >> $APACHE_CUSTOM_CONFIG_DIR/htvcenter-httpd.conf
+		fi
+		echo ".$APACHE_CUSTOM_CONFIG_DIR/htvcenter-httpd.conf"
+		# care about php disable_functions in php.ini
+		if [ -f /etc/php5/apache2/php.ini ]; then
+			sed -i -e "s/^disable_functions/;disable_functions/g" /etc/php5/apache2/php.ini
+		fi
+	elif [ -f /etc/redhat-release ]; then
+		APACHE_CUSTOM_CONFIG_DIR="/etc/httpd/conf.d"
+		ln -sf $htvcenter_SERVER_BASE_DIR/htvcenter/web/ $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter
+		cat $htvcenter_SERVER_BASE_DIR/htvcenter/etc/httpd/htvcenter-httpd.conf | sed -e "s#htvcenter_WEBSERVER_DOCUMENT_ROOT#$htvcenter_WEBSERVER_DOCUMENT_ROOT#g" >> $APACHE_CUSTOM_CONFIG_DIR/htvcenter-httpd.conf
+		echo ".$APACHE_CUSTOM_CONFIG_DIR/htvcenter-httpd.conf"
+	elif [ -f /etc/SuSE-release ]; then
+		APACHE_CUSTOM_CONFIG_DIR="/etc/apache2/conf.d"
+		HTPASSWD="htpasswd2"
+		ln -sf $htvcenter_SERVER_BASE_DIR/htvcenter/web/ $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter
+		cat $htvcenter_SERVER_BASE_DIR/htvcenter/etc/httpd/htvcenter-httpd.conf | sed -e "s#htvcenter_WEBSERVER_DOCUMENT_ROOT#$htvcenter_WEBSERVER_DOCUMENT_ROOT#g" >> $APACHE_CUSTOM_CONFIG_DIR/htvcenter-httpd.conf
+		echo ".$APACHE_CUSTOM_CONFIG_DIR/htvcenter-httpd.conf"
+		# we need a special treatment for suse to allow followsymlinks in the default-setup
+		DEFAULT_CONF=/etc/apache2/default-server.conf
+		NEW_CONF=/etc/apache2/default-server.conf.new
+		if [ -f $DEFAULT_CONF ]; then
+			if grep Options $DEFAULT_CONF | grep -v "#" | head -n1 | grep None 1>/dev/null; then
+				echo "Need to allow FollowSymLinks in default-server.conf"
+				OLD_IFS=$IFS
+				IFS=$NEWLINE
+				for LINE in `cat $DEFAULT_CONF`; do
+					if echo $LINE | grep -v '#' | grep Options | grep None 1>/dev/null; then
+						echo "  Options FollowSymLinks" >> $NEW_CONF
+					else
+						echo $LINE >> $NEW_CONF
+					fi
+				done
+				IFS=$OLD_IFS
+				cp -f $DEFAULT_CONF $DEFAULT_CONF.org
+				mv -f $NEW_CONF $DEFAULT_CONF
+			fi
+		fi
+	fi
+
+	# ssl ?
+	echo -n " Checking $htvcenter_SERVER_BASE_DIR/htvcenter/etc/htvcenter-server.conf for htvcenter_WEB_PROTOCOL=https.."
+	if [ "$htvcenter_WEB_PROTOCOL" == "https" ]; then
+		echo ".yes."
+		echo "  Setting up SSL secured htvcenter website."
+		# apache ssl setup, on centos it is enabled by default
+		if [ -f /etc/debian_version ]; then
+			if ! a2enmod ssl; then
+				echo "ERROR: Could not enable SSL in the Apache webserver ! Exiting."
+				return 1
+			fi
+		fi
+
+		# check for hostname settings
+		ETCHOSTS=/etc/hosts
+		MYHOSTNAME=`hostname`
+
+		if grep $MYHOSTNAME $ETCHOSTS | grep 127.0. 1>/dev/null || ! grep $MYHOSTNAME $ETCHOSTS 1>/dev/null; then
+			echo "   Found system hostname $MYHOSTNAME connected to loopback (127.0) interface"
+			echo "   [WARNING] This could cause problems when enabling SSL on the apache webserver."
+			AVAIL_IPS=`ifconfig -a | grep -v inet6  | grep -B1 inet | grep -i -A1 link | grep -v lo | grep inet | grep -v 127.0.0.1 | cut -d':' -f2 | awk {' print $1 '}`
+			while (true); do
+				echo
+				echo "   Please type one of the following ip addresses to be connected to this"
+				echo "   hostname: $MYHOSTNAME in $ETCHOSTS (Your current hosts file will be backed up):"
+				echo "$AVAIL_IPS"
+				echo -n "> "
+				read HOSTIP
+				if htvcenter_validate_ip "$HOSTIP"; then
+					if echo $AVAIL_IPS | grep "$HOSTIP" 1>/dev/null; then
+						break;
+					else
+						echo "$HOSTIP is not available on this system!"
+					fi
+				else
+					echo "$HOSTIP is invalid!"
+				fi
+			done
+			echo "   Connecting $HOSTIP to $MYHOSTNAME in $ETCHOSTS (we made a backup $ETCHOSTS.htvcenter.bak).."
+			# remove first
+			sed -i -e "s/.*$MYHOSTNAME.*//g" $ETCHOSTS
+			sed -i -e "s/.*htvcenter.*//g" $ETCHOSTS
+			# make sure we did not remove the loopback entry copmletely
+			if ! grep "127.0.*.localhost" $ETCHOSTS 1>/dev/null; then
+				echo "127.0.0.1 localhost" >> $ETCHOSTS.new
+				cat $ETCHOSTS >> $ETCHOSTS.new
+				cp -f $ETCHOSTS $ETCHOSTS.htvcenter.bak
+				mv -f $ETCHOSTS.new $ETCHOSTS
+			fi
+			echo "# added by htvcenter" >> $ETCHOSTS
+			echo "$HOSTIP	$MYHOSTNAME" >> $ETCHOSTS
+		fi
+
+		# creating the cert + key
+		PRIVATE_KEY=$htvcenter_SERVER_BASE_DIR/htvcenter/etc/ssl/private/htvcenter-private.key
+		CERTIFICATE_FILE=$htvcenter_SERVER_BASE_DIR/htvcenter/etc/ssl/cert/htvcenter.crt
+		VALID_DAYS=3650
+		mkdir -p `dirname $PRIVATE_KEY`
+		mkdir -p `dirname $CERTIFICATE_FILE`
+		echo
+		echo "   Creating new private/public-keys for server..."
+		rm -f $PRIVATE_KEY
+		openssl genrsa -out $PRIVATE_KEY 1024
+		echo "   Key saved at: $PRIVATE_KEY"
+		echo "  Starting certificate generation process..."
+		echo
+		rm -f $CERTIFICATE_FILE
+		openssl req -new -days $VALID_DAYS -key $PRIVATE_KEY -x509 -out $CERTIFICATE_FILE
+		# htvcenter apache ssl config
+		echo "   Certificate saved...$CERTIFICATE_FILE"
+		echo
+		echo -n "   Creating custom apache ssl config.."
+		cat $htvcenter_SERVER_BASE_DIR/htvcenter/etc/httpd/htvcenter-https.conf | \
+			sed -e "s#@@htvcenter_SERVER_BASE_DIR@@#$htvcenter_SERVER_BASE_DIR#g" | \
+			sed -e "s#@@htvcenter_WEBSERVER_DOCUMENT_ROOT@@#$htvcenter_WEBSERVER_DOCUMENT_ROOT#g" \
+			> $APACHE_CUSTOM_CONFIG_DIR/htvcenter-https.conf
+		echo ".$APACHE_CUSTOM_CONFIG_DIR/htvcenter-https.conf"
+		# check if to adjust the error log location
+		if [ -f /etc/redhat-release ]; then
+			sed -i -e "s/apache2/httpd/g" $APACHE_CUSTOM_CONFIG_DIR/htvcenter-https.conf
+		fi
+	fi
+
+	$htvcenter_WEBSERVER_INIT reload
+
+	# create the .htaccess file
+	cat $htvcenter_SERVER_BASE_DIR/htvcenter/etc/httpd/htvcenter-htaccess.conf | sed -e "s#htvcenter_WEBSERVER_DOCUMENT_ROOT#$htvcenter_WEBSERVER_DOCUMENT_ROOT#g" > $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/.htaccess
+	# create the default admin user
+	$HTPASSWD -bc $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/.htpasswd htvcenter htvcenter
+	chmod 666 $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/.htpasswd
+
+	# create the image-auth and upload dir
+	mkdir -p $htvcenter_SERVER_BASE_DIR/htvcenter/web/action/image-auth
+	chmod 777 $htvcenter_SERVER_BASE_DIR/htvcenter/web/action/image-auth
+	mkdir -p $htvcenter_SERVER_BASE_DIR/htvcenter/web/base/tmp
+	chmod 777 $htvcenter_SERVER_BASE_DIR/htvcenter/web/base/tmp
+
+	# link the tftpboot/boot dir to the boot-services
+	rm -f $htvcenter_SERVER_BASE_DIR/htvcenter/web/boot-service/boot
+	ln -sf $htvcenter_SERVER_BASE_DIR/htvcenter/tftpboot/boot/ $htvcenter_SERVER_BASE_DIR/htvcenter/web/boot-service/boot
+
+	# init the remote execution layer
+	case "$htvcenter_EXECUTION_LAYER" in
+		dropbear)
+			# init the htvcenter exec-mechanism via dropbear
+			echo " Initializing dropbear..."
+			# on debian and ubuntu, lets make sure it is not started as a service due to our install
+			if test -e /etc/default/dropbear; then
+				if grep '^NO_START=0' /etc/default/dropbear 1>/dev/null|| ! grep 'NO_START' /etc/default/dropbear 1>/dev/null; then
+					# looks like it has been set to start by default; let's revert that
+					/etc/init.d/dropbear stop
+					sed -i -e "s/^NO_START=0/NO_START=1/g" /etc/default/dropbear
+					# just in case it was never there in the first place
+					echo "NO_START=1" >> /etc/default/dropbear
+				fi
+			fi
+			# prepare dropbear config
+			/bin/rm -rf $htvcenter_SERVER_BASE_DIR/htvcenter/etc/dropbear
+			mkdir -p $htvcenter_SERVER_BASE_DIR/htvcenter/etc/dropbear/
+			if ! dropbearkey -t rsa -f $htvcenter_SERVER_BASE_DIR/htvcenter/etc/dropbear/dropbear_rsa_host_key; then
+				echo "ERROR: Could not create host key with dropbearkey. Please check to have dropbear installed correctly!"
+				return 1
+			fi
+			# allow the webserver user to read it
+			chmod 600 $htvcenter_SERVER_BASE_DIR/htvcenter/etc/dropbear/dropbear_rsa_host_key
+
+			# create authorized_keys
+			PUBLIC_KEY=`dropbearkey -y -f $htvcenter_SERVER_BASE_DIR/htvcenter/etc/dropbear/dropbear_rsa_host_key | grep ssh`
+			if [ ! -d /root/.ssh ]; then
+				mkdir /root/.ssh
+				chmod 700 /root/.ssh
+			fi
+			echo "  Adding public key to /root/.ssh/authorized_keys..."
+			echo
+			if [ ! -f /root/.ssh/authorized_keys ]; then
+				echo "$PUBLIC_KEY" > /root/.ssh/authorized_keys
+				chmod 600 /root/.ssh/authorized_keys
+			else
+				htvcenter_HOST=`echo $PUBLIC_KEY | awk {' print $3 '}`
+				if grep $htvcenter_HOST /root/.ssh/authorized_keys 1>/dev/null; then
+					sed -i -e "s#.*$htvcenter_HOST.*##g" /root/.ssh/authorized_keys
+				fi
+				echo "$PUBLIC_KEY" >> /root/.ssh/authorized_keys
+				chmod 600 /root/.ssh/authorized_keys
+			fi
+			# and put it in the boot-service dir for the resources to download
+			echo "$PUBLIC_KEY" > $htvcenter_SERVER_BASE_DIR/htvcenter/web/boot-service/htvcenter-server-public-rsa-key
+			# create the command-queue dir
+			mkdir -p $htvcenter_SERVER_BASE_DIR/htvcenter/var/spool/ $htvcenter_SERVER_BASE_DIR/htvcenter/var/lock/
+			chmod 777 $htvcenter_SERVER_BASE_DIR/htvcenter/var/spool $htvcenter_SERVER_BASE_DIR/htvcenter/var/lock/
+			;;
+		*)
+			echo "ERROR: Un-supported command execution layer $htvcenter_execution_layer ! Exiting."
+			return 1
+			;;
+	esac
+
+	# here we start the init
+	# add automatic startup
+	htvcenter_chkconfig add htvcenter
+
+	# create unconfigured file containing a list of available network cards to setup htvcenter on
+	#ifconfig -a | grep -v inet6  | grep -B1 inet | grep -i link | grep -v '^lo ' | awk {' print $1 '} > $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/unconfigured
+}
+
+
+
+function htvcenter_server_uninstall() {
+
+	echo "Uninstalling htvcenter-server ver. $htvcenter_SERVER_VERSION."
+	# backup state
+	chmod +x $htvcenter_SERVER_BASE_DIR/htvcenter/etc/db/$htvcenter_DATABASE_TYPE/htvcenter-$htvcenter_DATABASE_TYPE-functions
+	htvcenter_server_state backup uninstall
+
+	# stop first
+	htvcenter_server_stop
+
+	# drop db
+	$htvcenter_SERVER_BASE_DIR/htvcenter/etc/db/$htvcenter_DATABASE_TYPE/htvcenter-$htvcenter_DATABASE_TYPE-functions drop
+
+	# remove automatic startup
+	htvcenter_chkconfig del htvcenter
+	rm -f /etc/init.d/htvcenter
+
+	# removing the apache web + config
+	rm -f $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter
+	if [ -f /etc/debian_version ]; then
+		rm -f /etc/apache2/conf.d/htvcenter-httpd.conf
+		rm -f /etc/apache2/conf.d/htvcenter-https.conf
+	elif [ -f /etc/redhat-release ]; then
+		rm -f /etc/httpd/conf.d/htvcenter-httpd.conf
+		rm -f /etc/httpd/conf.d/htvcenter-https.conf
+	elif [ -f /etc/SuSE-release ]; then
+		rm -f /etc/apache2/conf.d/htvcenter-httpd.conf
+		rm -f /etc/apache2/conf.d/htvcenter-https.conf
+	fi
+	$htvcenter_WEBSERVER_INIT reload
+
+	# remove default file to re-init at next startup
+	rm -f $htvcenter_SERVER_BASE_DIR/htvcenter/tftpboot/pxelinux.cfg/default
+
+	case "$htvcenter_EXECUTION_LAYER" in
+		dropbear)
+			# remove dropbear key
+			rm -rf $htvcenter_SERVER_BASE_DIR/htvcenter/etc/dropbear
+			rm -rf $htvcenter_SERVER_BASE_DIR/htvcenter/var
+			;;
+	esac
+	echo "Uninstallation of htvcenter-server finished."
+}
+
+
+function htvcenter_server_start() {
+
+	if [ -f ${LOCKFILE} ]; then
+		echo "htvcenter-server ver. $htvcenter_SERVER_VERSION is already running."
+		return 1
+	fi
+	if [ -x /usr/bin/screen.real ]; then
+		RUNSCREEN="/usr/bin/screen.real"
+	else
+		RUNSCREEN=`which screen`
+	fi
+	# make sure apache is up
+	if [ -f /etc/debian_version ]; then
+		if ! ps ax | grep apache2 | grep -v grep 1>/dev/null; then
+			$htvcenter_WEBSERVER_INIT start
+		fi
+	elif [ -f /etc/redhat-release ]; then
+		if ! ps ax | grep httpd | grep -v grep 1>/dev/null; then
+			$htvcenter_WEBSERVER_INIT start
+			htvcenter_chkconfig add httpd
+		fi
+		if ! ps ax | grep mysqld | grep -v grep 1>/dev/null; then
+			# make sure the db is up
+			/etc/init.d/mysqld start
+			htvcenter_chkconfig add mysqld
+		fi
+	elif [ -f /etc/SuSE-release ]; then
+		if ! ps ax | grep apache | grep -v grep 1>/dev/null; then
+			$htvcenter_WEBSERVER_INIT start
+		fi
+	fi
+
+	# check if we are at first-startup, if yes do initialization
+	if [ ! -f $htvcenter_SERVER_BASE_DIR/htvcenter/tftpboot/pxelinux.cfg/default ]; then
+		htvcenter_server_init
+	fi
+	echo "Starting the htvcenter-server ver. $htvcenter_SERVER_VERSION."
+
+	# start the execution layer
+	stop_exec_subsystem_force
+	case "$htvcenter_EXECUTION_LAYER" in
+		dropbear)
+			# start the htvcenter-execd daemon
+			if ! dropbear -p $htvcenter_EXEC_PORT -r $htvcenter_SERVER_BASE_DIR/htvcenter/etc/dropbear/dropbear_rsa_host_key; then
+				echo "ERROR: Could not start the dropbear server. Please check to have dropbear installed correctly!"
+				return 1
+			fi
+			# start the htvcenter-cmd-queue
+			$RUNSCREEN -dmS cmdqueue $htvcenter_SERVER_BASE_DIR/htvcenter/sbin/htvcenter-cmd-queue
+			;;
+		*)
+			echo "ERROR: Un-supported command execution layer $htvcenter_execution_layer ! Exiting."
+			return 1
+			;;
+	esac
+	touch ${LOCKFILE}
+
+	if [ -f $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/unconfigured ]; then
+		echo
+		if [ "$htvcenter_SERVER_IP_ADDRESS" != "" ]; then
+			echo "Initialization complete. Please configure your htvcenter Server at: $htvcenter_WEB_PROTOCOL://$htvcenter_SERVER_IP_ADDRESS/htvcenter/"
+		else
+			echo "Initialization complete.  Please configure your htvcenter Server at: $htvcenter_WEB_PROTOCOL://[server-ip-address]/htvcenter/"
+		fi
+		echo "-> User: htvcenter  -> Password: htvcenter"
+		echo
+		sleep 2
+	else
+		# check htvcenter-interface
+		if ! ifconfig | grep ^"$htvcenter_SERVER_INTERFACE" 1>/dev/null; then
+			ifup "$htvcenter_SERVER_INTERFACE"
+			sleep 2
+		fi
+		ifconfig "$htvcenter_SERVER_INTERFACE" | grep inet 1>/dev/null 2>&1 || \
+		{ echo "Interface $htvcenter_SERVER_INTERFACE is down. Please configure and activate it and try again"; return 1; }
+		CONFIGURED_IP=$(cat $htvcenter_SERVER_BASE_DIR/htvcenter/tftpboot/pxelinux.cfg/default | grep "htvcenter=" | sed -e "s/.*htvcenter=//" | awk {' print $1 '})
+		htvcenter_SERVER_IP_ADDRESS=`ifconfig $htvcenter_SERVER_INTERFACE  2>/dev/null | grep inet | grep -v inet6 | cut -d':' -f2 | awk {' print $1 '} | head -n 1`
+		if [ "$htvcenter_SERVER_IP_ADDRESS" != "$CONFIGURED_IP" ]; then
+			echo "$htvcenter_SERVER_IP_ADDRESS  != $CONFIGURED_IP" > /tmp/lll-ip-check
+			echo -e "Interface $htvcenter_SERVER_INTERFACE has the wrong ip-configuration.\n" \
+			"       The htvcenter is configured to have the ip-address $CONFIGURED_IP\n" \
+			"       but the interface $htvcenter_SERVER_INTERFACE is running with the ip-address $htvcenter_SERVER_IP_ADDRESS"
+			# create lockfile again to forcre re-configuration
+			#ifconfig -a | grep -v inet6  | grep -B1 inet | grep -i link | grep -v lo | awk {' print $1 '} > $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/unconfigured
+			echo
+			if [ "$htvcenter_SERVER_IP_ADDRESS" != "" ]; then
+				echo "Please re-configure your htvcenter Server at : http://$htvcenter_SERVER_IP_ADDRESS/htvcenter/"
+			else
+				echo "Please re-configure your htvcenter Server at : http://[server-ip-address]/htvcenter/"
+			fi
+			echo
+			sleep 2
+			return 1
+		fi
+
+		# and the monitoring infra-structure
+		$RUNSCREEN -dmS monitord $htvcenter_SERVER_BASE_DIR/htvcenter/sbin/htvcenter-monitord
+		# start all enabled plugins
+		echo "Starting enabled htvcenter plugins..."
+		for htvcenter_PLUGIN in `ls $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/`; do
+			# make sure they are stopped before
+			if [ -e $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/$htvcenter_PLUGIN/.running ]; then
+				if [ -x $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/$htvcenter_PLUGIN/etc/init.d/htvcenter-plugin-$htvcenter_PLUGIN ]; then
+					$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/$htvcenter_PLUGIN/etc/init.d/htvcenter-plugin-$htvcenter_PLUGIN stop 1>/dev/null 2>/dev/null
+					touch $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/$htvcenter_PLUGIN/.htvcenter_stopped
+				fi
+			fi
+			if [ -e $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/$htvcenter_PLUGIN/.htvcenter_stopped ]; then
+				if [ -x $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/$htvcenter_PLUGIN/etc/init.d/htvcenter-plugin-$htvcenter_PLUGIN ]; then
+					$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/$htvcenter_PLUGIN/etc/init.d/htvcenter-plugin-$htvcenter_PLUGIN start
+					rm -f $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/$htvcenter_PLUGIN/.htvcenter_stopped
+				fi
+			fi
+		done
+	fi
+
+}
+
+
+function htvcenter_server_stop() {
+
+	if [ ! -f ${LOCKFILE} ]; then
+		echo "htvcenter ver. $htvcenter_SERVER_VERSION is not running."
+	else
+		# stop all enabled plugins
+		echo "Stopping enabled htvcenter plugins..."
+		for htvcenter_PLUGIN in `ls $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/`; do
+			if [ -e $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/$htvcenter_PLUGIN/.running ]; then
+				if [ -x $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/$htvcenter_PLUGIN/etc/init.d/htvcenter-plugin-$htvcenter_PLUGIN ]; then
+					$htvcenter_SERVER_BASE_DIR/htvcenter/plugins/$htvcenter_PLUGIN/etc/init.d/htvcenter-plugin-$htvcenter_PLUGIN stop
+					touch $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/$htvcenter_PLUGIN/.htvcenter_stopped
+				fi
+			fi
+		done
+		echo "Stopping the htvcenter ver. $htvcenter_SERVER_VERSION."
+		stop_exec_subsystem_force
+		/bin/rm -f ${LOCKFILE}
+	fi
+}
+
+
+function htvcenter_server_status() {
+	if [ -f ${LOCKFILE} ]; then
+		echo "htvcenter ver. $htvcenter_SERVER_VERSION is running."
+		exit 0
+	else
+		echo "htvcenter ver. $htvcenter_SERVER_VERSION is not running."
+		exit 3
+	fi
+}
+
+
+# main
+ADDITIONAL_PARAM=$2
+case "$1" in
+	start)
+		htvcenter_server_start
+		;;
+	stop)
+		htvcenter_server_stop
+		;;
+	status)
+		htvcenter_server_status
+		;;
+	restart)
+		htvcenter_server_stop
+		sleep 1
+		htvcenter_server_start
+		;;
+	reload)
+		htvcenter_server_stop
+		sleep 1
+		htvcenter_server_start
+		;;
+	force-reload)
+		htvcenter_server_stop
+		sleep 1
+		htvcenter_server_start
+		;;
+	init)
+		htvcenter_server_init
+		;;
+	uninstall)
+		htvcenter_server_uninstall
+		;;
+	*)
+		echo "Usage: $0 {start|stop|status|restart|reload|force-reload|init|uninstall}"
+		exit 1
+
+esac
+
+
+
