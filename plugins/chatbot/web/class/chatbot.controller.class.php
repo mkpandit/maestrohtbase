@@ -90,8 +90,8 @@ var $tpldir;
 */
 var $lang = array(
 	'select' => array(
-		'tab' => 'chatbot',
-		'label' => 'chatbot',
+		'tab' => 'ChatBot Configuration',
+		'label' => 'ChatBot Configuration',
 		'id' => 'Name',
 		'action_docblock' => 'docblock',
 		'action_rest' => 'rest',
@@ -102,6 +102,10 @@ var $lang = array(
 		'action_js' => 'js',
 		'action_css' => 'css',
 		'please_wait' => 'Loading. Please wait ..',
+	),
+	'reference' => array(
+		'tab' => 'ChatBot CMD Reference',
+		'label' => 'ChatBot CMD Reference',
 	),
 	'rest' => array(
 		'tab' => 'Rest',
@@ -242,6 +246,10 @@ var $lang = array(
 			case 'select':
 				$content[] = $this->select(true);
 			break;
+			case 'reference':
+				$content[] = $this->select(false);
+				$content[] = $this->reference(true);
+			break;
 			case 'rest':
 				$content[] = $this->select(false);
 				$content[] = $this->rest(true);
@@ -311,6 +319,37 @@ var $lang = array(
 		$content['request'] = $this->response->get_array($this->actions_name, 'select' );
 		$content['onclick'] = false;
 		if($this->action === 'select'){
+			$content['active']  = true;
+		}
+		return $content;
+	}
+
+	//--------------------------------------------
+	/**
+	 * Select
+	 *
+	 * @access public
+	 * @param bool $hidden
+	 * @return array
+	 */
+	//--------------------------------------------
+	function reference( $hidden = true ) {
+		$data = '';
+		if( $hidden === true ) {
+			require_once($this->rootdir.'/plugins/chatbot/class/chatbot.reference.class.php');
+			$controller = new chatbot_reference($this->htvcenter, $this->response);
+			$controller->actions_name  = $this->actions_name;
+			$controller->tpldir        = $this->tpldir;
+			$controller->message_param = $this->message_param;
+			$controller->lang          = $this->lang['reference'];
+			$data = $controller->action();
+		}
+		$content['label']   = $this->lang['reference']['tab'];
+		$content['value']   = $data;
+		$content['target']  = $this->response->html->thisfile;
+		$content['request'] = $this->response->get_array($this->actions_name, 'reference' );
+		$content['onclick'] = false;
+		if($this->action === 'reference'){
 			$content['active']  = true;
 		}
 		return $content;
