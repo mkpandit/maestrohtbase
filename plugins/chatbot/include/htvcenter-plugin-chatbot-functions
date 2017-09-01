@@ -1,0 +1,68 @@
+#!/bin/bash
+# this is the functions file for the chatbot-plugin
+#
+# htvcenter Enterprise developed by htvcenter Enterprise GmbH.
+#
+# All source code and content (c) Copyright 2014, htvcenter Enterprise GmbH unless specifically noted otherwise.
+#
+# This source code is released under the htvcenter Enterprise Server and Client License, unless otherwise agreed with htvcenter Enterprise GmbH.
+# The latest version of this license can be found here: http://htvcenter-enterprise.com/license
+#
+# By using this software, you acknowledge having read this license and agree to be bound thereby.
+#
+#           http://htvcenter-enterprise.com
+#
+# Copyright 2014, htvcenter Enterprise GmbH <info@htvcenter-enterprise.com>
+#
+chatbot_MANAGER_LOCK_FILE=/var/run/htvcenter/chatbot-plugin.lock
+chatbot_MANAGER_LOCK_DELAY=5
+chatbot_MANAGER_LOCK_RETRY=100
+chatbot_MANAGER_LOCK_TIMEOUT=500
+################ common chatbot functions
+
+# logs for chatbot
+function chatbot_manager_log() {
+	local COMPONENT=$1
+	shift
+	local MESSAGE=$@
+	logger -i -t "chatbot plug-in" "$COMPONENT : $MESSAGE"
+}
+
+
+# locking function
+function chatbot_manager_lock() {
+	local COMMAND=$1
+	local RET=1
+
+	if [ ! -d `dirname $chatbot_MANAGER_LOCK_FILE` ]; then
+		mkdir -p `dirname $chatbot_MANAGER_LOCK_FILE`
+	fi
+	case "$COMMAND" in
+		aquire)
+				lockfile -s $chatbot_MANAGER_LOCK_DELAY -r $chatbot_MANAGER_LOCK_RETRY -l $chatbot_MANAGER_LOCK_TIMEOUT $chatbot_MANAGER_LOCK_FILE
+				RET=$?
+				chatbot_manager_log chatbot_manager_lock "Aquired the lock"
+				return $RET
+				;;
+		release)
+				/bin/rm -f $chatbot_MANAGER_LOCK_FILE
+				RET=$?
+				chatbot_manager_log chatbot_manager_lock "Released the lock"
+				return $RET
+				;;
+		*)
+			chatbot_manager_log chatbot_manager_lock "No such command. Try 'aquire' or 'release'"
+			return 1
+			;;
+	esac
+}
+
+
+
+################ chatbot functions
+
+
+
+
+
+

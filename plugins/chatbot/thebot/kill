@@ -1,0 +1,4 @@
+#!/bin/bash
+pkill -f '/usr/share/htvcenter/plugins/chatbot/thebot/index.php'
+#killall -9 '/usr/share/htvcenter/plugins/chatbot/thebot/index.php'
+#ps ax | grep '/usr/share/htvcenter/plugins/chatbot/thebot/index.php' | awk -F ' ' '{print $1}' | xargs sudo kill -9
