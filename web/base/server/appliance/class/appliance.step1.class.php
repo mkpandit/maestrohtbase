@@ -162,7 +162,8 @@ var $lang = array();
 		$form = $response->get_form($this->actions_name, 'step1');
 
 		$submit = $form->get_elements('submit');
-		$submit->handler = 'onclick="wait();"';
+		//$submit->handler = 'onclick="wait();"';
+		$submit->handler = 'onclick="JavaScript:return validateServerName();"';
 		$form->add($submit, 'submit');
 
 		$submit = $form->get_elements('cancel');

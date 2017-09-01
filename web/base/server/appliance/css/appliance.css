@@ -406,3 +406,8 @@ div.card-header-top{
 	border-radius: 2px;
 
 }
+
+div#cloud_appliances_table_wrapper div#cloud_appliances_table_filter input[type="search"]{
+	border: 1px solid #e1e5ea;
+	padding: 3px;
+}

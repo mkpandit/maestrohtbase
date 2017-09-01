@@ -17,11 +17,10 @@
 
 <!-- div#storageformaddn div#comment_box div.left  -->
 
-
 <h2>{label}</h2>
 
 <div id="step1">
-<form action="{thisfile}" method="GET">
+<form action="{thisfile}" method="GET" id="server-add-step-1">
 
 	<div id="info" class="span5">
 		{info}
@@ -37,4 +36,20 @@
 
 	<div id="buttons">{submit}&#160;{cancel}</div>
 </form>
+<script>
+	function validateServerName(){
+		var serverName = $("div#step1 #name").val();
+		if (serverName == ""){
+			alert("Server name can not be empty");
+			return(false);
+		} else if (serverName.indexOf(' ') >= 0) {
+			alert("Server name can not have space");
+			return(false);
+		}
+		else {
+			document.getElementById('#server-add-step-1').submit();
+			return(true);
+		}
+	}
+</script>
 </div>

@@ -300,4 +300,19 @@ $(document).ready(function() {
 	$('#volumepopupcloseaddn').click(function(){
 		$('#volumepopupaddn').hide();
 	});
+	
+	function validateServerName(){
+		var serverName = $("div#step1 #name").val();
+		if (serverName == ""){
+			alert("Server name can not be empty");
+			return(false);
+		} else if (serverName.indexOf(' ') >= 0) {
+			alert("Server name can not have space");
+			return(false);
+		}
+		else {
+			document.getElementById('#server-add-step-1').submit();
+			return(true);
+		}
+	}
 </script>
