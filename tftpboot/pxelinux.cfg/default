@@ -1,0 +1,9 @@
+default linux
+
+label linux
+kernel boot/vmlinuz-default
+append ramdisk_size=131072 apm=off initrd=boot/initrd-default.img id=-1 htvcenter=192.168.0.241 selinux=0
+ipappend 3
+
+label local
+LOCALBOOT 0
