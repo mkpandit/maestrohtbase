@@ -1,0 +1,2908 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#", 
+  "contentVersion": "1.0.0.0", 
+  "variables": {}, 
+  "parameters": {
+    "subnets_MaestroFromSnapShot_subnet_name": {
+      "defaultValue": "MaestroFromSnapShot/MaestroFromSnapShot-subnet", 
+      "type": "String"
+    }, 
+    "subnets_VMFromSnapShot004_name": {
+      "defaultValue": "VMFromSnapShot004/VMFromSnapShot004", 
+      "type": "String"
+    }, 
+    "networkInterfaces_HTBaseDemoNIC_name": {
+      "defaultValue": "HTBaseDemoNIC", 
+      "type": "String"
+    }, 
+    "networkInterfaces_HTBaseHTNic_name": {
+      "defaultValue": "HTBaseHTNic", 
+      "type": "String"
+    }, 
+    "publicIPAddresses_MaestroOnAzure_ip_name": {
+      "defaultValue": "MaestroOnAzure-ip", 
+      "type": "String"
+    }, 
+    "securityRules_default_allow_ssh_name": {
+      "defaultValue": "MaestroAzureNSG/default-allow-ssh", 
+      "type": "String"
+    }, 
+    "storageAccounts_billowingfirefly6222_name": {
+      "defaultValue": "billowingfirefly6222", 
+      "type": "String"
+    }, 
+    "virtualNetworks_VMFromSnapShot004_name": {
+      "defaultValue": "VMFromSnapShot004", 
+      "type": "String"
+    }, 
+    "disks_HyperTaskDisk_name": {
+      "defaultValue": "HyperTaskDisk", 
+      "type": "String"
+    }, 
+    "storageAccounts_snowymud3178_name": {
+      "defaultValue": "snowymud3178", 
+      "type": "String"
+    }, 
+    "disks_MaestroAzure_disk2_257535701bdb40e187a032fdfd2b64b3_name": {
+      "defaultValue": "MaestroAzure_disk2_257535701bdb40e187a032fdfd2b64b3", 
+      "type": "String"
+    }, 
+    "images_MaestroImageOnAzure_name": {
+      "defaultValue": "MaestroImageOnAzure", 
+      "type": "String"
+    }, 
+    "disks_MaestroOnAzure_name": {
+      "defaultValue": "MaestroOnAzure", 
+      "type": "String"
+    }, 
+    "networkInterfaces_AZ_Unmanaged_vm_nic_name": {
+      "defaultValue": "AZ-Unmanaged-vm-nic", 
+      "type": "String"
+    }, 
+    "storageAccounts_icymud1444_name": {
+      "defaultValue": "icymud1444", 
+      "type": "String"
+    }, 
+    "images_MaestroOnAzure_image_20170731162622_name": {
+      "defaultValue": "MaestroOnAzure-image-20170731162622", 
+      "type": "String"
+    }, 
+    "networkSecurityGroups_MaestroOnAzure_nsg_name": {
+      "defaultValue": "MaestroOnAzure-nsg", 
+      "type": "String"
+    }, 
+    "disks_HTBaseSnapShotDisk003_name": {
+      "defaultValue": "HTBaseSnapShotDisk003", 
+      "type": "String"
+    }, 
+    "virtualNetworks_HTBaseHTVNet_name": {
+      "defaultValue": "HTBaseHTVNet", 
+      "type": "String"
+    }, 
+    "storageAccounts_dampglade0656_name": {
+      "defaultValue": "dampglade0656", 
+      "type": "String"
+    }, 
+    "disks_VMFromSnapShot004_OsDisk_1_fdbc16d682f54354ab9986be18051acd_name": {
+      "defaultValue": "VMFromSnapShot004_OsDisk_1_fdbc16d682f54354ab9986be18051acd", 
+      "type": "String"
+    }, 
+    "storageAccounts_witheredfrost7511_name": {
+      "defaultValue": "witheredfrost7511", 
+      "type": "String"
+    }, 
+    "publicIPAddresses_VMFromSnapShot0004_name": {
+      "defaultValue": "VMFromSnapShot0004", 
+      "type": "String"
+    }, 
+    "storageAccounts_crimsonmountain6015_name": {
+      "defaultValue": "crimsonmountain6015", 
+      "type": "String"
+    }, 
+    "virtualMachines_HTBaseDemo_name": {
+      "defaultValue": "HTBaseDemo", 
+      "type": "String"
+    }, 
+    "securityRules_ssh_name": {
+      "defaultValue": "azureRMVMnsg/ssh", 
+      "type": "String"
+    }, 
+    "virtualNetworks_MaestroFromSnapShot_name": {
+      "defaultValue": "MaestroFromSnapShot", 
+      "type": "String"
+    }, 
+    "disks_HyperTaskDisk200_name": {
+      "defaultValue": "HyperTaskDisk200", 
+      "type": "String"
+    }, 
+    "networkInterfaces_MaestroAZ_name": {
+      "defaultValue": "MaestroAZ", 
+      "type": "String"
+    }, 
+    "disks_MaestroOnAzure_OsDisk_1_ca7552da3693445b81dd43f875bc3bbb_name": {
+      "defaultValue": "MaestroOnAzure_OsDisk_1_ca7552da3693445b81dd43f875bc3bbb", 
+      "type": "String"
+    }, 
+    "publicIPAddresses_MaestroAzurePublicIP_name": {
+      "defaultValue": "MaestroAzurePublicIP", 
+      "type": "String"
+    }, 
+    "publicIPAddresses_VMFromSnapShot004_name": {
+      "defaultValue": "VMFromSnapShot004", 
+      "type": "String"
+    }, 
+    "networkSecurityGroups_MaestroAzureNSG_name": {
+      "defaultValue": "MaestroAzureNSG", 
+      "type": "String"
+    }, 
+    "virtualMachines_HTBaseHT_name": {
+      "defaultValue": "HTBaseHT", 
+      "type": "String"
+    }, 
+    "disks_MaestroDisk003_name": {
+      "defaultValue": "MaestroDisk003", 
+      "type": "String"
+    }, 
+    "storageAccounts_namelesshat2939_name": {
+      "defaultValue": "namelesshat2939", 
+      "type": "String"
+    }, 
+    "virtualMachines_MaestroAzure_name": {
+      "defaultValue": "MaestroAzure", 
+      "type": "String"
+    }, 
+    "networkInterfaces_maestroonazure529_name": {
+      "defaultValue": "maestroonazure529", 
+      "type": "String"
+    }, 
+    "storageAccounts_proudbreeze8265_name": {
+      "defaultValue": "proudbreeze8265", 
+      "type": "String"
+    }, 
+    "snapshots_MaestroAzureSnapShot_name": {
+      "defaultValue": "MaestroAzureSnapShot", 
+      "type": "String"
+    }, 
+    "networkInterfaces_VMFromSnapShot004_name": {
+      "defaultValue": "VMFromSnapShot004", 
+      "type": "String"
+    }, 
+    "storageAccounts_ancientdisk5717_name": {
+      "defaultValue": "ancientdisk5717", 
+      "type": "String"
+    }, 
+    "snapshots_MaestroOnAzureSnapShot_name": {
+      "defaultValue": "MaestroOnAzureSnapShot", 
+      "type": "String"
+    }, 
+    "virtualMachines_AZ_Unmanaged_name": {
+      "defaultValue": "AZ-Unmanaged", 
+      "type": "String"
+    }, 
+    "disks_MaestroDisk002_name": {
+      "defaultValue": "MaestroDisk002", 
+      "type": "String"
+    }, 
+    "disks_MaestroAZ_OsDisk_1_86e31051e7ab4298b3d6b79db8d7ec9c_name": {
+      "defaultValue": "MaestroAZ_OsDisk_1_86e31051e7ab4298b3d6b79db8d7ec9c", 
+      "type": "String"
+    }, 
+    "subnets_GatewaySubnet_name": {
+      "defaultValue": "VMFromSnapShot004/GatewaySubnet", 
+      "type": "String"
+    }, 
+    "disks_HTBaseSnapShotDisk004_name": {
+      "defaultValue": "HTBaseSnapShotDisk004", 
+      "type": "String"
+    }, 
+    "virtualMachines_MaestroAZ_name": {
+      "defaultValue": "MaestroAZ", 
+      "type": "String"
+    }, 
+    "virtualNetworks_azureRMVMvnet_name": {
+      "defaultValue": "azureRMVMvnet", 
+      "type": "String"
+    }, 
+    "networkSecurityGroups_azureRMVMnsg_name": {
+      "defaultValue": "azureRMVMnsg", 
+      "type": "String"
+    }, 
+    "disks_osdisk_7eefef4a33_name": {
+      "defaultValue": "osdisk_7eefef4a33", 
+      "type": "String"
+    }, 
+    "securityRules_http_name": {
+      "defaultValue": "MaestroAzureNSG/http", 
+      "type": "String"
+    }, 
+    "networkInterfaces_MaestroOnAzureVMNic_name": {
+      "defaultValue": "MaestroOnAzureVMNic", 
+      "type": "String"
+    }, 
+    "subnets_HTBaseHTSubNet_name": {
+      "defaultValue": "HTBaseHTVNet/HTBaseHTSubNet", 
+      "type": "String"
+    }, 
+    "publicIPAddresses_MaestroOnAzurePublicIP_name": {
+      "defaultValue": "MaestroOnAzurePublicIP", 
+      "type": "String"
+    }, 
+    "subnets_HTBaseDemoSubNet_name": {
+      "defaultValue": "HTBaseDemoVNet/HTBaseDemoSubNet", 
+      "type": "String"
+    }, 
+    "subnets_AZ_Unmanaged_vm_subnet_name": {
+      "defaultValue": "AZ-Unmanaged-vm-vnet/AZ-Unmanaged-vm-subnet", 
+      "type": "String"
+    }, 
+    "virtualNetworks_HTBase_vnet_name": {
+      "defaultValue": "HTBase-vnet", 
+      "type": "String"
+    }, 
+    "disks_MaestroAzure_disk2_257535701bdb40e187a032fdfd2b64b3_sourceUri": {
+      "defaultValue": "/subscriptions/865ee318-9b61-4c3b-a0ce-83b84c976705/resourceGroups/HTBase/providers/Microsoft.Compute/snapshots/MaestroImageOnAzure_fxf11ynfg35", 
+      "type": "String"
+    }, 
+    "securityRules_http_name_1": {
+      "defaultValue": "MaestroOnAzure-nsg/http", 
+      "type": "String"
+    }, 
+    "disks_osdisk_7eefef4a33_sourceUri": {
+      "defaultValue": "/subscriptions/865ee318-9b61-4c3b-a0ce-83b84c976705/resourceGroups/HTBase/providers/Microsoft.Compute/snapshots/MaestroImageOnAzure_xms5m5hegbe", 
+      "type": "String"
+    }, 
+    "disks_HTBaseSnapShotDisk_name": {
+      "defaultValue": "HTBaseSnapShotDisk", 
+      "type": "String"
+    }, 
+    "virtualMachines_VMFromSnapShot004_name": {
+      "defaultValue": "VMFromSnapShot004", 
+      "type": "String"
+    }, 
+    "storageAccounts_htbasediag371_name": {
+      "defaultValue": "htbasediag371", 
+      "type": "String"
+    }, 
+    "virtualMachines_MaestroOnAzure_name": {
+      "defaultValue": "MaestroOnAzure", 
+      "type": "String"
+    }, 
+    "networkInterfaces_MaestroFromSnapShot_vm_nic_name": {
+      "defaultValue": "MaestroFromSnapShot-vm-nic", 
+      "type": "String"
+    }, 
+    "subnets_subnet_name": {
+      "defaultValue": "azureRMVMvnet/subnet", 
+      "type": "String"
+    }, 
+    "images_MaestroOnAzure_image_container_name": {
+      "defaultValue": "MaestroOnAzure-image-container", 
+      "type": "String"
+    }, 
+    "subnets_default_name": {
+      "defaultValue": "HTBase-vnet/default", 
+      "type": "String"
+    }, 
+    "virtualNetworks_MaestroAZ_name": {
+      "defaultValue": "MaestroAZ", 
+      "type": "String"
+    }, 
+    "subnets_MaestroAZ_name": {
+      "defaultValue": "MaestroAZ/MaestroAZ", 
+      "type": "String"
+    }, 
+    "networkInterfaces_MaestroAzureVMNic_name": {
+      "defaultValue": "MaestroAzureVMNic", 
+      "type": "String"
+    }, 
+    "storageAccounts_witheredmountain7795_name": {
+      "defaultValue": "witheredmountain7795", 
+      "type": "String"
+    }, 
+    "networkSecurityGroups_MaestroOnAzureNSG_name": {
+      "defaultValue": "MaestroOnAzureNSG", 
+      "type": "String"
+    }, 
+    "virtualNetworks_HTBaseDemoVNet_name": {
+      "defaultValue": "HTBaseDemoVNet", 
+      "type": "String"
+    }, 
+    "securityRules_default_allow_ssh_name_1": {
+      "defaultValue": "MaestroOnAzure-nsg/default-allow-ssh", 
+      "type": "String"
+    }, 
+    "virtualNetworks_AZ_Unmanaged_vm_vnet_name": {
+      "defaultValue": "AZ-Unmanaged-vm-vnet", 
+      "type": "String"
+    }, 
+    "securityRules_default_allow_ssh_name_2": {
+      "defaultValue": "MaestroOnAzureNSG/default-allow-ssh", 
+      "type": "String"
+    }
+  }, 
+  "resources": [
+    {
+      "scale": null, 
+      "name": "[parameters('disks_HTBaseSnapShotDisk_name')]", 
+      "apiVersion": "2016-04-30-preview", 
+      "location": "westus", 
+      "dependsOn": [
+        "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_witheredmountain7795_name'))]"
+      ], 
+      "type": "Microsoft.Compute/disks", 
+      "properties": {
+        "accountType": "Premium_LRS", 
+        "creationData": {
+          "createOption": "Import", 
+          "sourceUri": "[concat('https', '://', parameters('storageAccounts_witheredmountain7795_name'), '.blob.core.windows.net', '/htbasecontainer/maestroonazuresnapshot.vhd')]"
+        }
+      }
+    }, 
+    {
+      "scale": null, 
+      "name": "[parameters('disks_HTBaseSnapShotDisk003_name')]", 
+      "apiVersion": "2016-04-30-preview", 
+      "location": "westus", 
+      "dependsOn": [
+        "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_witheredmountain7795_name'))]"
+      ], 
+      "type": "Microsoft.Compute/disks", 
+      "properties": {
+        "accountType": "Standard_LRS", 
+        "creationData": {
+          "createOption": "Import", 
+          "sourceUri": "[concat('https', '://', parameters('storageAccounts_witheredmountain7795_name'), '.blob.core.windows.net', '/htbasecontainer/maestroonazuresnapshot.vhd')]"
+        }
+      }
+    }, 
+    {
+      "scale": null, 
+      "name": "[parameters('disks_HTBaseSnapShotDisk004_name')]", 
+      "apiVersion": "2016-04-30-preview", 
+      "location": "westus", 
+      "dependsOn": [
+        "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_witheredmountain7795_name'))]"
+      ], 
+      "type": "Microsoft.Compute/disks", 
+      "properties": {
+        "diskSizeGB": 30, 
+        "accountType": "Standard_LRS", 
+        "creationData": {
+          "createOption": "Import", 
+          "sourceUri": "[concat('https', '://', parameters('storageAccounts_witheredmountain7795_name'), '.blob.core.windows.net', '/htbasecontainer/maestroonazuresnapshot.vhd')]"
+        }
+      }
+    }, 
+    {
+      "scale": null, 
+      "name": "[parameters('disks_HyperTaskDisk_name')]", 
+      "apiVersion": "2016-04-30-preview", 
+      "location": "westus", 
+      "dependsOn": [], 
+      "type": "Microsoft.Compute/disks", 
+      "properties": {
+        "diskSizeGB": 100, 
+        "accountType": "Standard_LRS", 
+        "creationData": {
+          "createOption": "Empty"
+        }
+      }
+    }, 
+    {
+      "scale": null, 
+      "name": "[parameters('disks_HyperTaskDisk200_name')]", 
+      "apiVersion": "2016-04-30-preview", 
+      "location": "westus", 
+      "dependsOn": [], 
+      "type": "Microsoft.Compute/disks", 
+      "properties": {
+        "diskSizeGB": 200, 
+        "accountType": "Standard_LRS", 
+        "creationData": {
+          "createOption": "Empty"
+        }
+      }
+    }, 
+    {
+      "scale": null, 
+      "name": "[parameters('disks_MaestroAZ_OsDisk_1_86e31051e7ab4298b3d6b79db8d7ec9c_name')]", 
+      "apiVersion": "2016-04-30-preview", 
+      "location": "westus", 
+      "dependsOn": [], 
+      "type": "Microsoft.Compute/disks", 
+      "properties": {
+        "osType": "Linux", 
+        "diskSizeGB": 90, 
+        "accountType": "Premium_LRS", 
+        "creationData": {
+          "imageReference": {
+            "id": "/Subscriptions/865ee318-9b61-4c3b-a0ce-83b84c976705/Providers/Microsoft.Compute/Locations/westus/Publishers/Canonical/ArtifactTypes/VMImage/Offers/UbuntuServer/Skus/16.04.0-LTS/Versions/latest"
+          }, 
+          "createOption": "FromImage"
+        }
+      }
+    }, 
+    {
+      "scale": null, 
+      "name": "[parameters('disks_MaestroDisk002_name')]", 
+      "apiVersion": "2016-04-30-preview", 
+      "location": "westus", 
+      "dependsOn": [], 
+      "type": "Microsoft.Compute/disks", 
+      "properties": {
+        "diskSizeGB": 150, 
+        "accountType": "Standard_LRS", 
+        "creationData": {
+          "createOption": "Empty"
+        }
+      }
+    }, 
+    {
+      "scale": null, 
+      "name": "[parameters('disks_MaestroDisk003_name')]", 
+      "apiVersion": "2016-04-30-preview", 
+      "location": "westus", 
+      "dependsOn": [], 
+      "type": "Microsoft.Compute/disks", 
+      "properties": {
+        "diskSizeGB": 200, 
+        "accountType": "Standard_LRS", 
+        "creationData": {
+          "createOption": "Empty"
+        }
+      }
+    }, 
+    {
+      "scale": null, 
+      "name": "[parameters('disks_VMFromSnapShot004_OsDisk_1_fdbc16d682f54354ab9986be18051acd_name')]", 
+      "apiVersion": "2016-04-30-preview", 
+      "location": "westus", 
+      "dependsOn": [], 
+      "type": "Microsoft.Compute/disks", 
+      "properties": {
+        "osType": "Linux", 
+        "diskSizeGB": 30, 
+        "accountType": "Premium_LRS", 
+        "creationData": {
+          "imageReference": {
+            "id": "/Subscriptions/865ee318-9b61-4c3b-a0ce-83b84c976705/Providers/Microsoft.Compute/Locations/westus/Publishers/Canonical/ArtifactTypes/VMImage/Offers/UbuntuServer/Skus/16.04.0-LTS/Versions/latest"
+          }, 
+          "createOption": "FromImage"
+        }
+      }
+    }, 
+    {
+      "scale": null, 
+      "name": "[parameters('disks_MaestroAzure_disk2_257535701bdb40e187a032fdfd2b64b3_name')]", 
+      "tags": {}, 
+      "apiVersion": "2016-04-30-preview", 
+      "location": "canadaeast", 
+      "dependsOn": [], 
+      "type": "Microsoft.Compute/disks", 
+      "properties": {
+        "diskSizeGB": 1023, 
+        "accountType": "Standard_LRS", 
+        "creationData": {
+          "createOption": "Copy", 
+          "sourceUri": "[parameters('disks_MaestroAzure_disk2_257535701bdb40e187a032fdfd2b64b3_sourceUri')]"
+        }
+      }
+    }, 
+    {
+      "scale": null, 
+      "name": "[parameters('disks_MaestroOnAzure_name')]", 
+      "apiVersion": "2016-04-30-preview", 
+      "location": "canadaeast", 
+      "dependsOn": [], 
+      "type": "Microsoft.Compute/disks", 
+      "properties": {
+        "diskSizeGB": 1023, 
+        "accountType": "Premium_LRS", 
+        "creationData": {
+          "createOption": "Empty"
+        }
+      }
+    }, 
+    {
+      "scale": null, 
+      "name": "[parameters('disks_MaestroOnAzure_OsDisk_1_ca7552da3693445b81dd43f875bc3bbb_name')]", 
+      "apiVersion": "2016-04-30-preview", 
+      "location": "canadaeast", 
+      "dependsOn": [], 
+      "type": "Microsoft.Compute/disks", 
+      "properties": {
+        "osType": "Linux", 
+        "diskSizeGB": 30, 
+        "accountType": "Premium_LRS", 
+        "creationData": {
+          "imageReference": {
+            "id": "/Subscriptions/865ee318-9b61-4c3b-a0ce-83b84c976705/Providers/Microsoft.Compute/Locations/CanadaEast/Publishers/Canonical/ArtifactTypes/VMImage/Offers/UbuntuServer/Skus/14.04.5-LTS/Versions/latest"
+          }, 
+          "createOption": "FromImage"
+        }
+      }
+    }, 
+    {
+      "scale": null, 
+      "name": "[parameters('disks_osdisk_7eefef4a33_name')]", 
+      "tags": {}, 
+      "apiVersion": "2016-04-30-preview", 
+      "location": "canadaeast", 
+      "dependsOn": [], 
+      "type": "Microsoft.Compute/disks", 
+      "properties": {
+        "osType": "Linux", 
+        "diskSizeGB": 30, 
+        "accountType": "Premium_LRS", 
+        "creationData": {
+          "createOption": "Copy", 
+          "sourceUri": "[parameters('disks_osdisk_7eefef4a33_sourceUri')]"
+        }
+      }
+    }, 
+    {
+      "scale": null, 
+      "name": "[parameters('images_MaestroImageOnAzure_name')]", 
+      "apiVersion": "2016-04-30-preview", 
+      "location": "CanadaEast", 
+      "dependsOn": [
+        "[resourceId('Microsoft.Compute/virtualMachines', parameters('virtualMachines_MaestroOnAzure_name'))]", 
+        "[resourceId('Microsoft.Compute/disks', parameters('disks_MaestroOnAzure_OsDisk_1_ca7552da3693445b81dd43f875bc3bbb_name'))]", 
+        "[resourceId('Microsoft.Compute/disks', parameters('disks_MaestroOnAzure_name'))]"
+      ], 
+      "type": "Microsoft.Compute/images", 
+      "properties": {
+        "storageProfile": {
+          "osDisk": {
+            "osType": "Linux", 
+            "caching": "ReadWrite", 
+            "osState": "Generalized", 
+            "managedDisk": {
+              "id": "[resourceId('Microsoft.Compute/disks', parameters('disks_MaestroOnAzure_OsDisk_1_ca7552da3693445b81dd43f875bc3bbb_name'))]"
+            }
+          }, 
+          "dataDisks": [
+            {
+              "caching": "ReadWrite", 
+              "managedDisk": {
+                "id": "[resourceId('Microsoft.Compute/disks', parameters('disks_MaestroOnAzure_name'))]"
+              }, 
+              "lun": 0
+            }
+          ]
+        }, 
+        "sourceVirtualMachine": {
+          "id": "[resourceId('Microsoft.Compute/virtualMachines', parameters('virtualMachines_MaestroOnAzure_name'))]"
+        }
+      }
+    }, 
+    {
+      "scale": null, 
+      "name": "[parameters('images_MaestroOnAzure_image_20170731162622_name')]", 
+      "apiVersion": "2016-04-30-preview", 
+      "location": "CanadaEast", 
+      "dependsOn": [
+        "[resourceId('Microsoft.Compute/virtualMachines', parameters('virtualMachines_MaestroOnAzure_name'))]", 
+        "[resourceId('Microsoft.Compute/disks', parameters('disks_MaestroOnAzure_OsDisk_1_ca7552da3693445b81dd43f875bc3bbb_name'))]", 
+        "[resourceId('Microsoft.Compute/disks', parameters('disks_MaestroOnAzure_name'))]"
+      ], 
+      "type": "Microsoft.Compute/images", 
+      "properties": {
+        "storageProfile": {
+          "osDisk": {
+            "osType": "Linux", 
+            "caching": "ReadWrite", 
+            "osState": "Generalized", 
+            "managedDisk": {
+              "id": "[resourceId('Microsoft.Compute/disks', parameters('disks_MaestroOnAzure_OsDisk_1_ca7552da3693445b81dd43f875bc3bbb_name'))]"
+            }
+          }, 
+          "dataDisks": [
+            {
+              "caching": "ReadWrite", 
+              "managedDisk": {
+                "id": "[resourceId('Microsoft.Compute/disks', parameters('disks_MaestroOnAzure_name'))]"
+              }, 
+              "lun": 0
+            }
+          ]
+        }, 
+        "sourceVirtualMachine": {
+          "id": "[resourceId('Microsoft.Compute/virtualMachines', parameters('virtualMachines_MaestroOnAzure_name'))]"
+        }
+      }
+    }, 
+    {
+      "scale": null, 
+      "name": "[parameters('images_MaestroOnAzure_image_container_name')]", 
+      "apiVersion": "2016-04-30-preview", 
+      "location": "CanadaEast", 
+      "dependsOn": [
+        "[resourceId('Microsoft.Compute/virtualMachines', parameters('virtualMachines_MaestroOnAzure_name'))]", 
+        "[resourceId('Microsoft.Compute/disks', parameters('disks_MaestroOnAzure_OsDisk_1_ca7552da3693445b81dd43f875bc3bbb_name'))]", 
+        "[resourceId('Microsoft.Compute/disks', parameters('disks_MaestroOnAzure_name'))]"
+      ], 
+      "type": "Microsoft.Compute/images", 
+      "properties": {
+        "storageProfile": {
+          "osDisk": {
+            "osType": "Linux", 
+            "caching": "ReadWrite", 
+            "osState": "Generalized", 
+            "managedDisk": {
+              "id": "[resourceId('Microsoft.Compute/disks', parameters('disks_MaestroOnAzure_OsDisk_1_ca7552da3693445b81dd43f875bc3bbb_name'))]"
+            }
+          }, 
+          "dataDisks": [
+            {
+              "caching": "ReadWrite", 
+              "managedDisk": {
+                "id": "[resourceId('Microsoft.Compute/disks', parameters('disks_MaestroOnAzure_name'))]"
+              }, 
+              "lun": 0
+            }
+          ]
+        }, 
+        "sourceVirtualMachine": {
+          "id": "[resourceId('Microsoft.Compute/virtualMachines', parameters('virtualMachines_MaestroOnAzure_name'))]"
+        }
+      }
+    }, 
+    {
+      "scale": null, 
+      "name": "[parameters('snapshots_MaestroAzureSnapShot_name')]", 
+      "apiVersion": "2016-04-30-preview", 
+      "location": "canadaeast", 
+      "dependsOn": [
+        "[resourceId('Microsoft.Compute/disks', parameters('disks_osdisk_7eefef4a33_name'))]"
+      ], 
+      "type": "Microsoft.Compute/snapshots", 
+      "properties": {
+        "osType": "Linux", 
+        "diskSizeGB": 30, 
+        "accountType": "Premium_LRS", 
+        "creationData": {
+          "createOption": "Copy", 
+          "sourceUri": "[resourceId('Microsoft.Compute/disks', parameters('disks_osdisk_7eefef4a33_name'))]"
+        }
+      }
+    }, 
+    {
+      "scale": null, 
+      "name": "[parameters('snapshots_MaestroOnAzureSnapShot_name')]", 
+      "apiVersion": "2016-04-30-preview", 
+      "location": "canadaeast", 
+      "dependsOn": [
+        "[resourceId('Microsoft.Compute/disks', parameters('disks_MaestroOnAzure_OsDisk_1_ca7552da3693445b81dd43f875bc3bbb_name'))]"
+      ], 
+      "type": "Microsoft.Compute/snapshots", 
+      "properties": {
+        "osType": "Linux", 
+        "diskSizeGB": 30, 
+        "accountType": "Premium_LRS", 
+        "creationData": {
+          "createOption": "Copy", 
+          "sourceUri": "[resourceId('Microsoft.Compute/disks', parameters('disks_MaestroOnAzure_OsDisk_1_ca7552da3693445b81dd43f875bc3bbb_name'))]"
+        }
+      }
+    }, 
+    {
+      "scale": null, 
+      "name": "[parameters('virtualMachines_HTBaseDemo_name')]", 
+      "tags": {
+        "who-rocks": "Manish", 
+        "where": "HTBase"
+      }, 
+      "apiVersion": "2016-04-30-preview", 
+      "location": "westus", 
+      "dependsOn": [
+        "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_crimsonmountain6015_name'))]", 
+        "[resourceId('Microsoft.Network/networkInterfaces', parameters('networkInterfaces_HTBaseDemoNIC_name'))]"
+      ], 
+      "type": "Microsoft.Compute/virtualMachines", 
+      "properties": {
+        "hardwareProfile": {
+          "vmSize": "Standard_DS1"
+        }, 
+        "storageProfile": {
+          "imageReference": {
+            "sku": "16.04.0-LTS", 
+            "publisher": "Canonical", 
+            "version": "latest", 
+            "offer": "UbuntuServer"
+          }, 
+          "osDisk": {
+            "osType": "Linux", 
+            "vhd": {
+              "uri": "[concat('https', '://', parameters('storageAccounts_crimsonmountain6015_name'), '.blob.core.windows.net', concat('/vhds/', parameters('virtualMachines_HTBaseDemo_name'),'solitary-resonance-5687.vhd'))]"
+            }, 
+            "createOption": "FromImage", 
+            "name": "[concat(parameters('virtualMachines_HTBaseDemo_name'),'OSDisk')]", 
+            "caching": "None"
+          }, 
+          "dataDisks": []
+        }, 
+        "osProfile": {
+          "adminUsername": "htbase", 
+          "secrets": [], 
+          "computerName": "[parameters('virtualMachines_HTBaseDemo_name')]", 
+          "linuxConfiguration": {
+            "disablePasswordAuthentication": false
+          }
+        }, 
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', parameters('networkInterfaces_HTBaseDemoNIC_name'))]"
+            }
+          ]
+        }
+      }
+    }, 
+    {
+      "scale": null, 
+      "name": "[parameters('virtualMachines_HTBaseHT_name')]", 
+      "tags": {
+        "who-rocks": "Manish", 
+        "where": "HTBase"
+      }, 
+      "apiVersion": "2016-04-30-preview", 
+      "location": "westus", 
+      "dependsOn": [
+        "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_witheredfrost7511_name'))]", 
+        "[resourceId('Microsoft.Network/networkInterfaces', parameters('networkInterfaces_HTBaseHTNic_name'))]"
+      ], 
+      "type": "Microsoft.Compute/virtualMachines", 
+      "properties": {
+        "hardwareProfile": {
+          "vmSize": "Standard_DS1"
+        }, 
+        "storageProfile": {
+          "imageReference": {
+            "sku": "16.04.0-LTS", 
+            "publisher": "Canonical", 
+            "version": "latest", 
+            "offer": "UbuntuServer"
+          }, 
+          "osDisk": {
+            "osType": "Linux", 
+            "vhd": {
+              "uri": "[concat('https', '://', parameters('storageAccounts_witheredfrost7511_name'), '.blob.core.windows.net', concat('/vhds/', parameters('virtualMachines_HTBaseHT_name'),'lively-hall-3489.vhd'))]"
+            }, 
+            "createOption": "FromImage", 
+            "name": "[concat(parameters('virtualMachines_HTBaseHT_name'),'OSDisk')]", 
+            "caching": "None"
+          }, 
+          "dataDisks": []
+        }, 
+        "osProfile": {
+          "adminUsername": "htbase", 
+          "secrets": [], 
+          "computerName": "[parameters('virtualMachines_HTBaseHT_name')]", 
+          "linuxConfiguration": {
+            "disablePasswordAuthentication": false
+          }
+        }, 
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', parameters('networkInterfaces_HTBaseHTNic_name'))]"
+            }
+          ]
+        }
+      }
+    }, 
+    {
+      "scale": null, 
+      "name": "[parameters('virtualMachines_MaestroAZ_name')]", 
+      "tags": {
+        "who-rocks": "Manish", 
+        "where": "HTBase"
+      }, 
+      "apiVersion": "2016-04-30-preview", 
+      "location": "westus", 
+      "dependsOn": [
+        "[resourceId('Microsoft.Compute/disks', parameters('disks_MaestroAZ_OsDisk_1_86e31051e7ab4298b3d6b79db8d7ec9c_name'))]", 
+        "[resourceId('Microsoft.Compute/disks', parameters('disks_MaestroDisk002_name'))]", 
+        "[resourceId('Microsoft.Compute/disks', parameters('disks_MaestroDisk003_name'))]", 
+        "[resourceId('Microsoft.Network/networkInterfaces', parameters('networkInterfaces_MaestroAZ_name'))]"
+      ], 
+      "type": "Microsoft.Compute/virtualMachines", 
+      "properties": {
+        "hardwareProfile": {
+          "vmSize": "Standard_DS1"
+        }, 
+        "storageProfile": {
+          "imageReference": {
+            "sku": "16.04.0-LTS", 
+            "publisher": "Canonical", 
+            "version": "latest", 
+            "offer": "UbuntuServer"
+          }, 
+          "osDisk": {
+            "name": "[concat(parameters('virtualMachines_MaestroAZ_name'),'_OsDisk_1_86e31051e7ab4298b3d6b79db8d7ec9c')]", 
+            "managedDisk": {
+              "storageAccountType": "Premium_LRS", 
+              "id": "[resourceId('Microsoft.Compute/disks', parameters('disks_MaestroAZ_OsDisk_1_86e31051e7ab4298b3d6b79db8d7ec9c_name'))]"
+            }, 
+            "diskSizeGB": 90, 
+            "createOption": "FromImage", 
+            "caching": "ReadWrite", 
+            "osType": "Linux"
+          }, 
+          "dataDisks": [
+            {
+              "name": "MaestroDisk002", 
+              "managedDisk": {
+                "storageAccountType": "Standard_LRS", 
+                "id": "[resourceId('Microsoft.Compute/disks', parameters('disks_MaestroDisk002_name'))]"
+              }, 
+              "diskSizeGB": 150, 
+              "createOption": "Attach", 
+              "caching": "None", 
+              "lun": 12
+            }, 
+            {
+              "name": "MaestroDisk003", 
+              "managedDisk": {
+                "storageAccountType": "Standard_LRS", 
+                "id": "[resourceId('Microsoft.Compute/disks', parameters('disks_MaestroDisk003_name'))]"
+              }, 
+              "diskSizeGB": 200, 
+              "createOption": "Attach", 
+              "caching": "None", 
+              "lun": 16
+            }
+          ]
+        }, 
+        "osProfile": {
+          "adminUsername": "htvcenter", 
+          "secrets": [], 
+          "computerName": "[parameters('virtualMachines_MaestroAZ_name')]", 
+          "linuxConfiguration": {
+            "disablePasswordAuthentication": false
+          }
+        }, 
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', parameters('networkInterfaces_MaestroAZ_name'))]"
+            }
+          ]
+        }
+      }
+    }, 
+    {
+      "scale": null, 
+      "name": "[parameters('virtualMachines_VMFromSnapShot004_name')]", 
+      "apiVersion": "2016-04-30-preview", 
+      "location": "westus", 
+      "dependsOn": [
+        "[resourceId('Microsoft.Compute/disks', parameters('disks_VMFromSnapShot004_OsDisk_1_fdbc16d682f54354ab9986be18051acd_name'))]", 
+        "[resourceId('Microsoft.Compute/disks', parameters('disks_HTBaseSnapShotDisk004_name'))]", 
+        "[resourceId('Microsoft.Network/networkInterfaces', parameters('networkInterfaces_VMFromSnapShot004_name'))]"
+      ], 
+      "type": "Microsoft.Compute/virtualMachines", 
+      "properties": {
+        "hardwareProfile": {
+          "vmSize": "Standard_DS1_v2"
+        }, 
+        "storageProfile": {
+          "imageReference": {
+            "sku": "16.04.0-LTS", 
+            "publisher": "Canonical", 
+            "version": "latest", 
+            "offer": "UbuntuServer"
+          }, 
+          "osDisk": {
+            "name": "[concat(parameters('virtualMachines_VMFromSnapShot004_name'),'_OsDisk_1_fdbc16d682f54354ab9986be18051acd')]", 
+            "managedDisk": {
+              "storageAccountType": "Premium_LRS", 
+              "id": "[resourceId('Microsoft.Compute/disks', parameters('disks_VMFromSnapShot004_OsDisk_1_fdbc16d682f54354ab9986be18051acd_name'))]"
+            }, 
+            "diskSizeGB": 30, 
+            "createOption": "FromImage", 
+            "caching": "ReadWrite", 
+            "osType": "Linux"
+          }, 
+          "dataDisks": [
+            {
+              "name": "HTBaseSnapShotDisk004", 
+              "managedDisk": {
+                "storageAccountType": "Standard_LRS", 
+                "id": "[resourceId('Microsoft.Compute/disks', parameters('disks_HTBaseSnapShotDisk004_name'))]"
+              }, 
+              "diskSizeGB": 30, 
+              "createOption": "Attach", 
+              "caching": "None", 
+              "lun": 12
+            }
+          ]
+        }, 
+        "osProfile": {
+          "adminUsername": "htbase", 
+          "secrets": [], 
+          "computerName": "[parameters('virtualMachines_VMFromSnapShot004_name')]", 
+          "linuxConfiguration": {
+            "disablePasswordAuthentication": false
+          }
+        }, 
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', parameters('networkInterfaces_VMFromSnapShot004_name'))]"
+            }
+          ]
+        }
+      }
+    }, 
+    {
+      "scale": null, 
+      "name": "[parameters('virtualMachines_AZ_Unmanaged_name')]", 
+      "tags": {
+        "who-rocks": "python", 
+        "where": "on azure"
+      }, 
+      "apiVersion": "2016-04-30-preview", 
+      "location": "CanadaEast", 
+      "dependsOn": [
+        "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_ancientdisk5717_name'))]", 
+        "[resourceId('Microsoft.Network/networkInterfaces', parameters('networkInterfaces_AZ_Unmanaged_vm_nic_name'))]"
+      ], 
+      "type": "Microsoft.Compute/virtualMachines", 
+      "properties": {
+        "hardwareProfile": {
+          "vmSize": "Standard_A1"
+        }, 
+        "storageProfile": {
+          "imageReference": {
+            "sku": "16.04.0-LTS", 
+            "publisher": "Canonical", 
+            "version": "latest", 
+            "offer": "UbuntuServer"
+          }, 
+          "osDisk": {
+            "osType": "Linux", 
+            "vhd": {
+              "uri": "[concat('https', '://', parameters('storageAccounts_ancientdisk5717_name'), '.blob.core.windows.net', concat('/vhds/', parameters('virtualMachines_AZ_Unmanaged_name'),'quiet-thunder-3496.vhd'))]"
+            }, 
+            "createOption": "FromImage", 
+            "name": "[concat(parameters('virtualMachines_AZ_Unmanaged_name'),'-vm-os-disk')]", 
+            "caching": "None"
+          }, 
+          "dataDisks": [
+            {
+              "name": "mydatadisk1", 
+              "diskSizeGB": 1, 
+              "createOption": "Empty", 
+              "caching": "None", 
+              "vhd": {
+                "uri": "[concat('http', '://', parameters('storageAccounts_ancientdisk5717_name'), '.blob.core.windows.net', '/vhds/mydatadisk1.vhd')]"
+              }, 
+              "lun": 0
+            }
+          ]
+        }, 
+        "osProfile": {
+          "adminUsername": "htbase", 
+          "secrets": [], 
+          "computerName": "[parameters('virtualMachines_AZ_Unmanaged_name')]", 
+          "linuxConfiguration": {
+            "disablePasswordAuthentication": false
+          }
+        }, 
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', parameters('networkInterfaces_AZ_Unmanaged_vm_nic_name'))]"
+            }
+          ]
+        }
+      }
+    }, 
+    {
+      "scale": null, 
+      "name": "[parameters('virtualMachines_MaestroAzure_name')]", 
+      "tags": {}, 
+      "apiVersion": "2016-04-30-preview", 
+      "location": "CanadaEast", 
+      "dependsOn": [
+        "[resourceId('Microsoft.Compute/images', parameters('images_MaestroImageOnAzure_name'))]", 
+        "[resourceId('Microsoft.Compute/disks', parameters('disks_osdisk_7eefef4a33_name'))]", 
+        "[resourceId('Microsoft.Compute/disks', parameters('disks_MaestroAzure_disk2_257535701bdb40e187a032fdfd2b64b3_name'))]", 
+        "[resourceId('Microsoft.Network/networkInterfaces', parameters('networkInterfaces_MaestroAzureVMNic_name'))]"
+      ], 
+      "type": "Microsoft.Compute/virtualMachines", 
+      "properties": {
+        "hardwareProfile": {
+          "vmSize": "Standard_DS1_v2"
+        }, 
+        "storageProfile": {
+          "imageReference": {
+            "id": "[resourceId('Microsoft.Compute/images', parameters('images_MaestroImageOnAzure_name'))]"
+          }, 
+          "osDisk": {
+            "name": "osdisk_7eefef4a33", 
+            "managedDisk": {
+              "storageAccountType": "Premium_LRS", 
+              "id": "[resourceId('Microsoft.Compute/disks', parameters('disks_osdisk_7eefef4a33_name'))]"
+            }, 
+            "diskSizeGB": 30, 
+            "createOption": "FromImage", 
+            "caching": "ReadWrite", 
+            "osType": "Linux"
+          }, 
+          "dataDisks": [
+            {
+              "name": "[concat(parameters('virtualMachines_MaestroAzure_name'),'_disk2_257535701bdb40e187a032fdfd2b64b3')]", 
+              "managedDisk": {
+                "storageAccountType": "Standard_LRS", 
+                "id": "[resourceId('Microsoft.Compute/disks', parameters('disks_MaestroAzure_disk2_257535701bdb40e187a032fdfd2b64b3_name'))]"
+              }, 
+              "diskSizeGB": 1023, 
+              "createOption": "FromImage", 
+              "caching": "ReadWrite", 
+              "lun": 0
+            }
+          ]
+        }, 
+        "osProfile": {
+          "adminUsername": "htbase", 
+          "secrets": [], 
+          "computerName": "[parameters('virtualMachines_MaestroAzure_name')]", 
+          "linuxConfiguration": {
+            "ssh": {
+              "publicKeys": [
+                {
+                  "path": "/home/htbase/.ssh/authorized_keys", 
+                  "keyData": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDAXqNx6fjw+48KqQGYeab4o4UbV2Te0RuDWFB+l5GgYEISeIQhkOY0vnkF80fPC/XaynAMST+sO+woRGmrWlKKrYq/U0IB0odjiVYCqTXBm2ZEdv+AlX4Q+3mHKkzKIWeFP8FLKEgApOCsIQqmC0JaxyFeTEEXmPNXyWt9Vb/trv7BjYzx5YklrHgKz1DBEZuJm+n5ar1mEM9OFCTYTxESmoIFUjhW/t8tJyKtrnmIXM3Qh1LcAUbPKfJtg3f6WCHsCGciG/yZYb6xHw2qke4RFwhMxsfnh8gPTpZhy9GJQxu2lUzuM6MZyLNoYMDhJUtEKSljU6BRTHHWA/sNwwF3"
+                }
+              ]
+            }, 
+            "disablePasswordAuthentication": true
+          }
+        }, 
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', parameters('networkInterfaces_MaestroAzureVMNic_name'))]"
+            }
+          ]
+        }
+      }
+    }, 
+    {
+      "scale": null, 
+      "name": "[parameters('virtualMachines_MaestroOnAzure_name')]", 
+      "apiVersion": "2016-04-30-preview", 
+      "location": "CanadaEast", 
+      "dependsOn": [
+        "[resourceId('Microsoft.Compute/disks', parameters('disks_MaestroOnAzure_OsDisk_1_ca7552da3693445b81dd43f875bc3bbb_name'))]", 
+        "[resourceId('Microsoft.Compute/disks', parameters('disks_MaestroOnAzure_name'))]", 
+        "[resourceId('Microsoft.Network/networkInterfaces', parameters('networkInterfaces_maestroonazure529_name'))]", 
+        "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_htbasediag371_name'))]"
+      ], 
+      "type": "Microsoft.Compute/virtualMachines", 
+      "properties": {
+        "hardwareProfile": {
+          "vmSize": "Standard_DS2_v2"
+        }, 
+        "storageProfile": {
+          "imageReference": {
+            "sku": "14.04.5-LTS", 
+            "publisher": "Canonical", 
+            "version": "latest", 
+            "offer": "UbuntuServer"
+          }, 
+          "osDisk": {
+            "osType": "Linux", 
+            "caching": "ReadWrite", 
+            "createOption": "FromImage", 
+            "name": "[concat(parameters('virtualMachines_MaestroOnAzure_name'),'_OsDisk_1_ca7552da3693445b81dd43f875bc3bbb')]", 
+            "managedDisk": {
+              "id": "[resourceId('Microsoft.Compute/disks', parameters('disks_MaestroOnAzure_OsDisk_1_ca7552da3693445b81dd43f875bc3bbb_name'))]"
+            }
+          }, 
+          "dataDisks": [
+            {
+              "caching": "ReadWrite", 
+              "managedDisk": {
+                "id": "[resourceId('Microsoft.Compute/disks', parameters('disks_MaestroOnAzure_name'))]"
+              }, 
+              "name": "[parameters('virtualMachines_MaestroOnAzure_name')]", 
+              "lun": 0, 
+              "createOption": "Attach"
+            }
+          ]
+        }, 
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', parameters('networkInterfaces_maestroonazure529_name'))]"
+            }
+          ]
+        }, 
+        "osProfile": {
+          "adminUsername": "htbase", 
+          "secrets": [], 
+          "computerName": "[parameters('virtualMachines_MaestroOnAzure_name')]", 
+          "linuxConfiguration": {
+            "disablePasswordAuthentication": false
+          }
+        }, 
+        "diagnosticsProfile": {
+          "bootDiagnostics": {
+            "storageUri": "[concat('https', '://', parameters('storageAccounts_htbasediag371_name'), '.blob.core.windows.net', '/')]", 
+            "enabled": true
+          }
+        }
+      }
+    }, 
+    {
+      "scale": null, 
+      "name": "[parameters('networkInterfaces_HTBaseDemoNIC_name')]", 
+      "apiVersion": "2017-06-01", 
+      "location": "westus", 
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('subnets_HTBaseDemoSubNet_name'))]", 
+        "[resourceId('Microsoft.Compute/virtualMachines', parameters('virtualMachines_HTBaseDemo_name'))]"
+      ], 
+      "type": "Microsoft.Network/networkInterfaces", 
+      "properties": {
+        "macAddress": "00-0D-3A-32-25-6C", 
+        "virtualMachine": {
+          "id": "[resourceId('Microsoft.Compute/virtualMachines', parameters('virtualMachines_HTBaseDemo_name'))]"
+        }, 
+        "enableAcceleratedNetworking": false, 
+        "primary": true, 
+        "dnsSettings": {
+          "internalDomainNameSuffix": "003kxvun2jbunhkih0aa5dex4b.dx.internal.cloudapp.net", 
+          "dnsServers": [], 
+          "appliedDnsServers": []
+        }, 
+        "provisioningState": "Succeeded", 
+        "enableIPForwarding": false, 
+        "ipConfigurations": [
+          {
+            "etag": "W/\"26bcfd98-cd90-45bc-a368-6403ee21a5fa\"", 
+            "name": "HTBaseDemoIPConfig", 
+            "properties": {
+              "subnet": {
+                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('subnets_HTBaseDemoSubNet_name'))]"
+              }, 
+              "primary": true, 
+              "privateIPAddressVersion": "IPv4", 
+              "privateIPAllocationMethod": "Dynamic", 
+              "privateIPAddress": "10.0.0.4", 
+              "provisioningState": "Succeeded"
+            }
+          }
+        ], 
+        "resourceGuid": "63fb437d-f08c-4a32-a2c1-efe4d9178e9c"
+      }
+    }, 
+    {
+      "scale": null, 
+      "name": "[parameters('networkInterfaces_HTBaseHTNic_name')]", 
+      "apiVersion": "2017-06-01", 
+      "location": "westus", 
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('subnets_HTBaseHTSubNet_name'))]", 
+        "[resourceId('Microsoft.Compute/virtualMachines', parameters('virtualMachines_HTBaseHT_name'))]"
+      ], 
+      "type": "Microsoft.Network/networkInterfaces", 
+      "properties": {
+        "virtualMachine": {
+          "id": "[resourceId('Microsoft.Compute/virtualMachines', parameters('virtualMachines_HTBaseHT_name'))]"
+        }, 
+        "enableAcceleratedNetworking": false, 
+        "primary": true, 
+        "dnsSettings": {
+          "dnsServers": [], 
+          "appliedDnsServers": []
+        }, 
+        "provisioningState": "Succeeded", 
+        "enableIPForwarding": false, 
+        "ipConfigurations": [
+          {
+            "etag": "W/\"e282cdd2-286c-49fd-9ec4-db746e00afee\"", 
+            "name": "HTBaseHTIPConfig", 
+            "properties": {
+              "subnet": {
+                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('subnets_HTBaseHTSubNet_name'))]"
+              }, 
+              "primary": true, 
+              "privateIPAddressVersion": "IPv4", 
+              "privateIPAllocationMethod": "Dynamic", 
+              "privateIPAddress": "10.0.0.4", 
+              "provisioningState": "Succeeded"
+            }
+          }
+        ], 
+        "resourceGuid": "dfe102ca-3c42-4829-93d3-d53e381e6b6b"
+      }
+    }, 
+    {
+      "scale": null, 
+      "name": "[parameters('networkInterfaces_MaestroAZ_name')]", 
+      "apiVersion": "2017-06-01", 
+      "location": "westus", 
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('subnets_MaestroAZ_name'))]", 
+        "[resourceId('Microsoft.Compute/virtualMachines', parameters('virtualMachines_MaestroAZ_name'))]"
+      ], 
+      "type": "Microsoft.Network/networkInterfaces", 
+      "properties": {
+        "macAddress": "00-0D-3A-31-AB-30", 
+        "virtualMachine": {
+          "id": "[resourceId('Microsoft.Compute/virtualMachines', parameters('virtualMachines_MaestroAZ_name'))]"
+        }, 
+        "enableAcceleratedNetworking": false, 
+        "primary": true, 
+        "dnsSettings": {
+          "internalDomainNameSuffix": "xv51ly32auoebg4b5vrq2kmtxh.dx.internal.cloudapp.net", 
+          "dnsServers": [], 
+          "appliedDnsServers": []
+        }, 
+        "provisioningState": "Succeeded", 
+        "enableIPForwarding": false, 
+        "ipConfigurations": [
+          {
+            "etag": "W/\"efd0f70c-29b0-4789-8240-a9c6070ffd66\"", 
+            "name": "[parameters('networkInterfaces_MaestroAZ_name')]", 
+            "properties": {
+              "subnet": {
+                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('subnets_MaestroAZ_name'))]"
+              }, 
+              "primary": true, 
+              "privateIPAddressVersion": "IPv4", 
+              "privateIPAllocationMethod": "Dynamic", 
+              "privateIPAddress": "10.0.0.4", 
+              "provisioningState": "Succeeded"
+            }
+          }
+        ], 
+        "resourceGuid": "bbee7186-5a73-43eb-a5a5-b7cd3540077e"
+      }
+    }, 
+    {
+      "scale": null, 
+      "name": "[parameters('networkInterfaces_VMFromSnapShot004_name')]", 
+      "apiVersion": "2017-06-01", 
+      "location": "westus", 
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/publicIPAddresses', parameters('publicIPAddresses_VMFromSnapShot0004_name'))]", 
+        "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('subnets_VMFromSnapShot004_name'))]", 
+        "[resourceId('Microsoft.Network/publicIPAddresses', parameters('publicIPAddresses_VMFromSnapShot004_name'))]", 
+        "[resourceId('Microsoft.Compute/virtualMachines', parameters('virtualMachines_VMFromSnapShot004_name'))]"
+      ], 
+      "type": "Microsoft.Network/networkInterfaces", 
+      "properties": {
+        "macAddress": "00-0D-3A-31-F3-E0", 
+        "virtualMachine": {
+          "id": "[resourceId('Microsoft.Compute/virtualMachines', parameters('virtualMachines_VMFromSnapShot004_name'))]"
+        }, 
+        "enableAcceleratedNetworking": false, 
+        "primary": true, 
+        "dnsSettings": {
+          "internalDomainNameSuffix": "ui04apnxpjmupabdz35lacbu0e.dx.internal.cloudapp.net", 
+          "dnsServers": [], 
+          "appliedDnsServers": []
+        }, 
+        "provisioningState": "Succeeded", 
+        "enableIPForwarding": true, 
+        "ipConfigurations": [
+          {
+            "etag": "W/\"9d68c6a6-0d33-4fb3-81ba-e88c90453645\"", 
+            "name": "[parameters('networkInterfaces_VMFromSnapShot004_name')]", 
+            "properties": {
+              "subnet": {
+                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('subnets_VMFromSnapShot004_name'))]"
+              }, 
+              "primary": true, 
+              "privateIPAddressVersion": "IPv4", 
+              "publicIPAddress": {
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses', parameters('publicIPAddresses_VMFromSnapShot0004_name'))]"
+              }, 
+              "privateIPAllocationMethod": "Dynamic", 
+              "privateIPAddress": "10.0.0.4", 
+              "provisioningState": "Succeeded"
+            }
+          }, 
+          {
+            "etag": "W/\"9d68c6a6-0d33-4fb3-81ba-e88c90453645\"", 
+            "name": "vmfromsnapshot", 
+            "properties": {
+              "subnet": {
+                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('subnets_VMFromSnapShot004_name'))]"
+              }, 
+              "primary": false, 
+              "privateIPAddressVersion": "IPv4", 
+              "publicIPAddress": {
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses', parameters('publicIPAddresses_VMFromSnapShot004_name'))]"
+              }, 
+              "privateIPAllocationMethod": "Dynamic", 
+              "privateIPAddress": "10.0.0.5", 
+              "provisioningState": "Succeeded"
+            }
+          }
+        ], 
+        "resourceGuid": "9ed04057-0af9-401d-8363-6621f9620b61"
+      }
+    }, 
+    {
+      "scale": null, 
+      "name": "[parameters('networkInterfaces_AZ_Unmanaged_vm_nic_name')]", 
+      "apiVersion": "2017-06-01", 
+      "location": "canadaeast", 
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('subnets_AZ_Unmanaged_vm_subnet_name'))]", 
+        "[resourceId('Microsoft.Compute/virtualMachines', parameters('virtualMachines_AZ_Unmanaged_name'))]"
+      ], 
+      "type": "Microsoft.Network/networkInterfaces", 
+      "properties": {
+        "macAddress": "00-0D-3A-F4-58-B5", 
+        "virtualMachine": {
+          "id": "[resourceId('Microsoft.Compute/virtualMachines', parameters('virtualMachines_AZ_Unmanaged_name'))]"
+        }, 
+        "enableAcceleratedNetworking": false, 
+        "primary": true, 
+        "dnsSettings": {
+          "internalDomainNameSuffix": "bx0uwl0yq0dedcdp3ykputzmuh.vx.internal.cloudapp.net", 
+          "dnsServers": [], 
+          "appliedDnsServers": []
+        }, 
+        "provisioningState": "Succeeded", 
+        "enableIPForwarding": false, 
+        "ipConfigurations": [
+          {
+            "etag": "W/\"8330c6de-f22a-46c5-8325-28bb052141b3\"", 
+            "name": "AZ-Unmanaged-vm-ip-config", 
+            "properties": {
+              "subnet": {
+                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('subnets_AZ_Unmanaged_vm_subnet_name'))]"
+              }, 
+              "primary": true, 
+              "privateIPAddressVersion": "IPv4", 
+              "privateIPAllocationMethod": "Dynamic", 
+              "privateIPAddress": "10.0.0.4", 
+              "provisioningState": "Succeeded"
+            }
+          }
+        ], 
+        "resourceGuid": "8ba7d7b0-992f-48ee-8412-94098bc68d3b"
+      }
+    }, 
+    {
+      "scale": null, 
+      "name": "[parameters('networkInterfaces_MaestroAzureVMNic_name')]", 
+      "tags": {}, 
+      "apiVersion": "2017-06-01", 
+      "location": "canadaeast", 
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/publicIPAddresses', parameters('publicIPAddresses_MaestroAzurePublicIP_name'))]", 
+        "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('subnets_default_name'))]", 
+        "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_MaestroAzureNSG_name'))]", 
+        "[resourceId('Microsoft.Compute/virtualMachines', parameters('virtualMachines_MaestroAzure_name'))]"
+      ], 
+      "type": "Microsoft.Network/networkInterfaces", 
+      "properties": {
+        "macAddress": "00-0D-3A-F4-29-E8", 
+        "enableIPForwarding": false, 
+        "virtualMachine": {
+          "id": "[resourceId('Microsoft.Compute/virtualMachines', parameters('virtualMachines_MaestroAzure_name'))]"
+        }, 
+        "enableAcceleratedNetworking": false, 
+        "dnsSettings": {
+          "internalDomainNameSuffix": "ytgyrxbg2whejiocnczgkt1lgg.vx.internal.cloudapp.net", 
+          "dnsServers": [], 
+          "appliedDnsServers": []
+        }, 
+        "primary": true, 
+        "resourceGuid": "8d5860bd-5bfc-4d86-87ee-1f4a2b59b4d2", 
+        "networkSecurityGroup": {
+          "id": "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_MaestroAzureNSG_name'))]"
+        }, 
+        "ipConfigurations": [
+          {
+            "etag": "W/\"e2ecd3ca-fd16-4399-bcae-7863ef336bef\"", 
+            "name": "ipconfigMaestroAzure", 
+            "properties": {
+              "subnet": {
+                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('subnets_default_name'))]"
+              }, 
+              "primary": true, 
+              "privateIPAddressVersion": "IPv4", 
+              "publicIPAddress": {
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses', parameters('publicIPAddresses_MaestroAzurePublicIP_name'))]"
+              }, 
+              "privateIPAllocationMethod": "Dynamic", 
+              "privateIPAddress": "10.1.1.6", 
+              "provisioningState": "Succeeded"
+            }
+          }
+        ], 
+        "provisioningState": "Succeeded"
+      }
+    }, 
+    {
+      "scale": null, 
+      "name": "[parameters('networkInterfaces_MaestroFromSnapShot_vm_nic_name')]", 
+      "apiVersion": "2017-06-01", 
+      "location": "canadaeast", 
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('subnets_MaestroFromSnapShot_subnet_name'))]"
+      ], 
+      "type": "Microsoft.Network/networkInterfaces", 
+      "properties": {
+        "provisioningState": "Succeeded", 
+        "dnsSettings": {
+          "internalDomainNameSuffix": "gf2iipaj2xkudmivxoweufzrtc.vx.internal.cloudapp.net", 
+          "dnsServers": [], 
+          "appliedDnsServers": []
+        }, 
+        "resourceGuid": "4f839511-9f35-4e46-ad62-623893037f22", 
+        "enableIPForwarding": false, 
+        "ipConfigurations": [
+          {
+            "etag": "W/\"d718fe2a-368f-4898-87b7-4ed4662eb52b\"", 
+            "name": "MaestroFromSnapShot-ip-config", 
+            "properties": {
+              "subnet": {
+                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('subnets_MaestroFromSnapShot_subnet_name'))]"
+              }, 
+              "primary": true, 
+              "privateIPAddressVersion": "IPv4", 
+              "privateIPAllocationMethod": "Dynamic", 
+              "privateIPAddress": "10.0.0.4", 
+              "provisioningState": "Succeeded"
+            }
+          }
+        ], 
+        "enableAcceleratedNetworking": false
+      }
+    }, 
+    {
+      "scale": null, 
+      "name": "[parameters('networkInterfaces_maestroonazure529_name')]", 
+      "apiVersion": "2017-06-01", 
+      "location": "canadaeast", 
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/publicIPAddresses', parameters('publicIPAddresses_MaestroOnAzure_ip_name'))]", 
+        "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('subnets_default_name'))]", 
+        "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_MaestroOnAzure_nsg_name'))]", 
+        "[resourceId('Microsoft.Compute/virtualMachines', parameters('virtualMachines_MaestroOnAzure_name'))]"
+      ], 
+      "type": "Microsoft.Network/networkInterfaces", 
+      "properties": {
+        "enableIPForwarding": false, 
+        "virtualMachine": {
+          "id": "[resourceId('Microsoft.Compute/virtualMachines', parameters('virtualMachines_MaestroOnAzure_name'))]"
+        }, 
+        "enableAcceleratedNetworking": false, 
+        "dnsSettings": {
+          "dnsServers": [], 
+          "appliedDnsServers": []
+        }, 
+        "primary": true, 
+        "provisioningState": "Succeeded", 
+        "networkSecurityGroup": {
+          "id": "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_MaestroOnAzure_nsg_name'))]"
+        }, 
+        "ipConfigurations": [
+          {
+            "etag": "W/\"a2fb12da-fbe5-47fb-bc31-ab078b1b873f\"", 
+            "name": "ipconfig1", 
+            "properties": {
+              "subnet": {
+                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('subnets_default_name'))]"
+              }, 
+              "primary": true, 
+              "privateIPAddressVersion": "IPv4", 
+              "publicIPAddress": {
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses', parameters('publicIPAddresses_MaestroOnAzure_ip_name'))]"
+              }, 
+              "privateIPAllocationMethod": "Dynamic", 
+              "privateIPAddress": "10.1.1.4", 
+              "provisioningState": "Succeeded"
+            }
+          }
+        ], 
+        "resourceGuid": "4041aad7-9924-4dbf-b194-cf59ae62d6d9"
+      }
+    }, 
+    {
+      "scale": null, 
+      "name": "[parameters('networkInterfaces_MaestroOnAzureVMNic_name')]", 
+      "tags": {}, 
+      "apiVersion": "2017-06-01", 
+      "location": "canadaeast", 
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/publicIPAddresses', parameters('publicIPAddresses_MaestroOnAzurePublicIP_name'))]", 
+        "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('subnets_default_name'))]", 
+        "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_MaestroOnAzureNSG_name'))]"
+      ], 
+      "type": "Microsoft.Network/networkInterfaces", 
+      "properties": {
+        "enableAcceleratedNetworking": false, 
+        "dnsSettings": {
+          "internalDomainNameSuffix": "ytgyrxbg2whejiocnczgkt1lgg.vx.internal.cloudapp.net", 
+          "dnsServers": [], 
+          "appliedDnsServers": []
+        }, 
+        "enableIPForwarding": false, 
+        "provisioningState": "Succeeded", 
+        "networkSecurityGroup": {
+          "id": "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_MaestroOnAzureNSG_name'))]"
+        }, 
+        "ipConfigurations": [
+          {
+            "etag": "W/\"5032b32b-0b09-443c-8f70-3cd98fd09955\"", 
+            "name": "ipconfigMaestroOnAzure", 
+            "properties": {
+              "subnet": {
+                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('subnets_default_name'))]"
+              }, 
+              "primary": true, 
+              "privateIPAddressVersion": "IPv4", 
+              "publicIPAddress": {
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses', parameters('publicIPAddresses_MaestroOnAzurePublicIP_name'))]"
+              }, 
+              "privateIPAllocationMethod": "Dynamic", 
+              "privateIPAddress": "10.1.1.5", 
+              "provisioningState": "Succeeded"
+            }
+          }
+        ], 
+        "resourceGuid": "de4700b4-51d1-4ceb-bdb1-fda002a91355"
+      }
+    }, 
+    {
+      "scale": null, 
+      "name": "[parameters('networkSecurityGroups_azureRMVMnsg_name')]", 
+      "apiVersion": "2017-06-01", 
+      "location": "canadaeast", 
+      "dependsOn": [], 
+      "type": "Microsoft.Network/networkSecurityGroups", 
+      "properties": {
+        "defaultSecurityRules": [
+          {
+            "etag": "W/\"d28ea3c7-3efc-4f3c-a08e-335367144aa9\"", 
+            "name": "AllowVnetInBound", 
+            "properties": {
+              "sourceAddressPrefixes": [], 
+              "access": "Allow", 
+              "direction": "Inbound", 
+              "protocol": "*", 
+              "description": "Allow inbound traffic from all VMs in VNET", 
+              "priority": 65000, 
+              "destinationAddressPrefixes": [], 
+              "destinationPortRange": "*", 
+              "sourceAddressPrefix": "VirtualNetwork", 
+              "destinationAddressPrefix": "VirtualNetwork", 
+              "sourcePortRange": "*", 
+              "provisioningState": "Succeeded"
+            }
+          }, 
+          {
+            "etag": "W/\"d28ea3c7-3efc-4f3c-a08e-335367144aa9\"", 
+            "name": "AllowAzureLoadBalancerInBound", 
+            "properties": {
+              "sourceAddressPrefixes": [], 
+              "access": "Allow", 
+              "direction": "Inbound", 
+              "protocol": "*", 
+              "description": "Allow inbound traffic from azure load balancer", 
+              "priority": 65001, 
+              "destinationAddressPrefixes": [], 
+              "destinationPortRange": "*", 
+              "sourceAddressPrefix": "AzureLoadBalancer", 
+              "destinationAddressPrefix": "*", 
+              "sourcePortRange": "*", 
+              "provisioningState": "Succeeded"
+            }
+          }, 
+          {
+            "etag": "W/\"d28ea3c7-3efc-4f3c-a08e-335367144aa9\"", 
+            "name": "DenyAllInBound", 
+            "properties": {
+              "sourceAddressPrefixes": [], 
+              "access": "Deny", 
+              "direction": "Inbound", 
+              "protocol": "*", 
+              "description": "Deny all inbound traffic", 
+              "priority": 65500, 
+              "destinationAddressPrefixes": [], 
+              "destinationPortRange": "*", 
+              "sourceAddressPrefix": "*", 
+              "destinationAddressPrefix": "*", 
+              "sourcePortRange": "*", 
+              "provisioningState": "Succeeded"
+            }
+          }, 
+          {
+            "etag": "W/\"d28ea3c7-3efc-4f3c-a08e-335367144aa9\"", 
+            "name": "AllowVnetOutBound", 
+            "properties": {
+              "sourceAddressPrefixes": [], 
+              "access": "Allow", 
+              "direction": "Outbound", 
+              "protocol": "*", 
+              "description": "Allow outbound traffic from all VMs to all VMs in VNET", 
+              "priority": 65000, 
+              "destinationAddressPrefixes": [], 
+              "destinationPortRange": "*", 
+              "sourceAddressPrefix": "VirtualNetwork", 
+              "destinationAddressPrefix": "VirtualNetwork", 
+              "sourcePortRange": "*", 
+              "provisioningState": "Succeeded"
+            }
+          }, 
+          {
+            "etag": "W/\"d28ea3c7-3efc-4f3c-a08e-335367144aa9\"", 
+            "name": "AllowInternetOutBound", 
+            "properties": {
+              "sourceAddressPrefixes": [], 
+              "access": "Allow", 
+              "direction": "Outbound", 
+              "protocol": "*", 
+              "description": "Allow outbound traffic from all VMs to Internet", 
+              "priority": 65001, 
+              "destinationAddressPrefixes": [], 
+              "destinationPortRange": "*", 
+              "sourceAddressPrefix": "*", 
+              "destinationAddressPrefix": "Internet", 
+              "sourcePortRange": "*", 
+              "provisioningState": "Succeeded"
+            }
+          }, 
+          {
+            "etag": "W/\"d28ea3c7-3efc-4f3c-a08e-335367144aa9\"", 
+            "name": "DenyAllOutBound", 
+            "properties": {
+              "sourceAddressPrefixes": [], 
+              "access": "Deny", 
+              "direction": "Outbound", 
+              "protocol": "*", 
+              "description": "Deny all outbound traffic", 
+              "priority": 65500, 
+              "destinationAddressPrefixes": [], 
+              "destinationPortRange": "*", 
+              "sourceAddressPrefix": "*", 
+              "destinationAddressPrefix": "*", 
+              "sourcePortRange": "*", 
+              "provisioningState": "Succeeded"
+            }
+          }
+        ], 
+        "provisioningState": "Succeeded", 
+        "securityRules": [
+          {
+            "etag": "W/\"d28ea3c7-3efc-4f3c-a08e-335367144aa9\"", 
+            "name": "ssh", 
+            "properties": {
+              "sourceAddressPrefixes": [], 
+              "access": "Allow", 
+              "direction": "Inbound", 
+              "protocol": "Tcp", 
+              "description": "ssh rule", 
+              "priority": 100, 
+              "destinationAddressPrefixes": [], 
+              "destinationPortRange": "22", 
+              "sourceAddressPrefix": "*", 
+              "destinationAddressPrefix": "*", 
+              "sourcePortRange": "*", 
+              "provisioningState": "Succeeded"
+            }
+          }
+        ], 
+        "resourceGuid": "4ca6581b-7712-4e94-8375-0f0e464a7163"
+      }
+    }, 
+    {
+      "scale": null, 
+      "name": "[parameters('networkSecurityGroups_MaestroAzureNSG_name')]", 
+      "tags": {}, 
+      "apiVersion": "2017-06-01", 
+      "location": "canadaeast", 
+      "dependsOn": [], 
+      "type": "Microsoft.Network/networkSecurityGroups", 
+      "properties": {
+        "defaultSecurityRules": [
+          {
+            "etag": "W/\"aab92b1f-1260-463a-ab2c-0a60b832d99d\"", 
+            "name": "AllowVnetInBound", 
+            "properties": {
+              "sourceAddressPrefixes": [], 
+              "access": "Allow", 
+              "direction": "Inbound", 
+              "protocol": "*", 
+              "description": "Allow inbound traffic from all VMs in VNET", 
+              "priority": 65000, 
+              "destinationAddressPrefixes": [], 
+              "destinationPortRange": "*", 
+              "sourceAddressPrefix": "VirtualNetwork", 
+              "destinationAddressPrefix": "VirtualNetwork", 
+              "sourcePortRange": "*", 
+              "provisioningState": "Succeeded"
+            }
+          }, 
+          {
+            "etag": "W/\"aab92b1f-1260-463a-ab2c-0a60b832d99d\"", 
+            "name": "AllowAzureLoadBalancerInBound", 
+            "properties": {
+              "sourceAddressPrefixes": [], 
+              "access": "Allow", 
+              "direction": "Inbound", 
+              "protocol": "*", 
+              "description": "Allow inbound traffic from azure load balancer", 
+              "priority": 65001, 
+              "destinationAddressPrefixes": [], 
+              "destinationPortRange": "*", 
+              "sourceAddressPrefix": "AzureLoadBalancer", 
+              "destinationAddressPrefix": "*", 
+              "sourcePortRange": "*", 
+              "provisioningState": "Succeeded"
+            }
+          }, 
+          {
+            "etag": "W/\"aab92b1f-1260-463a-ab2c-0a60b832d99d\"", 
+            "name": "DenyAllInBound", 
+            "properties": {
+              "sourceAddressPrefixes": [], 
+              "access": "Deny", 
+              "direction": "Inbound", 
+              "protocol": "*", 
+              "description": "Deny all inbound traffic", 
+              "priority": 65500, 
+              "destinationAddressPrefixes": [], 
+              "destinationPortRange": "*", 
+              "sourceAddressPrefix": "*", 
+              "destinationAddressPrefix": "*", 
+              "sourcePortRange": "*", 
+              "provisioningState": "Succeeded"
+            }
+          }, 
+          {
+            "etag": "W/\"aab92b1f-1260-463a-ab2c-0a60b832d99d\"", 
+            "name": "AllowVnetOutBound", 
+            "properties": {
+              "sourceAddressPrefixes": [], 
+              "access": "Allow", 
+              "direction": "Outbound", 
+              "protocol": "*", 
+              "description": "Allow outbound traffic from all VMs to all VMs in VNET", 
+              "priority": 65000, 
+              "destinationAddressPrefixes": [], 
+              "destinationPortRange": "*", 
+              "sourceAddressPrefix": "VirtualNetwork", 
+              "destinationAddressPrefix": "VirtualNetwork", 
+              "sourcePortRange": "*", 
+              "provisioningState": "Succeeded"
+            }
+          }, 
+          {
+            "etag": "W/\"aab92b1f-1260-463a-ab2c-0a60b832d99d\"", 
+            "name": "AllowInternetOutBound", 
+            "properties": {
+              "sourceAddressPrefixes": [], 
+              "access": "Allow", 
+              "direction": "Outbound", 
+              "protocol": "*", 
+              "description": "Allow outbound traffic from all VMs to Internet", 
+              "priority": 65001, 
+              "destinationAddressPrefixes": [], 
+              "destinationPortRange": "*", 
+              "sourceAddressPrefix": "*", 
+              "destinationAddressPrefix": "Internet", 
+              "sourcePortRange": "*", 
+              "provisioningState": "Succeeded"
+            }
+          }, 
+          {
+            "etag": "W/\"aab92b1f-1260-463a-ab2c-0a60b832d99d\"", 
+            "name": "DenyAllOutBound", 
+            "properties": {
+              "sourceAddressPrefixes": [], 
+              "access": "Deny", 
+              "direction": "Outbound", 
+              "protocol": "*", 
+              "description": "Deny all outbound traffic", 
+              "priority": 65500, 
+              "destinationAddressPrefixes": [], 
+              "destinationPortRange": "*", 
+              "sourceAddressPrefix": "*", 
+              "destinationAddressPrefix": "*", 
+              "sourcePortRange": "*", 
+              "provisioningState": "Succeeded"
+            }
+          }
+        ], 
+        "provisioningState": "Succeeded", 
+        "securityRules": [
+          {
+            "etag": "W/\"aab92b1f-1260-463a-ab2c-0a60b832d99d\"", 
+            "name": "default-allow-ssh", 
+            "properties": {
+              "sourceAddressPrefixes": [], 
+              "access": "Allow", 
+              "direction": "Inbound", 
+              "protocol": "Tcp", 
+              "priority": 1000, 
+              "destinationAddressPrefixes": [], 
+              "destinationPortRange": "22", 
+              "sourceAddressPrefix": "*", 
+              "destinationAddressPrefix": "*", 
+              "sourcePortRange": "*", 
+              "provisioningState": "Succeeded"
+            }
+          }, 
+          {
+            "etag": "W/\"aab92b1f-1260-463a-ab2c-0a60b832d99d\"", 
+            "name": "http", 
+            "properties": {
+              "sourceAddressPrefixes": [], 
+              "access": "Allow", 
+              "direction": "Inbound", 
+              "protocol": "*", 
+              "priority": 1010, 
+              "destinationAddressPrefixes": [], 
+              "destinationPortRange": "80", 
+              "sourceAddressPrefix": "*", 
+              "destinationAddressPrefix": "*", 
+              "sourcePortRange": "*", 
+              "provisioningState": "Succeeded"
+            }
+          }
+        ], 
+        "resourceGuid": "9de60c2e-4864-4277-b40e-020ac075508e"
+      }
+    }, 
+    {
+      "scale": null, 
+      "name": "[parameters('networkSecurityGroups_MaestroOnAzure_nsg_name')]", 
+      "apiVersion": "2017-06-01", 
+      "location": "canadaeast", 
+      "dependsOn": [], 
+      "type": "Microsoft.Network/networkSecurityGroups", 
+      "properties": {
+        "defaultSecurityRules": [
+          {
+            "etag": "W/\"74440365-14ec-48a1-a907-323a78d4ac90\"", 
+            "name": "AllowVnetInBound", 
+            "properties": {
+              "sourceAddressPrefixes": [], 
+              "access": "Allow", 
+              "direction": "Inbound", 
+              "protocol": "*", 
+              "description": "Allow inbound traffic from all VMs in VNET", 
+              "priority": 65000, 
+              "destinationAddressPrefixes": [], 
+              "destinationPortRange": "*", 
+              "sourceAddressPrefix": "VirtualNetwork", 
+              "destinationAddressPrefix": "VirtualNetwork", 
+              "sourcePortRange": "*", 
+              "provisioningState": "Succeeded"
+            }
+          }, 
+          {
+            "etag": "W/\"74440365-14ec-48a1-a907-323a78d4ac90\"", 
+            "name": "AllowAzureLoadBalancerInBound", 
+            "properties": {
+              "sourceAddressPrefixes": [], 
+              "access": "Allow", 
+              "direction": "Inbound", 
+              "protocol": "*", 
+              "description": "Allow inbound traffic from azure load balancer", 
+              "priority": 65001, 
+              "destinationAddressPrefixes": [], 
+              "destinationPortRange": "*", 
+              "sourceAddressPrefix": "AzureLoadBalancer", 
+              "destinationAddressPrefix": "*", 
+              "sourcePortRange": "*", 
+              "provisioningState": "Succeeded"
+            }
+          }, 
+          {
+            "etag": "W/\"74440365-14ec-48a1-a907-323a78d4ac90\"", 
+            "name": "DenyAllInBound", 
+            "properties": {
+              "sourceAddressPrefixes": [], 
+              "access": "Deny", 
+              "direction": "Inbound", 
+              "protocol": "*", 
+              "description": "Deny all inbound traffic", 
+              "priority": 65500, 
+              "destinationAddressPrefixes": [], 
+              "destinationPortRange": "*", 
+              "sourceAddressPrefix": "*", 
+              "destinationAddressPrefix": "*", 
+              "sourcePortRange": "*", 
+              "provisioningState": "Succeeded"
+            }
+          }, 
+          {
+            "etag": "W/\"74440365-14ec-48a1-a907-323a78d4ac90\"", 
+            "name": "AllowVnetOutBound", 
+            "properties": {
+              "sourceAddressPrefixes": [], 
+              "access": "Allow", 
+              "direction": "Outbound", 
+              "protocol": "*", 
+              "description": "Allow outbound traffic from all VMs to all VMs in VNET", 
+              "priority": 65000, 
+              "destinationAddressPrefixes": [], 
+              "destinationPortRange": "*", 
+              "sourceAddressPrefix": "VirtualNetwork", 
+              "destinationAddressPrefix": "VirtualNetwork", 
+              "sourcePortRange": "*", 
+              "provisioningState": "Succeeded"
+            }
+          }, 
+          {
+            "etag": "W/\"74440365-14ec-48a1-a907-323a78d4ac90\"", 
+            "name": "AllowInternetOutBound", 
+            "properties": {
+              "sourceAddressPrefixes": [], 
+              "access": "Allow", 
+              "direction": "Outbound", 
+              "protocol": "*", 
+              "description": "Allow outbound traffic from all VMs to Internet", 
+              "priority": 65001, 
+              "destinationAddressPrefixes": [], 
+              "destinationPortRange": "*", 
+              "sourceAddressPrefix": "*", 
+              "destinationAddressPrefix": "Internet", 
+              "sourcePortRange": "*", 
+              "provisioningState": "Succeeded"
+            }
+          }, 
+          {
+            "etag": "W/\"74440365-14ec-48a1-a907-323a78d4ac90\"", 
+            "name": "DenyAllOutBound", 
+            "properties": {
+              "sourceAddressPrefixes": [], 
+              "access": "Deny", 
+              "direction": "Outbound", 
+              "protocol": "*", 
+              "description": "Deny all outbound traffic", 
+              "priority": 65500, 
+              "destinationAddressPrefixes": [], 
+              "destinationPortRange": "*", 
+              "sourceAddressPrefix": "*", 
+              "destinationAddressPrefix": "*", 
+              "sourcePortRange": "*", 
+              "provisioningState": "Succeeded"
+            }
+          }
+        ], 
+        "provisioningState": "Succeeded", 
+        "securityRules": [
+          {
+            "etag": "W/\"74440365-14ec-48a1-a907-323a78d4ac90\"", 
+            "name": "default-allow-ssh", 
+            "properties": {
+              "sourceAddressPrefixes": [], 
+              "access": "Allow", 
+              "direction": "Inbound", 
+              "protocol": "TCP", 
+              "priority": 1000, 
+              "destinationAddressPrefixes": [], 
+              "destinationPortRange": "22", 
+              "sourceAddressPrefix": "*", 
+              "destinationAddressPrefix": "*", 
+              "sourcePortRange": "*", 
+              "provisioningState": "Succeeded"
+            }
+          }, 
+          {
+            "etag": "W/\"74440365-14ec-48a1-a907-323a78d4ac90\"", 
+            "name": "http", 
+            "properties": {
+              "sourceAddressPrefixes": [], 
+              "access": "Allow", 
+              "direction": "Inbound", 
+              "protocol": "*", 
+              "priority": 1010, 
+              "destinationAddressPrefixes": [], 
+              "destinationPortRange": "80", 
+              "sourceAddressPrefix": "*", 
+              "destinationAddressPrefix": "*", 
+              "sourcePortRange": "*", 
+              "provisioningState": "Succeeded"
+            }
+          }
+        ], 
+        "resourceGuid": "c7c07012-4768-4307-99f6-0ba2c13d2528"
+      }
+    }, 
+    {
+      "scale": null, 
+      "name": "[parameters('networkSecurityGroups_MaestroOnAzureNSG_name')]", 
+      "tags": {}, 
+      "apiVersion": "2017-06-01", 
+      "location": "canadaeast", 
+      "dependsOn": [], 
+      "type": "Microsoft.Network/networkSecurityGroups", 
+      "properties": {
+        "defaultSecurityRules": [
+          {
+            "etag": "W/\"7bcfed50-602d-42c0-abe0-0dc1a5c07d35\"", 
+            "name": "AllowVnetInBound", 
+            "properties": {
+              "sourceAddressPrefixes": [], 
+              "access": "Allow", 
+              "direction": "Inbound", 
+              "protocol": "*", 
+              "description": "Allow inbound traffic from all VMs in VNET", 
+              "priority": 65000, 
+              "destinationAddressPrefixes": [], 
+              "destinationPortRange": "*", 
+              "sourceAddressPrefix": "VirtualNetwork", 
+              "destinationAddressPrefix": "VirtualNetwork", 
+              "sourcePortRange": "*", 
+              "provisioningState": "Succeeded"
+            }
+          }, 
+          {
+            "etag": "W/\"7bcfed50-602d-42c0-abe0-0dc1a5c07d35\"", 
+            "name": "AllowAzureLoadBalancerInBound", 
+            "properties": {
+              "sourceAddressPrefixes": [], 
+              "access": "Allow", 
+              "direction": "Inbound", 
+              "protocol": "*", 
+              "description": "Allow inbound traffic from azure load balancer", 
+              "priority": 65001, 
+              "destinationAddressPrefixes": [], 
+              "destinationPortRange": "*", 
+              "sourceAddressPrefix": "AzureLoadBalancer", 
+              "destinationAddressPrefix": "*", 
+              "sourcePortRange": "*", 
+              "provisioningState": "Succeeded"
+            }
+          }, 
+          {
+            "etag": "W/\"7bcfed50-602d-42c0-abe0-0dc1a5c07d35\"", 
+            "name": "DenyAllInBound", 
+            "properties": {
+              "sourceAddressPrefixes": [], 
+              "access": "Deny", 
+              "direction": "Inbound", 
+              "protocol": "*", 
+              "description": "Deny all inbound traffic", 
+              "priority": 65500, 
+              "destinationAddressPrefixes": [], 
+              "destinationPortRange": "*", 
+              "sourceAddressPrefix": "*", 
+              "destinationAddressPrefix": "*", 
+              "sourcePortRange": "*", 
+              "provisioningState": "Succeeded"
+            }
+          }, 
+          {
+            "etag": "W/\"7bcfed50-602d-42c0-abe0-0dc1a5c07d35\"", 
+            "name": "AllowVnetOutBound", 
+            "properties": {
+              "sourceAddressPrefixes": [], 
+              "access": "Allow", 
+              "direction": "Outbound", 
+              "protocol": "*", 
+              "description": "Allow outbound traffic from all VMs to all VMs in VNET", 
+              "priority": 65000, 
+              "destinationAddressPrefixes": [], 
+              "destinationPortRange": "*", 
+              "sourceAddressPrefix": "VirtualNetwork", 
+              "destinationAddressPrefix": "VirtualNetwork", 
+              "sourcePortRange": "*", 
+              "provisioningState": "Succeeded"
+            }
+          }, 
+          {
+            "etag": "W/\"7bcfed50-602d-42c0-abe0-0dc1a5c07d35\"", 
+            "name": "AllowInternetOutBound", 
+            "properties": {
+              "sourceAddressPrefixes": [], 
+              "access": "Allow", 
+              "direction": "Outbound", 
+              "protocol": "*", 
+              "description": "Allow outbound traffic from all VMs to Internet", 
+              "priority": 65001, 
+              "destinationAddressPrefixes": [], 
+              "destinationPortRange": "*", 
+              "sourceAddressPrefix": "*", 
+              "destinationAddressPrefix": "Internet", 
+              "sourcePortRange": "*", 
+              "provisioningState": "Succeeded"
+            }
+          }, 
+          {
+            "etag": "W/\"7bcfed50-602d-42c0-abe0-0dc1a5c07d35\"", 
+            "name": "DenyAllOutBound", 
+            "properties": {
+              "sourceAddressPrefixes": [], 
+              "access": "Deny", 
+              "direction": "Outbound", 
+              "protocol": "*", 
+              "description": "Deny all outbound traffic", 
+              "priority": 65500, 
+              "destinationAddressPrefixes": [], 
+              "destinationPortRange": "*", 
+              "sourceAddressPrefix": "*", 
+              "destinationAddressPrefix": "*", 
+              "sourcePortRange": "*", 
+              "provisioningState": "Succeeded"
+            }
+          }
+        ], 
+        "provisioningState": "Succeeded", 
+        "securityRules": [
+          {
+            "etag": "W/\"7bcfed50-602d-42c0-abe0-0dc1a5c07d35\"", 
+            "name": "default-allow-ssh", 
+            "properties": {
+              "sourceAddressPrefixes": [], 
+              "access": "Allow", 
+              "direction": "Inbound", 
+              "protocol": "Tcp", 
+              "priority": 1000, 
+              "destinationAddressPrefixes": [], 
+              "destinationPortRange": "22", 
+              "sourceAddressPrefix": "*", 
+              "destinationAddressPrefix": "*", 
+              "sourcePortRange": "*", 
+              "provisioningState": "Succeeded"
+            }
+          }
+        ], 
+        "resourceGuid": "5aa47d35-af4f-4d20-98d9-8b4d361480af"
+      }
+    }, 
+    {
+      "scale": null, 
+      "name": "[parameters('publicIPAddresses_VMFromSnapShot0004_name')]", 
+      "apiVersion": "2017-06-01", 
+      "location": "westus", 
+      "dependsOn": [], 
+      "type": "Microsoft.Network/publicIPAddresses", 
+      "properties": {
+        "publicIPAllocationMethod": "Dynamic", 
+        "publicIPAddressVersion": "IPv4", 
+        "provisioningState": "Succeeded", 
+        "ipAddress": "40.83.149.13", 
+        "idleTimeoutInMinutes": 4, 
+        "resourceGuid": "30d0c19c-32cc-4cf4-8504-f06b5c0b97f0"
+      }
+    }, 
+    {
+      "scale": null, 
+      "name": "[parameters('publicIPAddresses_VMFromSnapShot004_name')]", 
+      "apiVersion": "2017-06-01", 
+      "location": "westus", 
+      "dependsOn": [], 
+      "type": "Microsoft.Network/publicIPAddresses", 
+      "properties": {
+        "publicIPAllocationMethod": "Dynamic", 
+        "publicIPAddressVersion": "IPv4", 
+        "provisioningState": "Succeeded", 
+        "ipAddress": "40.83.144.55", 
+        "idleTimeoutInMinutes": 4, 
+        "resourceGuid": "5226b1d7-c651-4805-b12f-1fbf6bb41629"
+      }
+    }, 
+    {
+      "scale": null, 
+      "name": "[parameters('publicIPAddresses_MaestroAzurePublicIP_name')]", 
+      "tags": {}, 
+      "apiVersion": "2017-06-01", 
+      "location": "canadaeast", 
+      "dependsOn": [], 
+      "type": "Microsoft.Network/publicIPAddresses", 
+      "properties": {
+        "publicIPAllocationMethod": "Dynamic", 
+        "dnsSettings": {
+          "domainNameLabel": "maestroazure", 
+          "fqdn": "maestroazure.canadaeast.cloudapp.azure.com"
+        }, 
+        "publicIPAddressVersion": "IPv4", 
+        "resourceGuid": "bea98a40-55d5-472a-8845-a8c3360636f7", 
+        "ipAddress": "52.242.19.15", 
+        "idleTimeoutInMinutes": 4, 
+        "provisioningState": "Succeeded"
+      }
+    }, 
+    {
+      "scale": null, 
+      "name": "[parameters('publicIPAddresses_MaestroOnAzure_ip_name')]", 
+      "apiVersion": "2017-06-01", 
+      "location": "canadaeast", 
+      "dependsOn": [], 
+      "type": "Microsoft.Network/publicIPAddresses", 
+      "properties": {
+        "publicIPAllocationMethod": "Dynamic", 
+        "dnsSettings": {
+          "domainNameLabel": "maestroanazure", 
+          "fqdn": "maestroanazure.canadaeast.cloudapp.azure.com"
+        }, 
+        "publicIPAddressVersion": "IPv4", 
+        "provisioningState": "Succeeded", 
+        "idleTimeoutInMinutes": 4, 
+        "resourceGuid": "1bf6d595-f43e-43cb-950a-56dcd89ad5ee"
+      }
+    }, 
+    {
+      "scale": null, 
+      "name": "[parameters('publicIPAddresses_MaestroOnAzurePublicIP_name')]", 
+      "tags": {}, 
+      "apiVersion": "2017-06-01", 
+      "location": "canadaeast", 
+      "dependsOn": [], 
+      "type": "Microsoft.Network/publicIPAddresses", 
+      "properties": {
+        "publicIPAllocationMethod": "Dynamic", 
+        "publicIPAddressVersion": "IPv4", 
+        "provisioningState": "Succeeded", 
+        "idleTimeoutInMinutes": 4, 
+        "resourceGuid": "6e6f1800-0f6e-4fd2-915d-e5f2483aa280"
+      }
+    }, 
+    {
+      "scale": null, 
+      "name": "[parameters('virtualNetworks_HTBaseDemoVNet_name')]", 
+      "apiVersion": "2017-06-01", 
+      "location": "westus", 
+      "dependsOn": [], 
+      "type": "Microsoft.Network/virtualNetworks", 
+      "properties": {
+        "virtualNetworkPeerings": [], 
+        "subnets": [
+          {
+            "etag": "W/\"bb7f8b7f-0bf8-46a7-b2a9-76b9c5d349d5\"", 
+            "name": "HTBaseDemoSubNet", 
+            "properties": {
+              "addressPrefix": "10.0.0.0/24", 
+              "provisioningState": "Succeeded"
+            }
+          }
+        ], 
+        "provisioningState": "Succeeded", 
+        "addressSpace": {
+          "addressPrefixes": [
+            "10.0.0.0/16"
+          ]
+        }, 
+        "resourceGuid": "d6abbad6-e28d-4643-9d48-3e800f8c97f1"
+      }
+    }, 
+    {
+      "scale": null, 
+      "name": "[parameters('virtualNetworks_HTBaseHTVNet_name')]", 
+      "apiVersion": "2017-06-01", 
+      "location": "westus", 
+      "dependsOn": [], 
+      "type": "Microsoft.Network/virtualNetworks", 
+      "properties": {
+        "virtualNetworkPeerings": [], 
+        "subnets": [
+          {
+            "etag": "W/\"a691e150-7ca1-44dc-87fb-e39cb759a450\"", 
+            "name": "HTBaseHTSubNet", 
+            "properties": {
+              "addressPrefix": "10.0.0.0/24", 
+              "provisioningState": "Succeeded"
+            }
+          }
+        ], 
+        "provisioningState": "Succeeded", 
+        "addressSpace": {
+          "addressPrefixes": [
+            "10.0.0.0/16"
+          ]
+        }, 
+        "resourceGuid": "edc89d22-1f88-4c9e-bc5a-bb79a3e86eb4"
+      }
+    }, 
+    {
+      "scale": null, 
+      "name": "[parameters('virtualNetworks_MaestroAZ_name')]", 
+      "apiVersion": "2017-06-01", 
+      "location": "westus", 
+      "dependsOn": [], 
+      "type": "Microsoft.Network/virtualNetworks", 
+      "properties": {
+        "virtualNetworkPeerings": [], 
+        "subnets": [
+          {
+            "etag": "W/\"eecebb94-6d1c-4358-ba83-5da0fbba4e0b\"", 
+            "name": "[parameters('virtualNetworks_MaestroAZ_name')]", 
+            "properties": {
+              "addressPrefix": "10.0.0.0/24", 
+              "provisioningState": "Succeeded"
+            }
+          }
+        ], 
+        "provisioningState": "Succeeded", 
+        "addressSpace": {
+          "addressPrefixes": [
+            "10.0.0.0/16"
+          ]
+        }, 
+        "resourceGuid": "e3b57fbd-05bc-401c-9bc1-fd630e2993bf"
+      }
+    }, 
+    {
+      "scale": null, 
+      "name": "[parameters('virtualNetworks_VMFromSnapShot004_name')]", 
+      "apiVersion": "2017-06-01", 
+      "location": "westus", 
+      "dependsOn": [], 
+      "type": "Microsoft.Network/virtualNetworks", 
+      "properties": {
+        "virtualNetworkPeerings": [], 
+        "subnets": [
+          {
+            "etag": "W/\"bbff4b62-05ec-4b3c-9fde-844b29a69d61\"", 
+            "name": "[parameters('virtualNetworks_VMFromSnapShot004_name')]", 
+            "properties": {
+              "addressPrefix": "10.0.0.0/24", 
+              "provisioningState": "Succeeded"
+            }
+          }, 
+          {
+            "etag": "W/\"bbff4b62-05ec-4b3c-9fde-844b29a69d61\"", 
+            "name": "GatewaySubnet", 
+            "properties": {
+              "addressPrefix": "10.0.1.0/24", 
+              "privateAccessServices": [], 
+              "provisioningState": "Succeeded"
+            }
+          }
+        ], 
+        "provisioningState": "Succeeded", 
+        "addressSpace": {
+          "addressPrefixes": [
+            "10.0.0.0/16"
+          ]
+        }, 
+        "resourceGuid": "3de035a2-7ab7-4759-8023-cf7eb00834d4"
+      }
+    }, 
+    {
+      "scale": null, 
+      "name": "[parameters('virtualNetworks_AZ_Unmanaged_vm_vnet_name')]", 
+      "apiVersion": "2017-06-01", 
+      "location": "canadaeast", 
+      "dependsOn": [], 
+      "type": "Microsoft.Network/virtualNetworks", 
+      "properties": {
+        "virtualNetworkPeerings": [], 
+        "subnets": [
+          {
+            "etag": "W/\"5454825f-1e2d-4d83-9c53-46000e0e5679\"", 
+            "name": "AZ-Unmanaged-vm-subnet", 
+            "properties": {
+              "addressPrefix": "10.0.0.0/24", 
+              "provisioningState": "Succeeded"
+            }
+          }
+        ], 
+        "provisioningState": "Succeeded", 
+        "addressSpace": {
+          "addressPrefixes": [
+            "10.0.0.0/16"
+          ]
+        }, 
+        "resourceGuid": "2f4bf50d-8658-4186-886f-ee14fa4f2ca7"
+      }
+    }, 
+    {
+      "scale": null, 
+      "name": "[parameters('virtualNetworks_azureRMVMvnet_name')]", 
+      "apiVersion": "2017-06-01", 
+      "location": "canadaeast", 
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_azureRMVMnsg_name'))]"
+      ], 
+      "type": "Microsoft.Network/virtualNetworks", 
+      "properties": {
+        "virtualNetworkPeerings": [], 
+        "subnets": [
+          {
+            "etag": "W/\"68807774-d0ff-4a55-af74-ddcad6582ef1\"", 
+            "name": "subnet", 
+            "properties": {
+              "addressPrefix": "10.0.0.0/16", 
+              "networkSecurityGroup": {
+                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_azureRMVMnsg_name'))]"
+              }, 
+              "provisioningState": "Succeeded"
+            }
+          }
+        ], 
+        "provisioningState": "Succeeded", 
+        "addressSpace": {
+          "addressPrefixes": [
+            "10.0.0.0/16"
+          ]
+        }, 
+        "resourceGuid": "ab650844-2242-4710-91a7-f4c60bec24db"
+      }
+    }, 
+    {
+      "scale": null, 
+      "name": "[parameters('virtualNetworks_HTBase_vnet_name')]", 
+      "apiVersion": "2017-06-01", 
+      "location": "canadaeast", 
+      "dependsOn": [], 
+      "type": "Microsoft.Network/virtualNetworks", 
+      "properties": {
+        "virtualNetworkPeerings": [], 
+        "subnets": [
+          {
+            "etag": "W/\"28e48bab-44b2-48e5-ade0-febf4c4f84f5\"", 
+            "name": "default", 
+            "properties": {
+              "addressPrefix": "10.1.1.0/24", 
+              "provisioningState": "Succeeded"
+            }
+          }
+        ], 
+        "provisioningState": "Succeeded", 
+        "addressSpace": {
+          "addressPrefixes": [
+            "10.1.1.0/24"
+          ]
+        }, 
+        "resourceGuid": "dc88cdc4-e526-448e-a1c2-68b2654f6b36"
+      }
+    }, 
+    {
+      "scale": null, 
+      "name": "[parameters('virtualNetworks_MaestroFromSnapShot_name')]", 
+      "apiVersion": "2017-06-01", 
+      "location": "canadaeast", 
+      "dependsOn": [], 
+      "type": "Microsoft.Network/virtualNetworks", 
+      "properties": {
+        "virtualNetworkPeerings": [], 
+        "subnets": [
+          {
+            "etag": "W/\"12b812c5-f615-4aff-95b7-6f5caf299075\"", 
+            "name": "[concat(parameters('virtualNetworks_MaestroFromSnapShot_name'),'-subnet')]", 
+            "properties": {
+              "addressPrefix": "10.0.0.0/24", 
+              "provisioningState": "Succeeded"
+            }
+          }
+        ], 
+        "provisioningState": "Succeeded", 
+        "addressSpace": {
+          "addressPrefixes": [
+            "10.0.0.0/16"
+          ]
+        }, 
+        "resourceGuid": "3c847831-e509-41d5-b115-bbac4a17319a"
+      }
+    }, 
+    {
+      "sku": {
+        "tier": "Standard", 
+        "name": "Standard_LRS"
+      }, 
+      "kind": "Storage", 
+      "scale": null, 
+      "name": "[parameters('storageAccounts_ancientdisk5717_name')]", 
+      "tags": {}, 
+      "apiVersion": "2016-01-01", 
+      "location": "canadaeast", 
+      "dependsOn": [], 
+      "type": "Microsoft.Storage/storageAccounts", 
+      "properties": {}
+    }, 
+    {
+      "sku": {
+        "tier": "Standard", 
+        "name": "Standard_LRS"
+      }, 
+      "kind": "Storage", 
+      "scale": null, 
+      "name": "[parameters('storageAccounts_billowingfirefly6222_name')]", 
+      "tags": {}, 
+      "apiVersion": "2016-01-01", 
+      "location": "westus", 
+      "dependsOn": [], 
+      "type": "Microsoft.Storage/storageAccounts", 
+      "properties": {}
+    }, 
+    {
+      "sku": {
+        "tier": "Standard", 
+        "name": "Standard_LRS"
+      }, 
+      "kind": "Storage", 
+      "scale": null, 
+      "name": "[parameters('storageAccounts_crimsonmountain6015_name')]", 
+      "tags": {}, 
+      "apiVersion": "2016-01-01", 
+      "location": "westus", 
+      "dependsOn": [], 
+      "type": "Microsoft.Storage/storageAccounts", 
+      "properties": {}
+    }, 
+    {
+      "sku": {
+        "tier": "Standard", 
+        "name": "Standard_LRS"
+      }, 
+      "kind": "Storage", 
+      "scale": null, 
+      "name": "[parameters('storageAccounts_dampglade0656_name')]", 
+      "tags": {}, 
+      "apiVersion": "2016-01-01", 
+      "location": "canadaeast", 
+      "dependsOn": [], 
+      "type": "Microsoft.Storage/storageAccounts", 
+      "properties": {}
+    }, 
+    {
+      "sku": {
+        "tier": "Standard", 
+        "name": "Standard_LRS"
+      }, 
+      "kind": "Storage", 
+      "scale": null, 
+      "name": "[parameters('storageAccounts_htbasediag371_name')]", 
+      "tags": {}, 
+      "apiVersion": "2016-01-01", 
+      "location": "canadaeast", 
+      "dependsOn": [], 
+      "type": "Microsoft.Storage/storageAccounts", 
+      "properties": {}
+    }, 
+    {
+      "sku": {
+        "tier": "Standard", 
+        "name": "Standard_LRS"
+      }, 
+      "kind": "Storage", 
+      "scale": null, 
+      "name": "[parameters('storageAccounts_icymud1444_name')]", 
+      "tags": {}, 
+      "apiVersion": "2016-01-01", 
+      "location": "canadaeast", 
+      "dependsOn": [], 
+      "type": "Microsoft.Storage/storageAccounts", 
+      "properties": {}
+    }, 
+    {
+      "sku": {
+        "tier": "Standard", 
+        "name": "Standard_LRS"
+      }, 
+      "kind": "Storage", 
+      "scale": null, 
+      "name": "[parameters('storageAccounts_namelesshat2939_name')]", 
+      "tags": {}, 
+      "apiVersion": "2016-01-01", 
+      "location": "westus", 
+      "dependsOn": [], 
+      "type": "Microsoft.Storage/storageAccounts", 
+      "properties": {}
+    }, 
+    {
+      "sku": {
+        "tier": "Standard", 
+        "name": "Standard_LRS"
+      }, 
+      "kind": "Storage", 
+      "scale": null, 
+      "name": "[parameters('storageAccounts_proudbreeze8265_name')]", 
+      "tags": {}, 
+      "apiVersion": "2016-01-01", 
+      "location": "westus", 
+      "dependsOn": [], 
+      "type": "Microsoft.Storage/storageAccounts", 
+      "properties": {}
+    }, 
+    {
+      "sku": {
+        "tier": "Standard", 
+        "name": "Standard_LRS"
+      }, 
+      "kind": "Storage", 
+      "scale": null, 
+      "name": "[parameters('storageAccounts_snowymud3178_name')]", 
+      "tags": {}, 
+      "apiVersion": "2016-01-01", 
+      "location": "canadaeast", 
+      "dependsOn": [], 
+      "type": "Microsoft.Storage/storageAccounts", 
+      "properties": {}
+    }, 
+    {
+      "sku": {
+        "tier": "Standard", 
+        "name": "Standard_LRS"
+      }, 
+      "kind": "Storage", 
+      "scale": null, 
+      "name": "[parameters('storageAccounts_witheredfrost7511_name')]", 
+      "tags": {}, 
+      "apiVersion": "2016-01-01", 
+      "location": "westus", 
+      "dependsOn": [], 
+      "type": "Microsoft.Storage/storageAccounts", 
+      "properties": {}
+    }, 
+    {
+      "sku": {
+        "tier": "Standard", 
+        "name": "Standard_LRS"
+      }, 
+      "kind": "Storage", 
+      "scale": null, 
+      "name": "[parameters('storageAccounts_witheredmountain7795_name')]", 
+      "tags": {}, 
+      "apiVersion": "2016-01-01", 
+      "location": "westus", 
+      "dependsOn": [], 
+      "type": "Microsoft.Storage/storageAccounts", 
+      "properties": {}
+    }, 
+    {
+      "scale": null, 
+      "name": "[parameters('securityRules_ssh_name')]", 
+      "apiVersion": "2017-06-01", 
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_azureRMVMnsg_name'))]"
+      ], 
+      "type": "Microsoft.Network/networkSecurityGroups/securityRules", 
+      "properties": {
+        "sourceAddressPrefixes": [], 
+        "access": "Allow", 
+        "direction": "Inbound", 
+        "protocol": "Tcp", 
+        "description": "ssh rule", 
+        "priority": 100, 
+        "destinationAddressPrefixes": [], 
+        "destinationPortRange": "22", 
+        "sourceAddressPrefix": "*", 
+        "destinationAddressPrefix": "*", 
+        "sourcePortRange": "*", 
+        "provisioningState": "Succeeded"
+      }
+    }, 
+    {
+      "scale": null, 
+      "name": "[parameters('securityRules_default_allow_ssh_name')]", 
+      "apiVersion": "2017-06-01", 
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_MaestroAzureNSG_name'))]"
+      ], 
+      "type": "Microsoft.Network/networkSecurityGroups/securityRules", 
+      "properties": {
+        "sourceAddressPrefixes": [], 
+        "access": "Allow", 
+        "direction": "Inbound", 
+        "protocol": "Tcp", 
+        "priority": 1000, 
+        "destinationAddressPrefixes": [], 
+        "destinationPortRange": "22", 
+        "sourceAddressPrefix": "*", 
+        "destinationAddressPrefix": "*", 
+        "sourcePortRange": "*", 
+        "provisioningState": "Succeeded"
+      }
+    }, 
+    {
+      "scale": null, 
+      "name": "[parameters('securityRules_http_name')]", 
+      "apiVersion": "2017-06-01", 
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_MaestroAzureNSG_name'))]"
+      ], 
+      "type": "Microsoft.Network/networkSecurityGroups/securityRules", 
+      "properties": {
+        "sourceAddressPrefixes": [], 
+        "access": "Allow", 
+        "direction": "Inbound", 
+        "protocol": "*", 
+        "priority": 1010, 
+        "destinationAddressPrefixes": [], 
+        "destinationPortRange": "80", 
+        "sourceAddressPrefix": "*", 
+        "destinationAddressPrefix": "*", 
+        "sourcePortRange": "*", 
+        "provisioningState": "Succeeded"
+      }
+    }, 
+    {
+      "scale": null, 
+      "name": "[parameters('securityRules_default_allow_ssh_name_1')]", 
+      "apiVersion": "2017-06-01", 
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_MaestroOnAzure_nsg_name'))]"
+      ], 
+      "type": "Microsoft.Network/networkSecurityGroups/securityRules", 
+      "properties": {
+        "sourceAddressPrefixes": [], 
+        "access": "Allow", 
+        "direction": "Inbound", 
+        "protocol": "TCP", 
+        "priority": 1000, 
+        "destinationAddressPrefixes": [], 
+        "destinationPortRange": "22", 
+        "sourceAddressPrefix": "*", 
+        "destinationAddressPrefix": "*", 
+        "sourcePortRange": "*", 
+        "provisioningState": "Succeeded"
+      }
+    }, 
+    {
+      "scale": null, 
+      "name": "[parameters('securityRules_http_name_1')]", 
+      "apiVersion": "2017-06-01", 
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_MaestroOnAzure_nsg_name'))]"
+      ], 
+      "type": "Microsoft.Network/networkSecurityGroups/securityRules", 
+      "properties": {
+        "sourceAddressPrefixes": [], 
+        "access": "Allow", 
+        "direction": "Inbound", 
+        "protocol": "*", 
+        "priority": 1010, 
+        "destinationAddressPrefixes": [], 
+        "destinationPortRange": "80", 
+        "sourceAddressPrefix": "*", 
+        "destinationAddressPrefix": "*", 
+        "sourcePortRange": "*", 
+        "provisioningState": "Succeeded"
+      }
+    }, 
+    {
+      "scale": null, 
+      "name": "[parameters('securityRules_default_allow_ssh_name_2')]", 
+      "apiVersion": "2017-06-01", 
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_MaestroOnAzureNSG_name'))]"
+      ], 
+      "type": "Microsoft.Network/networkSecurityGroups/securityRules", 
+      "properties": {
+        "sourceAddressPrefixes": [], 
+        "access": "Allow", 
+        "direction": "Inbound", 
+        "protocol": "Tcp", 
+        "priority": 1000, 
+        "destinationAddressPrefixes": [], 
+        "destinationPortRange": "22", 
+        "sourceAddressPrefix": "*", 
+        "destinationAddressPrefix": "*", 
+        "sourcePortRange": "*", 
+        "provisioningState": "Succeeded"
+      }
+    }, 
+    {
+      "scale": null, 
+      "name": "[parameters('subnets_HTBaseDemoSubNet_name')]", 
+      "apiVersion": "2017-06-01", 
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworks_HTBaseDemoVNet_name'))]"
+      ], 
+      "type": "Microsoft.Network/virtualNetworks/subnets", 
+      "properties": {
+        "addressPrefix": "10.0.0.0/24", 
+        "provisioningState": "Succeeded"
+      }
+    }, 
+    {
+      "scale": null, 
+      "name": "[parameters('subnets_HTBaseHTSubNet_name')]", 
+      "apiVersion": "2017-06-01", 
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworks_HTBaseHTVNet_name'))]"
+      ], 
+      "type": "Microsoft.Network/virtualNetworks/subnets", 
+      "properties": {
+        "addressPrefix": "10.0.0.0/24", 
+        "provisioningState": "Succeeded"
+      }
+    }, 
+    {
+      "scale": null, 
+      "name": "[parameters('subnets_MaestroAZ_name')]", 
+      "apiVersion": "2017-06-01", 
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworks_MaestroAZ_name'))]"
+      ], 
+      "type": "Microsoft.Network/virtualNetworks/subnets", 
+      "properties": {
+        "addressPrefix": "10.0.0.0/24", 
+        "provisioningState": "Succeeded"
+      }
+    }, 
+    {
+      "scale": null, 
+      "name": "[parameters('subnets_VMFromSnapShot004_name')]", 
+      "apiVersion": "2017-06-01", 
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworks_VMFromSnapShot004_name'))]"
+      ], 
+      "type": "Microsoft.Network/virtualNetworks/subnets", 
+      "properties": {
+        "addressPrefix": "10.0.0.0/24", 
+        "provisioningState": "Succeeded"
+      }
+    }, 
+    {
+      "scale": null, 
+      "name": "[parameters('subnets_GatewaySubnet_name')]", 
+      "apiVersion": "2017-06-01", 
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworks_VMFromSnapShot004_name'))]"
+      ], 
+      "type": "Microsoft.Network/virtualNetworks/subnets", 
+      "properties": {
+        "addressPrefix": "10.0.1.0/24", 
+        "privateAccessServices": [], 
+        "provisioningState": "Succeeded"
+      }
+    }, 
+    {
+      "scale": null, 
+      "name": "[parameters('subnets_AZ_Unmanaged_vm_subnet_name')]", 
+      "apiVersion": "2017-06-01", 
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworks_AZ_Unmanaged_vm_vnet_name'))]"
+      ], 
+      "type": "Microsoft.Network/virtualNetworks/subnets", 
+      "properties": {
+        "addressPrefix": "10.0.0.0/24", 
+        "provisioningState": "Succeeded"
+      }
+    }, 
+    {
+      "scale": null, 
+      "name": "[parameters('subnets_subnet_name')]", 
+      "apiVersion": "2017-06-01", 
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworks_azureRMVMvnet_name'))]", 
+        "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_azureRMVMnsg_name'))]"
+      ], 
+      "type": "Microsoft.Network/virtualNetworks/subnets", 
+      "properties": {
+        "addressPrefix": "10.0.0.0/16", 
+        "networkSecurityGroup": {
+          "id": "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_azureRMVMnsg_name'))]"
+        }, 
+        "provisioningState": "Succeeded"
+      }
+    }, 
+    {
+      "scale": null, 
+      "name": "[parameters('subnets_default_name')]", 
+      "apiVersion": "2017-06-01", 
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworks_HTBase_vnet_name'))]"
+      ], 
+      "type": "Microsoft.Network/virtualNetworks/subnets", 
+      "properties": {
+        "addressPrefix": "10.1.1.0/24", 
+        "provisioningState": "Succeeded"
+      }
+    }, 
+    {
+      "scale": null, 
+      "name": "[parameters('subnets_MaestroFromSnapShot_subnet_name')]", 
+      "apiVersion": "2017-06-01", 
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworks_MaestroFromSnapShot_name'))]"
+      ], 
+      "type": "Microsoft.Network/virtualNetworks/subnets", 
+      "properties": {
+        "addressPrefix": "10.0.0.0/24", 
+        "provisioningState": "Succeeded"
+      }
+    }
+  ]
+}
