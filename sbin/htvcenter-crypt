@@ -1,0 +1,31 @@
+#!/usr/bin/perl -w
+#
+# htvcenter Enterprise developed by htvcenter Enterprise GmbH.
+#
+# All source code and content (c) Copyright 2014, htvcenter Enterprise GmbH unless specifically noted otherwise.
+#
+# This source code is released under the htvcenter Enterprise Server and Client License, unless otherwise agreed with htvcenter Enterprise GmbH.
+# The latest version of this license can be found here: http://htvcenter-enterprise.com/license
+#
+# By using this software, you acknowledge having read this license and agree to be bound thereby.
+#
+#           http://htvcenter-enterprise.com
+#
+# Copyright 2014, htvcenter Enterprise GmbH <info@htvcenter-enterprise.com>
+#
+use strict;
+my ($plain) = @ARGV;
+my $itoa64 = './0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+my $salt;
+for (1..2) { $salt .= substr $itoa64, rand(length($itoa64)), 1; }
+my $password = crypt($plain, $salt);
+
+print "<\?php\n";
+print "\$thisfile = basename(\$_SERVER['PHP_SELF']);\n";
+print "echo \"$password\";\n";
+print "unlink(\$thisfile);\n";
+print "\?>\n";
+
+
+
+
