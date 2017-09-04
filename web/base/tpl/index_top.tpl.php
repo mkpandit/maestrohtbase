@@ -365,15 +365,13 @@
 
 						<!--Language selector-->
 						<!--~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~-->
-						<li class="dropdown">
+						<!-- <li class="dropdown">
 							<a id="demo-lang-switch" class="lang-selector dropdown-toggle" href="#" data-toggle="dropdown">
 								
 							</a>
 
-							<!--Language selector menu-->
 							<ul class="head-list dropdown-menu with-arrow langselectoul">
 								<li>
-									<!--English-->
 									<a href="#" >
 										<img class="lang-flag" src="img/flags/united-kingdom.png" alt="English">
 										<span class="lang-id">EN</span>
@@ -382,7 +380,7 @@
 								</li>
 							
 								<li>
-									<!--Germany-->
+
 									<a href="#" >
 										<img class="lang-flag" src="img/flags/germany.png" alt="Germany">
 										<span class="lang-id">DE</span>
@@ -391,7 +389,6 @@
 								</li>
 							
 								<li>
-									<!--Spain-->
 									<a href="#">
 										<img class="lang-flag" src="img/flags/spain.png" alt="Spain">
 										<span class="lang-id">ES</span>
@@ -399,7 +396,7 @@
 									</a>
 								</li>
 							</ul>
-						</li>
+						</li> -->
 						<!--~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~-->
 						<!--End language selector-->
 
