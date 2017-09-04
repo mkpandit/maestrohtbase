@@ -212,7 +212,7 @@ function get_info_box() {
 				<!--================================-->
 				<div class="navbar-header">
 					<a href="/htvcenter/base/" class="navbar-brand">
-						<img src="{baseurl}/img/logo.png" alt="HTBase Logo" title="HTBase Logo" class="brand-icon">
+						<img src="{baseurl}/img/htbaselogo.png" alt="HTBase Logo" title="HTBase Logo" class="brand-icon">
 					
 					</a>
 				</div>
