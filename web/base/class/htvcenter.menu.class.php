@@ -97,7 +97,7 @@ var $tpldir;
 		$strMenuStructure .= implode('', file($this->PluginsDir.'/aa_plugins/menu.txt'));
 		
 		// define the base plugin sections
-		$strMenuStructure .= $this->parse_subsection("Cloud", "cloud");
+		
 		$strMenuStructure .= $this->parse_subsection("Deployment", "deployment");
 		$strMenuStructure .= $this->parse_subsection("Highavailability", "HA");
 		$strMenuStructure .= $this->parse_subsection("Management", "management");
@@ -106,6 +106,7 @@ var $tpldir;
 		$strMenuStructure .= $this->parse_subsection("Storage", "storage");
 		$strMenuStructure .= $this->parse_subsection("Virtualization", "virtualization");
 		$strMenuStructure .= $this->parse_subsection("Misc", "misc");
+		$strMenuStructure .= $this->parse_subsection("Cloud", "cloud");
 		
 		if($strMenuStructure != '') {
 			$mid2->setMenuStructureString($strMenuStructure);

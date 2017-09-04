@@ -1,0 +1,107 @@
+#!/bin/bash
+# init script for the htvcenter chatbot-plugin
+#
+# htvcenter Enterprise developed by htvcenter Enterprise GmbH.
+#
+# All source code and content (c) Copyright 2014, htvcenter Enterprise GmbH unless specifically noted otherwise.
+#
+# This source code is released under the htvcenter Enterprise Server and Client License, unless otherwise agreed with htvcenter Enterprise GmbH.
+# The latest version of this license can be found here: http://htvcenter-enterprise.com/license
+#
+# By using this software, you acknowledge having read this license and agree to be bound thereby.
+#
+#           http://htvcenter-enterprise.com
+#
+# Copyright 2014, htvcenter Enterprise GmbH <info@htvcenter-enterprise.com>
+#
+
+htvcenter_SERVER_BASE_DIR=$(pushd $(dirname $0)/../../../../.. > /dev/null; echo $PWD; popd > /dev/null)
+. $htvcenter_SERVER_BASE_DIR/htvcenter/etc/htvcenter-server.conf
+. $htvcenter_SERVER_BASE_DIR/htvcenter/include/htvcenter-functions
+. $htvcenter_SERVER_BASE_DIR/htvcenter/include/htvcenter-server-functions
+. $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/multi-cloud/include/htvcenter-plugin-multi-cloud-functions
+. $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/multi-cloud/etc/htvcenter-plugin-multi-cloud.conf
+htvcenter_server_get_config
+export LANG=C
+# define wget to use with https
+if [ "$htvcenter_WEB_PROTOCOL" == "https" ]; then
+	WGET_NO_CERT_CHECK="--no-check-certificate"
+fi
+
+
+function htvcenter_plugin_multi_cloud_start() {
+	echo "Starting the htvcenter multi-cloud-plugin"
+	touch $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/multi-cloud/.running
+}
+
+
+function htvcenter_plugin_multi_cloud_stop() {
+	echo "Stopping the htvcenter multi-cloud-plugin"
+	rm -f $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/multi-cloud/.running
+}
+
+function htvcenter_plugin_multi_cloud_uninstall() {
+	local USERNAME=$1
+	local PASSWORD=$2
+	if [ "$USERNAME" == "" ] && [ "$PASSWORD" == "" ]; then
+		echo -n "chatbot: Please give a username to uninstall the plugin : "
+		read USERNAME
+		echo
+		echo -n "chatbot: Please give the password for user $USERNAME : "
+		read PASSWORD
+		echo
+	fi
+	echo "Uninstalling the htvcenter multi-cloud-plugin"
+	htvcenter_plugin_chatbot_stop
+	rm -f $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/multi-cloud
+}
+
+function htvcenter_plugin_multi_cloud_init() {
+	local USERNAME=$1
+	local PASSWORD=$2
+	if [ "$USERNAME" == "" ] && [ "$PASSWORD" == "" ]; then
+		echo -n "multi-cloud: Please give a username to init the plugin : "
+		read USERNAME
+		echo
+		echo -n "multi-cloud: Please give the password for user $USERNAME : "
+		read PASSWORD
+		echo
+	fi
+
+	echo "Initializing the htvcenter multi-cloud-plugin"
+	# linking the web dir
+	ln -sf $htvcenter_SERVER_BASE_DIR/htvcenter/plugins/multi-cloud/web $htvcenter_WEBSERVER_DOCUMENT_ROOT/htvcenter/base/plugins/multi-cloud
+
+}
+
+USER=$2
+PASS=$3
+
+case "$1" in
+	start)
+		htvcenter_plugin_multi_cloud_start
+		;;
+	stop)
+		htvcenter_plugin_multi_cloud_stop
+		;;
+	restart)
+		htvcenter_plugin_multi_cloud_stop
+		sleep 1
+		htvcenter_plugin_multi_cloud_start
+		;;
+	init)
+		htvcenter_plugin_multi_cloud_init $USER $PASS
+		;;
+	uninstall)
+		htvcenter_plugin_multi_cloud_uninstall $USER $PASS
+		;;
+	*)
+		echo "Usage: $0 {start|stop|restart|init|uninstall}"
+		exit 1
+
+esac
+exit $?
+
+
+
+

@@ -16,7 +16,9 @@ class awsVolumes:
         row = cur.fetchone()
         unserializedData = unserialize(row[2])
         awsaccesskeyid = unserializedData['aws_access_key_id']
+        print awsaccesskeyid
         awssecretaccesskey = unserializedData['aws_secret_access_key']
+        print awssecretaccesskey
         session = boto3.Session(aws_access_key_id=awsaccesskeyid, aws_secret_access_key=awssecretaccesskey, region_name='us-east-1')
         s3 = boto3.resource('s3', aws_access_key_id = awsaccesskeyid, aws_secret_access_key = awssecretaccesskey, region_name='us-east-1')
         client = boto3.resource('ec2', aws_access_key_id=awsaccesskeyid, aws_secret_access_key=awssecretaccesskey, region_name='us-east-1')

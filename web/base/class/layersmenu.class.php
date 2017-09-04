@@ -1438,6 +1438,12 @@ function newTreeMenu(
 						$faicon = 'fa-cubes';
 						$label = '';
 					break;
+					
+					case 'Multi-Cloud':
+						$faicon = 'fa-cogs';
+						$label = '';
+						$this->tree[$cnt]['text'] = 'Multi Cloud';
+					break;
 
 
 
