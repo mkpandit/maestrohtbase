@@ -90,20 +90,10 @@
 			{resource_type_filter}
 			<!-- <div id="pagination"> {pagerContainer} </div> -->
 		</div>
-		
+		<div id="storagekvmid" style="display: none;">
+			{storagekvmid}
+		</div>
 		<div class="divTable">
-			<!-- <div class="headRow">
-				<div class="divCell-big">
-					<div class="divCell" style="width: 13%;">VM Name</div>
-					<div class="divCell" style="width: 15%;">VM IP</div>
-					<div class="divCell" style="width: 18%;">Image</div>
-					<div class="divCell" style="width: 10%;">Total<br />Memory</div>
-					<div class="divCell" style="width: 10%;">Memory<br/>Used</div>
-					<div class="divCell" style="width: 10%;">CPU</div>
-					<div class="divCell" style="width: 10%;">CPU<br />Used</div>
-					<div class="divCell" style="width: 10%;">Status</div>
-				</div>
-			</div> -->
 			{div_html}
 		</div>
 		
@@ -205,9 +195,44 @@ $(document).ready(function() {
 				if (d[12]) {
 					onclickHtml = onclickHtml + '<span><i class="fa fa-refresh"></i> '+d[12]+'</span>';
 				}
+				if (d[13]) {
+					onclickHtml = onclickHtml + '<span class="clonera"><i class="fa fa-clone"></i> Clone</span> <span class="protera"><i class="fa fa-files-o"></i> Snapshot</span>';
+				}
+				if (d[14]) {
+					onclickHtml = onclickHtml + '<span><i class="fa fa-clone"></i> '+d[14]+'</span>';
+				}
 				onclickHtml = onclickHtml + '</div>'+
 			'</div>'+
 		'</section>';
+		return onclickHtml;
+	}
+	
+	function formatPopOver (d) {
+		var img_text = jQuery(d[3]).text();
+		var onclickHtml = '<ul class="appliance-pop-over-menu">';
+		if (d[10]){
+			if (d[10].indexOf('stop') !== -1){
+				onclickHtml = onclickHtml + '<li class="fa fa-stop"> '+d[10]+'</li>';
+			} else {
+				onclickHtml = onclickHtml + '<li class="fa fa-play"> '+d[10]+'</li>';
+			}
+		}
+		if (d[11]){
+			onclickHtml = onclickHtml + '<li class="fa fa-edit"> '+d[11]+'</li>';
+		}
+		if (d[12]) {
+			onclickHtml = onclickHtml + '<li class="fa fa-refresh"> '+d[12]+'</li>';
+		}
+		if (d[15] && d[15] != 1) {
+			onclickHtml = onclickHtml + '<li class="fa fa-trash"><span class="remove-server" onclick=\'removeServer("'+d[15]+'");\'> Remove</span></li>'; //<a href="index.php?base=appliance&appliance_action=remove&appliance_id='+d[15]+'">
+		}
+		if (d[13]) {
+			onclickHtml = onclickHtml + '<li class="fa fa-clone"><span class="clonera" onclick=\'cloneImage("'+img_text+'");\'> Clone</span></li> <li class="fa fa-files-o"><span class="protera" onclick=\'snapShot("'+img_text+'");\'> Snapshot</span></li>';
+		}
+		if (d[14]) {
+			onclickHtml = onclickHtml + '<li> '+d[14]+'</li>';
+		}
+		onclickHtml = onclickHtml + '</ul>';
 		return onclickHtml;
 	}
 
@@ -220,15 +245,28 @@ $(document).ready(function() {
 				{ "visible": false },
 				{ "visible": false },
 				{ "visible": false },
+				{ "visible": false },
+				{ "visible": false },
 		],
-		"order": [], "bLengthChange": false, "pageLength": 10, "search": { "regex": true }, "bAutoWidth": true
+		"order": [], "bLengthChange": false, "pageLength": 10, "search": { "regex": true }, "bAutoWidth": true,
+		"fnDrawCallback": function( oSettings ) {
+			$(".toggle-graph a").popover({
+				html: true,
+				placement: "bottom",
+				content: function() {
+					var tr = $(this).closest('tr');
+					var row = dt.row( tr );
+					return formatPopOver(row.data()); //$('#popover-content').html();
+				}
+			});
+		}
 	});
-
-	$(".toggle-graph a").click(function () {
+	
+	/*$(".toggle-graph a").click(function () {
 		var tr = $(this).closest('tr');
 		var row = dt.row( tr );
 		var row_id = tr.attr("id");
-			
+	
 		if (row.child.isShown()) {
 			tr.removeClass('details');
 			row.child.hide();
@@ -237,7 +275,7 @@ $(document).ready(function() {
 			row.child( format(row.data()) ).show();
 			row.child().addClass('hv-bg')
 		}
-	});
+	});*/
 	
 	var delay = (function(){
 		var timer = 0;
@@ -315,4 +353,57 @@ $(document).ready(function() {
 			return(true);
 		}
 	}
+	
+	function cloneImage(d3){
+		var img = d3;
+		var storageid = $('#storagekvmid').text();
+		var urlstring = 'index.php?base=storage&storage_filter=&splugin=kvm&scontroller=kvm&storage_action=load&storage_id='+storageid+'&volgroup=storage1&kvm_action=clone&lvol='+img;
+		$('#storageformvmf').load(urlstring+" form", function(){
+			$('.lead').hide();
+			$('#actionvmf').html('<div class="alaction"><label>Action:</label> <div class="alcontent"><i class="fa fa-clone"></i> Clone </div><br/></div>');
+			$('#storageformvmf select').selectpicker();
+			$('#storageformvmf select').hide();
+			$('#volumepopupvmf').show();
+		});
+	}
+	
+	function snapShot(d3){
+		var storageid = $('#storagekvmid').text();
+		var img = d3;		
+		var urlstring = 'index.php?base=storage&storage_filter=&splugin=kvm&scontroller=kvm&storage_action=load&storage_id='+storageid+'&volgroup=storage1&kvm_action=snap&lvol='+img;
+		$('#storageformvmf').load(urlstring+" form", function(){
+			$('.lead').hide();
+			$('#actionvmf').html('<div class="alaction"><label>Action:</label> <div class="alcontent"><i class="fa fa-files-o"></i> Snapshot </div><br/></div>');
+			$('#storageformvmf select').selectpicker();
+			$('#storageformvmf select').hide();
+			$('#volumepopupvmf').show();
+		}); 
+	}
+
+	function removeServer(id){
+		var id = id;
+		var url = 'index.php?base=appliance&resource_filter=&appliance_action=select&resource_filter=&resource_type_filter=&appliance%5Bsort%5D=appliance_id&appliance%5Border%5D=ASC&appliance%5Boffset%5D=0&appliance%5Blimit%5D=20&appliance_identifier%5B%5D='+id+'&appliance_action%5Bremove%5D=remove';
+		$('#storageform').load(url+" form", function(){
+			$('#storageform select').selectpicker();
+			$('#storageform select').hide();
+			$('#storageform .selectpicker')
+			$('#volumepopup').show();
+		});
+	}
+	
+	/*$('body').on('click', '.removeservina', function(e){
+		e.preventDefault();
+		var id = $(this).attr('idserv');
+		var url = 'index.php?base=appliance&resource_filter=&appliance_action=select&resource_filter=&resource_type_filter=&appliance%5Bsort%5D=appliance_id&appliance%5Border%5D=ASC&appliance%5Boffset%5D=0&appliance%5Blimit%5D=20&appliance_identifier%5B%5D='+id+'&appliance_action%5Bremove%5D=remove';
+
+
+		  		$('#storageform').load(url+" form", function(){
+	  			
+		  			$('#storageform select').selectpicker();
+		  			$('#storageform select').hide();
+		  			$('#storageform .selectpicker')
+		  			$('#volumepopup').show();
+		  		});  		
+	});*/
+	
 </script>

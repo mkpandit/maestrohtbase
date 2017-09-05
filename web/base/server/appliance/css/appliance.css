@@ -411,3 +411,32 @@ div#cloud_appliances_table_wrapper div#cloud_appliances_table_filter input[type=
 	border: 1px solid #e1e5ea;
 	padding: 3px;
 }
+
+div.clone-spanshot{
+	top: 0;
+	left: 0;
+}
+
+span.clonera, span.protera, span.remove-server{
+	margin: 0;
+	position: relative;
+	top: 0;
+	color: #515151;
+	font-size: 12px;
+	cursor: pointer;
+}
+
+ul.appliance-pop-over-menu {
+	margin: 0;
+	padding: 0;
+}
+
+ul.appliance-pop-over-menu li {
+	list-style-type: none;
+	width: 100%;
+	padding: 0px 0px 10px 0;
+}
+
+.en-app:before{
+	padding: 3px;
+}

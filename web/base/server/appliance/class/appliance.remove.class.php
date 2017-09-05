@@ -165,6 +165,11 @@ var $lang = array();
 
 	}
 
+
+	function removeApi($appliance) {
+		$appliance->remove($appliance->id);
+	}
+
 	//--------------------------------------------
 	/**
 	 * Get Response

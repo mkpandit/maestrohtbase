@@ -290,7 +290,7 @@ var $lang = array();
 				// --- end appname my code ---
 				
 				if (preg_match('@VM \(localboot\)@', $appliance_virtualization_name)) {
-					$clonelink = '<div class="vmaplfeatures"><span class="clonera"><i class="fa fa-clone"></i> Clone</span><br/><span class="protera"><i class="fa fa-files-o"></i> Snapshot</span></div>';
+					$clonelink = '<div class="vmaplfeatures_ clone-spanshot"><span class="clonera"><i class="fa fa-clone"></i> Clone</span> <span class="protera"><i class="fa fa-files-o"></i> Snapshot</span></div>';
 				} else {
 					$clonelink ='';
 				}
@@ -436,7 +436,8 @@ var $lang = array();
 									}
 
 								//	$alink->handler = $alink->handler.' onclick="wait();"';
-									$alink->css = 'enable';
+									//$alink->css = 'enable';
+									$alink->css = 'en-app fa fa-plus';
 									$alink->title = preg_replace('~(.*?)<a.*>(.*?)</a>(.*?)~i', '$1$2$3', $p['description']);
 
 									$alink = $alink->get_string();
@@ -466,7 +467,7 @@ var $lang = array();
 						$appliance_comment = "<br/><hr>".$appliance_link_section;
 					}
 				}
-				$b[] = array('appliance_id' => $appliance_db["appliance_id"], 'appliance_name' => $appliance_db["appliance_name"], 'appliance_ip' => $resource->ip, 'appliance_values' => $str, 'appliance_comment' => $appliance_comment, 'appliance_virtualization' => $appliance_db["appliance_virtualization"], 'appliance_image' => $image_edit_link, 'appliance_total_memory' => $resource->memtotal, 'appliance_used_memory' => $resource->memused, 'appliance_cpu' => $resource->cpunumber, 'appliance_load' => $resource->load, 'appliance_edit' => $strEdit, 'appliance_start' => $strStart, 'appliance_release' => $release_resource, 'appliance_state' => $state_icon, 'appliance_state_value' => $state_text_value,);
+				$b[] = array('appliance_id' => $appliance_db["appliance_id"], 'appliance_name' => $appliance_db["appliance_name"], 'appliance_ip' => $resource->ip, 'appliance_values' => $str, 'appliance_comment' => $appliance_comment, 'appliance_virtualization' => $appliance_db["appliance_virtualization"], 'appliance_image' => $image_edit_link, 'appliance_total_memory' => $resource->memtotal, 'appliance_used_memory' => $resource->memused, 'appliance_cpu' => $resource->cpunumber, 'appliance_load' => $resource->load, 'appliance_edit' => $strEdit, 'appliance_start' => $strStart, 'appliance_release' => $release_resource, 'appliance_state' => $state_icon, 'appliance_state_value' => $state_text_value, 'appliance_link_section' => $appliance_link_section,);
 			}
 		}
 		// Filter
@@ -537,7 +538,7 @@ var $lang = array();
 		
 		$div_html = '';
 		
-		$row_headers = array('ID', 'VM Name', 'VM IP', 'Image', 'Total Memory', 'Memory Used', 'CPU', 'CPU Used', 'Status', 'Details');
+		$row_headers = array('ID', 'VM Name', 'VM IP', 'Image', 'Total Memory', 'Memory Used', 'CPU', 'CPU Used', 'Status', '...');
 		
 		$div_html = '<table class="table table-hover nowrap dataTable dtr-inline" id="cloud_appliances_table" role="grid" style="width: 100%;"><thead><tr>';
 
@@ -561,6 +562,8 @@ var $lang = array();
 			$div_html .= '<td class="app_edit">'.$b[$i]['appliance_edit'].'</td>';
 			$div_html .= '<td class="app_release">'.$b[$i]['appliance_release'].'</td>';
 			$div_html .= '<td class="app_clone">'.$clonelink.'</td>';
+			$div_html .= '<td class="svaccess">'.$b[$i]['appliance_link_section'].'</td>';
+			$div_html .= '<td class="appliance_id">'.$b[$i]['appliance_id'].'</td>';
 			$div_html .= '</tr>'; 
 		}
 		$div_html .=	'</tbody></table>';
